@@ -1,7 +1,7 @@
 "use client";
 
 import { login } from "@/actions/login";
-import { toaster } from "@/components/ui/toaster";
+import { toaster } from "@/components/chakra/toaster";
 import { LoginSchema } from "@/schemas";
 import {
   Button,

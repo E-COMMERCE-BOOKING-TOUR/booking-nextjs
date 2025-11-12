@@ -1,6 +1,6 @@
-import { Provider } from "@/components/ui/provider";
+import { Provider } from "@/components/chakra/provider";
 import TanstackProvider from "@/components/ui/tanstack";
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from "@/components/chakra/toaster";
 import { SessionProvider } from "next-auth/react";
 
 export default function RootLayout({

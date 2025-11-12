@@ -1,7 +1,7 @@
 "use client";
 import { login } from "@/actions/login";
 import authApi from "@/apis/auth";
-import { toaster } from "@/components/ui/toaster";
+import { toaster } from "@/components/chakra/toaster";
 import { RegisterSchema } from "@/schemas";
 import { ICreateRegister } from "@/types/auth.type";
 import {
