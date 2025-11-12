@@ -1,7 +1,11 @@
-import { Provider } from "@/components/chakra/provider";
 import TanstackProvider from "@/components/ui/tanstack";
-import { Toaster } from "@/components/chakra/toaster";
+import { Metadata } from "next";
 import { SessionProvider } from "next-auth/react";
+
+export const metadata: Metadata = {
+  title: "Booking NextJS",
+  description: "Booking NextJS",
+};
 
 export default function RootLayout({
   children,
@@ -9,14 +13,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html suppressHydrationWarning>
+    <html suppressHydrationWarning lang="en">
       <body>
         <SessionProvider>
           <TanstackProvider>
-            <Provider>
-              {children}
-              <Toaster />
-            </Provider>
+            {children}
           </TanstackProvider>
         </SessionProvider>
       </body>

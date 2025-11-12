@@ -10,7 +10,6 @@ export default function AuthLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <>
       <Box position={"relative"}>
         <Container
           as={SimpleGrid}
@@ -22,6 +21,5 @@ export default function AuthLayout({
           {children}
         </Container>
       </Box>
-    </>
   );
 }
