@@ -1,5 +1,6 @@
 import { Provider } from "@/components/ui/provider";
-import TanstackProvider from "@/components/ui/Tanstack";
+import TanstackProvider from "@/components/ui/tanstack";
+import { Toaster } from "@/components/ui/toaster";
 import { SessionProvider } from "next-auth/react";
 
 export default function RootLayout({
@@ -12,7 +13,10 @@ export default function RootLayout({
       <body>
         <SessionProvider>
           <TanstackProvider>
-            <Provider>{children}</Provider>
+            <Provider>
+              {children}
+              <Toaster />
+            </Provider>
           </TanstackProvider>
         </SessionProvider>
       </body>
