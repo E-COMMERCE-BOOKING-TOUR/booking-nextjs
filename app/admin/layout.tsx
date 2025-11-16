@@ -4,14 +4,14 @@ import "./admin-globals.scss"
 
 export default function AdminDashboardLayout({
     children,
-}: {
+}: Readonly<{
     children: React.ReactNode;
-}) {
+}>) {
     return (
         <SidebarProvider>
             <AppSidebar />
-            <main>
-                <SidebarTrigger />
+            <main className="w-full flex-1 p-4">
+                {/* <SidebarTrigger size={"icon-lg"} /> */}
                 {children}
             </main>
         </SidebarProvider>
