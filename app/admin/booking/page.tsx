@@ -2,68 +2,82 @@
 
 import { useState, useRef, useEffect } from "react";
 
-import { Card, CardTitle, CardHeader, CardDescription, CardContent, CardAction } from "@/components/ui/card";
+import { Card, CardContent, CardAction } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { LineChart, Line, XAxis, CartesianGrid, AreaChart, Area } from "recharts";
-import { ArrowLeft, ChevronDown, Plus, Search, TrendingUp } from "lucide-react";
-import { PieChartDashboard } from "../dashboard/components/PieChart.dashboard";
+import { Search} from "lucide-react";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
-const kpis = [
-  { label: "Total Booking", value: "1,200", delta: "+2.9%" },
-  { label: "Total Participants", value: "2,845", delta: "-1.6%" },
-  { label: "Total Earnings", value: "$14,795", delta: "+4.7%" },
-];
-
-const overview = [
-  { m: "Aug 1", done: 900, canceled: 300 },
-  { m: "Sep 7", done: 1100, canceled: 350 },
-  { m: "Oct 12", done: 1200, canceled: 400 },
-  { m: "Nov 27", done: 1760, canceled: 500 },
-  { m: "Dec 9", done: 1500, canceled: 520 },
-  { m: "Jan 22", done: 1650, canceled: 480 },
-  { m: "Feb 14", done: 1400, canceled: 450 },
-  { m: "Mar 30", done: 1600, canceled: 420 },
-  { m: "Apr 18", done: 1720, canceled: 460 },
-  { m: "May 26", done: 1550, canceled: 410 },
-  { m: "Jun 22", done: 1680, canceled: 430 },
-  { m: "Jul 28", done: 1620, canceled: 390 },
-];
-
-const bookings = [
-  { name: "Camello Luy", code: "BG023482", package: "Venice Doenara", duration: "5 Days / 7 Nights", dates: "June 25 – June 30", price: "$1,500", status: "Confirmed" },
-  { name: "Raphael Coronel", code: "BG023438", package: "Safari Adventure", duration: "8 Days / 7 Nights", dates: "June 25 – July 2", price: "$3,200,000,000", status: "Pending" },
-  { name: "Luigiv Contessa", code: "BG023412", package: "Alpine Escape", duration: "7 Days / 6 Nights", dates: "Jan 26 – Feb 2", price: "$2,300", status: "Completed" },
-  { name: "Armando Max Meyers", code: "BG023405", package: "Caribbean Cruise", duration: "5 Days / 4 Nights", dates: "Jun 25 – Jun 30", price: "$1,600", status: "Cancelled" },
-  { name: "Jorma Dum", code: "BG023380", package: "Parisian Romance", duration: "4 Days / 4 Nights", dates: "Jun 27 – Jun 30", price: "$1,450", status: "Confirmed" },
-  { name: "Hilary Grey", code: "BG023370", package: "Tokyo Cultural Adventure", duration: "7 Days / 6 Nights", dates: "Jan 23 – Jan 29", price: "$2,500", status: "Pending" },
-  { name: "Ashlynn Dean", code: "BG023365", package: "New York Highlights", duration: "3 Days / 2 Nights", dates: "Jun 26 – Jun 28", price: "$1,400", status: "Completed" },
-  { name: "Uday Singh", code: "BG023351", package: "Bali Beach Escape", duration: "8 Days / 7 Nights", dates: "Jun 24 – Jul 2", price: "$2,050", status: "Confirmed" },
-];
+type ApiBooking = {
+  id: number;
+  contact_name: string;
+  contact_email: string;
+  contact_phone: string;
+  total_amount: number;
+  status: "pending" | "confirmed" | "cancelled" | "expired";
+  payment_status: "unpaid" | "paid" | "refunded" | "partial";
+  user_id: number;
+  currency_id: number;
+  booking_payment_id: number;
+};
 
 export default function AdminBooking() {
-  const [rows, setRows] = useState(bookings);
-  const [statusOpenId, setStatusOpenId] = useState<string | null>(null);
-  const statusDropdownRef = useRef<HTMLDivElement | null>(null);
-  const statusOptions = ["Confirmed", "Pending", "Cancelled", "Completed"];
-  const badgeCls = (s: string) => s === "Completed" ? "bg-blue-500/15 text-blue-700" : s === "Confirmed" ? "bg-green-500/15 text-green-700" : s === "Pending" ? "bg-orange-500/15 text-orange-700" : "bg-red-500/15 text-red-700";
-  const setRowStatus = (code: string, s: string) => setRows(prev => prev.map(r => r.code === code ? { ...r, status: s } : r));
+  const [rows, setRows] = useState<ApiBooking[]>([]);
+  const selectBase = "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium";
+  const statusBadgeCls = (s: ApiBooking["status"]) => s === "confirmed" ? "bg-green-500/15" : s === "pending" ? "bg-orange-500/15" : s === "cancelled" ? "bg-red-500/15" : "bg-gray-500/15";
+  const statusBadgeTxtCls = (s: ApiBooking["status"]) => s === "confirmed" ? "text-green-700" : s === "pending" ? "text-orange-700" : s === "cancelled" ? "text-red-700" : "text-gray-700";
+  const paymentBadgeCls = (s: ApiBooking["payment_status"]) => s === "paid" ? "bg-green-500/15" : s === "unpaid" ? "bg-red-500/15" : s === "refunded" ? "bg-purple-500/15" : "bg-orange-500/15";
+  const paymentBadgeTxtCls = (s: ApiBooking["payment_status"]) => s === "paid" ? "text-green-700" : s === "unpaid" ? "text-red-700" : s === "refunded" ? "text-purple-700" : "text-orange-700";
+  const statusOptions: ApiBooking["status"][] = ["pending", "confirmed", "cancelled", "expired"];
+  const paymentOptions: ApiBooking["payment_status"][] = ["unpaid", "paid", "refunded", "partial"];
   const [detailOpen, setDetailOpen] = useState(false);
-  const [detailRow, setDetailRow] = useState<typeof bookings[0] | null>(null);
+  const [detailRow, setDetailRow] = useState<ApiBooking | null>(null);
   const detailRef = useRef<HTMLDivElement | null>(null);
+
+  const StatusSelect = ({ value, onValueChange }: { value: ApiBooking["status"]; onValueChange: (v: ApiBooking["status"]) => void }) => (
+    <div onClick={(e) => e.stopPropagation()}>
+      <Select value={value} onValueChange={(v) => onValueChange(v as ApiBooking["status"]) }>
+        <SelectTrigger className={statusBadgeCls(value)}>
+          <SelectValue placeholder="Status" />
+        </SelectTrigger>
+        <SelectContent>
+          {statusOptions.map((s) => (
+            <SelectItem key={s} value={s}>
+              <span className={statusBadgeTxtCls(s).replace(selectBase, "")}>{s}</span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
+  const PaymentStatusSelect = ({ value, onValueChange }: { value: ApiBooking["payment_status"]; onValueChange: (v: ApiBooking["payment_status"]) => void }) => (
+    <div onClick={(e) => e.stopPropagation()}>
+      <Select value={value} onValueChange={(v) => onValueChange(v as ApiBooking["payment_status"]) }>
+        <SelectTrigger className={paymentBadgeCls(value)}>
+          <SelectValue placeholder="Payment" />
+        </SelectTrigger>
+        <SelectContent>
+          {paymentOptions.map((p) => (
+            <SelectItem key={p} value={p}>
+              <span className={paymentBadgeTxtCls(p).replace(selectBase, "")}>{p}</span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
   useEffect(() => {
-    const onDown = (e: MouseEvent) => {
-      if (!statusDropdownRef.current) return;
-      if (statusOpenId && !statusDropdownRef.current.contains(e.target as Node)) setStatusOpenId(null);
-    };
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setStatusOpenId(null); };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
-  }, [statusOpenId]);
+    (async () => {
+      try {
+        const res = await fetch("http://localhost:3000/api/v1/booking/getAll");
+        const data = await res.json();
+        setRows(Array.isArray(data) ? data : []);
+      } catch (e) {
+        setRows([]);
+      }
+    })();
+  }, []);
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
       if (!detailRef.current) return;
@@ -90,84 +104,33 @@ export default function AdminBooking() {
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="text-left text-muted-foreground">
-                  <th className="py-3 font-medium">Name</th>
-                  <th className="py-3 font-medium">Booking Code</th>
-                  <th className="py-3 font-medium">Package</th>
-                  <th className="py-3 font-medium">Duration</th>
-                  <th className="py-3 font-medium">Dates</th>
-                  <th className="py-3 font-medium">Price</th>
+                  <th className="py-3 font-medium">ID</th>
+                  <th className="py-3 font-medium">Contact Name</th>
+                  <th className="py-3 font-medium">Email</th>
+                  <th className="py-3 font-medium">Phone</th>
+                  <th className="py-3 font-medium">Total</th>
                   <th className="py-3 font-medium">Status</th>
+                  <th className="py-3 font-medium">Payment</th>
+                  <th className="py-3 font-medium">User ID</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {rows.map((row) => {
-                  const getStatusBadge = (status: string) => {
-                    const base =
-                      "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium";
-
-                    switch (status) {
-                      case "Completed":
-                        return (
-                          <span className={`${base} bg-blue-500/15 text-blue-700`}>
-                            Completed
-                          </span>
-                        );
-
-                      case "Confirmed":
-                        return (
-                          <span className={`${base} bg-green-500/15 text-green-700`}>
-                            Confirmed
-                          </span>
-                        );
-
-                      case "Pending":
-                        return (
-                          <span className={`${base} bg-orange-500/15 text-orange-700`}>
-                            Pending
-                          </span>
-                        );
-
-                      case "Cancelled":
-                        return (
-                          <span className={`${base} bg-red-500/15 text-red-700`}>
-                            Cancelled
-                          </span>
-                        );
-                    }
-                  };
-
-                  return (
-                    <tr
-                      key={row.code}
-                      onClick={() => { setDetailRow(row); setDetailOpen(true); }}
-                      className="cursor-pointer hover:bg-muted/30 transition-colors"
-                    >
-                      <td className="py-3 font-medium">{row.name}</td>
-                      <td className="py-3">{row.code}</td>
-                      <td className="py-3">{row.package}</td>
-                      <td className="py-3">{row.duration}</td>
-                      <td className="py-3">{row.dates}</td>
-                      <td className="py-3">{row.price}</td>
-                      <td className="py-3">
-                        <div ref={statusOpenId === row.code ? statusDropdownRef : null} className="relative inline-block">
-                          <Button variant="secondary" size="sm" className={`gap-2 ${badgeCls(row.status)}`} onClick={(e) => { e.stopPropagation(); setStatusOpenId(statusOpenId === row.code ? null : row.code); }}>
-                            {row.status}
-                            <ChevronDown className="size-4" />
-                          </Button>
-                          {statusOpenId === row.code && (
-                            <div className="bg-popover text-popover-foreground absolute z-10 mt-2 w-40 rounded-md border p-2 shadow-xl">
-                              {statusOptions.map((opt) => (
-                                <button key={opt} type="button" className="w-full text-left px-2 py-1 rounded-sm hover:bg-muted" onClick={() => { setRowStatus(row.code, opt); setStatusOpenId(null); }}>
-                                  {opt}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {rows.map((row) => (
+                  <tr key={row.id} onClick={() => { setDetailRow(row); setDetailOpen(true); }} className="cursor-pointer hover:bg-muted/30 transition-colors">
+                    <td className="py-3 font-medium">{row.id}</td>
+                    <td className="py-3">{row.contact_name}</td>
+                    <td className="py-3">{row.contact_email}</td>
+                    <td className="py-3">{row.contact_phone}</td>
+                    <td className="py-3">{row.total_amount.toLocaleString()}</td>
+                    <td className="py-3">
+                      <StatusSelect value={row.status} onValueChange={(v) => setRows(prev => prev.map(r => r.id === row.id ? { ...r, status: v } : r))} />
+                    </td>
+                    <td className="py-3">
+                      <PaymentStatusSelect value={row.payment_status} onValueChange={(v) => setRows(prev => prev.map(r => r.id === row.id ? { ...r, payment_status: v } : r))} />
+                    </td>
+                    <td className="py-3">{row.user_id}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -196,32 +159,32 @@ export default function AdminBooking() {
               <div className="p-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div className="p-2 rounded-md border bg-muted/20">
-                    <div className="text-xs text-muted-foreground">Name</div>
-                    <div className="text-sm font-medium">{detailRow.name}</div>
+                    <div className="text-xs text-muted-foreground">Contact Name</div>
+                    <div className="text-sm font-medium">{detailRow.contact_name}</div>
                   </div>
                   <div className="p-2 rounded-md border bg-muted/20">
-                    <div className="text-xs text-muted-foreground">Booking Code</div>
-                    <div className="text-sm font-medium">{detailRow.code}</div>
+                    <div className="text-xs text-muted-foreground">Contact Email</div>
+                    <div className="text-sm font-medium">{detailRow.contact_email}</div>
                   </div>
                   <div className="p-2 rounded-md border bg-muted/20">
-                    <div className="text-xs text-muted-foreground">Package</div>
-                    <div className="text-sm font-medium">{detailRow.package}</div>
+                    <div className="text-xs text-muted-foreground">Contact Phone</div>
+                    <div className="text-sm font-medium">{detailRow.contact_phone}</div>
                   </div>
                   <div className="p-2 rounded-md border bg-muted/20">
-                    <div className="text-xs text-muted-foreground">Duration</div>
-                    <div className="text-sm font-medium">{detailRow.duration}</div>
+                    <div className="text-xs text-muted-foreground">Total Amount</div>
+                    <div className="text-sm font-medium">{detailRow.total_amount.toLocaleString()}</div>
                   </div>
                   <div className="p-2 rounded-md border bg-muted/20">
-                    <div className="text-xs text-muted-foreground">Dates</div>
-                    <div className="text-sm font-medium">{detailRow.dates}</div>
-                  </div>
-                  <div className="p-2 rounded-md border bg-muted/20">
-                    <div className="text-xs text-muted-foreground">Price</div>
-                    <div className="text-sm font-medium">{detailRow.price}</div>
-                  </div>
-                  <div className="p-2 rounded-md border bg-muted/20 md:col-span-2">
                     <div className="text-xs text-muted-foreground">Status</div>
                     <div className="text-sm font-medium">{detailRow.status}</div>
+                  </div>
+                  <div className="p-2 rounded-md border bg-muted/20">
+                    <div className="text-xs text-muted-foreground">Payment Status</div>
+                    <div className="text-sm font-medium">{detailRow.payment_status}</div>
+                  </div>
+                  <div className="p-2 rounded-md border bg-muted/20 md:col-span-2">
+                    <div className="text-xs text-muted-foreground">IDs</div>
+                    <div className="text-sm font-medium">User: {detailRow.user_id} • Currency: {detailRow.currency_id} • Booking Payment: {detailRow.booking_payment_id}</div>
                   </div>
                 </div>
               </div>
