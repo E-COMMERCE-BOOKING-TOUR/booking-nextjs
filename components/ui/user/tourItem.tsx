@@ -9,7 +9,7 @@ interface TourItemProps {
   reviews: number;
   ratingText: string;
   capacity: string;
-  originalPrice: number;
+  originalPrice?: number;
   currentPrice: number;
   tags: string[];
 }
@@ -55,9 +55,9 @@ export default function TourItem({
       <Box position="relative" w="full" h="220px">
         <Image src={image} alt={title} w="full" h="full" objectFit="cover" />
       </Box>
-      <HStack gap={2} my={4} px={4}>
+      <HStack gap={2} my={4} px={4} overflow="hidden">
         {tags.length > 0 && (
-          tags.map((tag, i) => (
+          tags.slice(0, 2).map((tag, i) => (
             <Badge key={i} bg="gray.300" color="gray.700" px={3} py={1} borderRadius="full" fontSize="xs">
               {tag}
             </Badge>
@@ -65,7 +65,7 @@ export default function TourItem({
         )}
       </HStack>
       <VStack align="stretch" px={4} pb={4} gap={2}>
-        <Text fontSize="lg" fontWeight="bold" lineHeight="1.3" lineClamp={2} color="gray.900">
+        <Text fontSize="lg" fontWeight="bold" lineHeight="1.3" lineClamp={2} color="gray.900" minH="3em">
           {title}
         </Text>
         <HStack gap={1} color="gray.600">
@@ -77,9 +77,11 @@ export default function TourItem({
           <Text fontSize="sm" color="gray.700" fontWeight="medium">{capacity}</Text>
         </HStack>
         <HStack justify="space-between" align="baseline" mt={1}>
-          <Text fontSize="sm" color="red.400" textDecoration="line-through">
-            VND {originalPrice.toLocaleString()}
-          </Text>
+          {originalPrice && (
+            <Text fontSize="sm" color="red.400" textDecoration="line-through">
+              VND {originalPrice.toLocaleString()}
+            </Text>
+          )}
           <Text fontSize="xl" fontWeight="bold" color="gray.900">
             VND {currentPrice.toLocaleString()}
           </Text>

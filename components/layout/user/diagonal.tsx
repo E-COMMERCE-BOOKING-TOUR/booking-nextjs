@@ -132,12 +132,13 @@ export default function Diagonal() {
             fontSize={{ base: "3xl", md: "5xl" }}
             fontWeight="bold"
             color="white"
+            lineHeight="1.3"
           >
-            What is Lorem Ipsum?
+            Discover the best destinations for your next trip with TripConnect&apos;s Travel Platform
           </Heading>
 
           <Text fontSize="md" color="whiteAlpha.900">
-            There are many variations of passages of Lorem Ipsum
+            Discover the best destinations for your next trip with TripConnect&apos;s Travel Platform
           </Text>
 
           <Box w="full" maxW="600px" h="1px" bg="whiteAlpha.400" my={4} />
@@ -145,11 +146,9 @@ export default function Diagonal() {
           <Text
             fontSize="sm"
             color="whiteAlpha.800"
-            lineHeight="1.8"
             maxW="700px"
           >
-            There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in
-            some form, by injected humour, or randomised words which don&apos;t look even slightly believable
+            Discover the best destinations for your next trip with TripConnect&apos;s Travel Platform
           </Text>
 
           <Button
@@ -170,7 +169,7 @@ export default function Diagonal() {
             }}
             transition="all 0.3s"
           >
-            Explore Now
+            Discover Now
             <ChevronRight size={20} style={{ marginLeft: "8px" }} />
           </Button>
         </VStack>

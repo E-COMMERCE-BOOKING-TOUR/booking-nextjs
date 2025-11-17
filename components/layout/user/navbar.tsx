@@ -4,6 +4,7 @@ import { NavItem } from './navItem';
 import { auth } from '@/libs/auth/auth';
 import { IUserAuth } from '@/types/response/auth.type';
 import { MobileDrawer } from './navMobileDrawer';
+import { LogoutButton } from './logoutButton';
 
 type NavItem = {
   name: string;
@@ -83,9 +84,7 @@ const UserMenu = ({ user }: { user: IUserAuth }) => {
           <Menu.Item value="profile">
             <NextLink href="/user-profile">Profile</NextLink>
           </Menu.Item>
-          <Menu.Item value="logout">
-            <NextLink href="/user-logout">Sign out</NextLink>
-          </Menu.Item>
+          <LogoutButton />
         </Menu.Content>
       </Menu.Positioner>
     </Menu.Root>
