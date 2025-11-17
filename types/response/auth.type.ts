@@ -15,14 +15,14 @@ export interface IResponseAuthLogout {
 export interface IUserAuth {
     uuid: string,
     username: string,
-    full_name: string,
+    name: string,
     email: string,
     role: {
         name: string,
         desciption: string,
-        permissions: {
-            permission_name: string,
-            description: string
-        }[]
+        // permissions: {
+        //     permission_name: string,
+        //     description: string
+        // }[]
     }
 }

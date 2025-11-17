@@ -1,6 +1,7 @@
 import TanstackProvider from "@/components/ui/tanstack";
 import { Metadata } from "next";
 import { SessionProvider } from "next-auth/react";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Booking NextJS",
