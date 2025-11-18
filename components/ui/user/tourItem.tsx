@@ -1,5 +1,6 @@
 import { Badge, Box, HStack, Image, Text, VStack } from "@chakra-ui/react";
-import { MapPin } from "lucide-react";
+import Link from "next/link";
+import { FaMapMarkerAlt } from "react-icons/fa";
 
 interface TourItemProps {
   image: string;
@@ -12,12 +13,13 @@ interface TourItemProps {
   originalPrice?: number;
   currentPrice: number;
   tags: string[];
+  slug: string;
 }
 
 const TourRating = ({ rating, ratingText, reviews }: { rating: number; ratingText: string; reviews: number }) => (
   <HStack gap={2}>
     <Box bg="main" color="white" px={2} py={1} borderRadius="10px 10px 10px 0" fontWeight="bold" fontSize="lg">
-      {rating}
+      {parseFloat(rating.toString()).toFixed(1)}
     </Box>
     <VStack align="start" gap={0}>
       <Text fontSize="sm" fontWeight="medium" color="gray.900">{ratingText}</Text>
@@ -37,6 +39,7 @@ export default function TourItem({
   originalPrice,
   currentPrice,
   tags,
+  slug,
 }: TourItemProps) {
   return (
     <VStack
@@ -52,9 +55,11 @@ export default function TourItem({
       transition="all 0.3s"
       _hover={{ shadow: "md" }}
     >
-      <Box position="relative" w="full" h="220px">
-        <Image src={image} alt={title} w="full" h="full" objectFit="cover" />
-      </Box>
+      <Link href={`/tour/${slug}`}>
+        <Box position="relative" w="full" h="220px">
+          <Image src={image} alt={title} w="full" h="full" objectFit="cover" />
+        </Box>
+      </Link>
       <HStack gap={2} my={4} px={4} overflow="hidden">
         {tags.length > 0 && (
           tags.slice(0, 2).map((tag, i) => (
@@ -65,11 +70,13 @@ export default function TourItem({
         )}
       </HStack>
       <VStack align="stretch" px={4} pb={4} gap={2}>
-        <Text fontSize="lg" fontWeight="bold" lineHeight="1.3" lineClamp={2} color="gray.900" minH="3em">
-          {title}
-        </Text>
+        <Link href={`/tour/${slug}`}>
+          <Text fontSize="lg" fontWeight="bold" lineHeight="1.3" lineClamp={2} color="gray.900" minH="3em">
+            {title}
+          </Text>
+        </Link>
         <HStack gap={1} color="gray.600">
-          <MapPin size={14} />
+          <FaMapMarkerAlt size={14} />
           <Text fontSize="sm">{location}</Text>
         </HStack>
         <HStack justify="space-between" align="center">

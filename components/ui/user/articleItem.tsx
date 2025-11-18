@@ -30,9 +30,7 @@ const LargeArticleItem = ({ image, title, description, tags }: ArticleItemProps)
         <Text fontSize="xl" fontWeight="bold" lineHeight="1.4" color="gray.900">
           {title}
         </Text>
-        {/* <Box>
-          <ArticleDescription description={description} />
-        </Box> */}
+        <ArticleDescription description={description} />
       </VStack>
     </VStack>
     <Box position="absolute" top={4} left="-10px" w="50px" h="50px" bg="orange.500" borderRadius="md" display="flex" alignItems="center" justifyContent="center" fontWeight="bold" color="white" zIndex={1}>
@@ -51,9 +49,7 @@ const SmallArticleItem = ({ image, title, description, tags, timestamp }: Articl
       <Text fontSize="md" fontWeight="bold" lineHeight="1.4" lineClamp={2} color="gray.900">
         {title}
       </Text>
-      {/* <Box>
-        <ArticleDescription description={description} />
-      </Box> */}
+      {/* <ArticleDescription description={description} /> */}
       {timestamp && (
         <Text fontSize="xs" color="gray.500" textAlign="right">
           {timestamp}

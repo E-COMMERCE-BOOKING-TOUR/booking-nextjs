@@ -1,6 +1,5 @@
 import { Box, Container, Grid, GridItem, HStack, Text, VStack } from '@chakra-ui/react';
 import { SearchInput, TourItem, ArticleItem, TravelList, HeaderList } from '@/components/ui/user';
-import { auth } from '@/libs/auth/auth';
 import Header from './components/header';
 import RecentSearch from './components/recentSearch';
 import BannerHeader from './components/bannerHeader';
@@ -10,11 +9,10 @@ import article from '@/apis/article';
 import division from '@/apis/division';
 
 export default async function TopPage() {
-  const session = await auth();
   const popularTours = await tour.popular(8);
   const popularArticles = await article.popular(4);
   const trendingDestinations = await division.trending(6);
-  console.log(trendingDestinations);
+
   return (
     <>
       <Container maxW="2xl" mx="auto">
@@ -42,6 +40,7 @@ export default async function TopPage() {
                   originalPrice={tourItem.originalPrice}
                   currentPrice={tourItem.currentPrice}
                   tags={tourItem.tags}
+                  slug={tourItem.slug}
                 />
               ))
             ) : (

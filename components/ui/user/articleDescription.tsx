@@ -5,7 +5,6 @@ import { Box } from "@chakra-ui/react";
 export default function ArticleDescription({ description }: { description: string }) {
     return (
         <Box
-            as="div"
             fontSize="sm"
             color="gray.600"
             lineHeight="1.6"
