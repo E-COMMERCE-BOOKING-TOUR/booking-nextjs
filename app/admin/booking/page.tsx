@@ -67,6 +67,7 @@ export default function AdminBooking() {
       </Select>
     </div>
   );
+
   useEffect(() => {
     (async () => {
       try {
@@ -78,6 +79,7 @@ export default function AdminBooking() {
       }
     })();
   }, []);
+
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
       if (!detailRef.current) return;
@@ -88,6 +90,7 @@ export default function AdminBooking() {
     document.addEventListener("keydown", onKey);
     return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
   }, [detailOpen]);
+  
   return (
     <div className="flex flex-col gap-4">
       <CardAction className="w-full flex items-center gap-2 justify-between">

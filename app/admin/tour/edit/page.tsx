@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardAction } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Save, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { CardInput } from "@/components/CardInput";
+import { tourApi } from "@/apis/tour";
+import { toaster } from "@/components/chakra/toaster";
+import { masterApi } from "@/apis/master";
+import { useRouter } from "next/navigation";
+import { ICountry, ICurrency, IDivision } from "@/types/response/base.type";
+import { ISupplier } from "@/types/response/tour.type";
+import { redirect } from "next/navigation";
 
 export default function AdminTourEdit() {
+    const router = useRouter();
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [summary, setSummary] = useState("");
@@ -30,6 +38,10 @@ export default function AdminTourEdit() {
     const [divisionId, setDivisionId] = useState<string>("1");
     const [currencyId, setCurrencyId] = useState<string>("1");
     const [supplierId, setSupplierId] = useState<string>("1");
+    const [countries, setCountries] = useState<ICountry[]>([]);
+    const [divisions, setDivisions] = useState<IDivision[]>([]);
+    const [currencies, setCurrencies] = useState<ICurrency[]>([]);
+    const [suppliers, setSuppliers] = useState<ISupplier[]>([]);
     const [images, setImages] = useState<File[]>([]);
     const [previews, setPreviews] = useState<string[]>([]);
     const [tags, setTags] = useState({ popular: false, discount: false, featured: false });
@@ -40,6 +52,29 @@ export default function AdminTourEdit() {
         { key: "discount", label: "Giảm giá" },
         { key: "featured", label: "Nổi bật" },
     ];
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const [cs, ds, crs, ss] = await Promise.all([
+                    masterApi.getCountries(),
+                    masterApi.getDivisions(),
+                    masterApi.getCurrencies(),
+                    masterApi.getSuppliers(),
+                ]);
+                setCountries(cs.map(c => ({ ...c, divisions: [] })));
+                setDivisions(ds);
+                setCurrencies(crs.map(c => ({ ...c, tours: [] })));
+                setSuppliers(ss.map(s => ({ ...s, tours: [] })));
+                if (cs.length) setCountryId(String(cs[0].id));
+                if (ds.length) setDivisionId(String(ds[0].id));
+                if (crs.length) setCurrencyId(String(crs[0].id));
+                if (ss.length) setSupplierId(String(ss[0].id));
+            } catch (e) {
+                toaster.create({ description: "Lỗi tải dữ liệu select", type: "error" });
+            }
+        })();
+    }, []);
 
     const handleFiles = (files: FileList | null) => {
         const arr = Array.from(files || []);
@@ -52,8 +87,42 @@ export default function AdminTourEdit() {
         setPreviews((prev) => prev.filter((_, i) => i !== idx));
     };
 
+    const [isSubmitting, startTransition] = useTransition();
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        startTransition(async () => {
+            const dto = {
+                title,
+                description,
+                summary,
+                map_url: mapUrl || null,
+                slug,
+                address,
+                score_rating: typeof scoreRating === "number" ? scoreRating : null,
+                tax: typeof tax === "number" ? tax : 0,
+                is_visible: isVisible,
+                published_at: publishedAt || null,
+                status: publishStatus as "draft" | "active" | "inactive",
+                duration_hours: typeof durationHours === "number" ? durationHours : null,
+                duration_days: typeof durationDaysDetail === "number" ? durationDaysDetail : null,
+                min_pax: typeof minPax === "number" ? minPax : 1,
+                max_pax: typeof maxPax === "number" ? maxPax : null,
+                country_id: 1,
+                division_id: 8,
+                currency_id: 1,
+                supplier_id: 1,
+                tour_category_ids: [],
+                images: previews.map((src, i) => ({ image_url: src, sort_no: i, is_cover: i === 0 })),
+            };
+            try {
+                await tourApi.create(dto);
+                router.push("/admin/tour");
+                router.refresh();
+            } catch (error) {
+                toaster.create({ description: "Tạo tour thất bại", type: "error" });
+                console.log("Error: " + error)
+            }
+        });
     };
 
     return (
@@ -61,7 +130,7 @@ export default function AdminTourEdit() {
             <Card className="border-none shadow-none">
                 <CardHeader className="border-b">
                     <CardAction className="flex items-center gap-2">
-                        <Button size="sm" onClick={handleSubmit}>
+                        <Button size="sm" onClick={handleSubmit} disabled={isSubmitting}>
                             <Save className="size-4" color={'#ffffff'} />
                             Lưu
                         </Button>
@@ -132,13 +201,13 @@ export default function AdminTourEdit() {
                             <CardInput title="Max pax">
                                 <Input className="py-2" type="number" min={1} value={maxPax} onChange={(e) => setMaxPax(e.target.value === "" ? "" : Number(e.target.value))} placeholder="Tối đa" />
                             </CardInput>
-                            <CardInput title="Country">
+                            {/* <CardInput title="Country">
                                 <Select value={countryId} onValueChange={(v) => setCountryId(v)}>
                                     <SelectTrigger><SelectValue placeholder="Chọn country" /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="1">Vietnam</SelectItem>
-                                        <SelectItem value="2">USA</SelectItem>
-                                        <SelectItem value="3">Japan</SelectItem>
+                                        {countries.map((c) => (
+                                            <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </CardInput>
@@ -146,9 +215,9 @@ export default function AdminTourEdit() {
                                 <Select value={divisionId} onValueChange={(v) => setDivisionId(v)}>
                                     <SelectTrigger><SelectValue placeholder="Chọn division" /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="1">North</SelectItem>
-                                        <SelectItem value="2">Central</SelectItem>
-                                        <SelectItem value="3">South</SelectItem>
+                                        {divisions.map((d) => (
+                                            <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </CardInput>
@@ -156,9 +225,9 @@ export default function AdminTourEdit() {
                                 <Select value={currencyId} onValueChange={(v) => setCurrencyId(v)}>
                                     <SelectTrigger><SelectValue placeholder="Chọn currency" /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="1">VND</SelectItem>
-                                        <SelectItem value="2">USD</SelectItem>
-                                        <SelectItem value="3">JPY</SelectItem>
+                                        {currencies.map((c) => (
+                                            <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </CardInput>
@@ -166,13 +235,13 @@ export default function AdminTourEdit() {
                                 <Select value={supplierId} onValueChange={(v) => setSupplierId(v)}>
                                     <SelectTrigger><SelectValue placeholder="Chọn supplier" /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="1">Venice Experience Co.</SelectItem>
-                                        <SelectItem value="2">Serengeti Safaris Ltd.</SelectItem>
-                                        <SelectItem value="3">Swiss Alpine Tours</SelectItem>
+                                        {suppliers.map((s) => (
+                                            <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
-                            </CardInput>
-                            <CardInput title="Tùy chọn hiển thị">
+                            </CardInput> */}
+                            {/* <CardInput title="Tùy chọn hiển thị">
                                 <CardContent className="grid grid-cols-3 gap-2 p-3">
                                     {tagOptions.map((t) => (
                                         <label key={t.key} className="flex items-center gap-2 text-sm">
@@ -185,7 +254,7 @@ export default function AdminTourEdit() {
                                     ))}
                                 </CardContent>
 
-                            </CardInput>
+                            </CardInput> */}
                             <CardInput title="Ảnh (nhiều ảnh)" className="md:col-span-2">
                                     <Input type="file" multiple accept="image/*" onChange={(e) => handleFiles(e.target.files)} />
                                     {
@@ -204,7 +273,7 @@ export default function AdminTourEdit() {
                         </div>
                         <CardAction className="flex items-center justify-end gap-2">
                             <a href="/admin/tour-list"><Button type="button" variant="ghost">Hủy</Button></a>
-                            <Button type="submit">Lưu</Button>
+                            <Button type="submit" disabled={isSubmitting}>Lưu</Button>
                         </CardAction>
                     </form>
                 </CardContent>

@@ -17,30 +17,19 @@ import {
   ChevronRightIcon,
   ChevronsRightIcon,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { IUser } from "@/types/response/user.type";
+import { adminApi } from "@/apis/admin";
 
-type Row = {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  dept: string;
-  status: "Active" | "Inactive" | "Deactivate";
-};
-
-const rows: Row[] = [
-  { id: "860315-1521", name: "john gerard", email: "adam@gmail.com", phone: "076-8359082", dept: "sales", status: "Active" },
-  { id: "860315-1521", name: "john gerard", email: "adam@gmail.com", phone: "076-8359082", dept: "forvaltning", status: "Inactive" },
-  { id: "860315-1521", name: "john smith gerard", email: "adam@gmail.com", phone: "076-8359082", dept: "DET", status: "Active" },
-  { id: "860315-1521", name: "gerard antony john", email: "adam@gmail.com", phone: "076-8359082", dept: "sales", status: "Active" },
-  { id: "860315-1521", name: "johngerard", email: "adam@gmail.com", phone: "076-8359082", dept: "forvaltning", status: "Active" },
-  { id: "860315-1521", name: "johngerard", email: "adam@gmail.com", phone: "076-8359082", dept: "forvaltning", status: "Deactivate" },
-  { id: "860315-1521", name: "johngerard", email: "adam@gmail.com", phone: "076-8359082", dept: "sales", status: "Active" },
-  { id: "860315-1521", name: "johngerard", email: "adam@gmail.com", phone: "076-8359082", dept: "DET", status: "Active" },
-  { id: "860315-1521", name: "johngerard", email: "adam@gmail.com", phone: "076-8359082", dept: "DET", status: "Active" },
-  { id: "860315-1521", name: "john gerard", email: "adam@gmail.com", phone: "076-8359082", dept: "sales", status: "Active" },
-];
 
 const AdminListEmployee = () => {
+
+  const [users, setUsers] = useState<IUser[]>([]);
+
+  useEffect(() => {
+    adminApi.getAllUser().then((res) => setUsers(res));
+  }, []);
+
   return (
     <div className="w-full min-h-svh flex flex-col">
       <Card className="w-full flex-1 flex flex-col p-4">
@@ -75,25 +64,24 @@ const AdminListEmployee = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-muted-foreground text-xs">
-                  <th className="py-3 text-left">NAME</th>
-                  <th className="py-3 text-left">EMAIL</th>
-                  <th className="py-3 text-left">MOBILE</th>
-                  <th className="py-3 text-left">STATUS</th>
-                  <th className="py-3 text-left">EDIT</th>
+                  <th className="py-3 text-left">Tên</th>
+                  <th className="py-3 text-left">Email</th>
+                  <th className="py-3 text-left">Số điện thoại</th>
+                  <th className="py-3 text-left">Vai trò</th>
+                  <th className="py-3 text-left">Trạng thái</th>
+                  <th className="py-3 text-left">Hành động</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row, i) => {
+                {users.map((row, i) => {
                   const renderStatus = () => {
                     const base = "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium";
                     switch (row.status) {
-                      case "Active":
+                      case 0:
                         return <span className={`${base} bg-green-500/15 text-green-700`}>Active</span>;
-                      case "Inactive":
+                      case 1:
                         return <span className={`${base} bg-orange-500/15 text-orange-700`}>Inactive</span>;
-                      case "Deactivate":
-                        return <span className={`${base} bg-red-500/15 text-red-700`}>Deactivate</span>;
-                    }
+                      }
                   };
 
                   return (
@@ -102,9 +90,10 @@ const AdminListEmployee = () => {
                       onClick={() => console.log("Row clicked:", row)}
                       className="border-t cursor-pointer transition-colors hover:bg-muted/30"
                     >
-                      <td className="py-3">{row.name}</td>
+                      <td className="py-3">{row.full_name}</td>
                       <td className="py-3 text-muted-foreground">{row.email}</td>
                       <td className="py-3">{row.phone}</td>
+                      <td className="py-3">{row.role.name}</td>
                       <td className="py-3">{renderStatus()}</td>
                       <td className="py-3">
                         <div className="flex items-center gap-2">

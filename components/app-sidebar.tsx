@@ -68,15 +68,15 @@ const sections = [
       { title: "Đánh giá", url: "/admin/review" },
     ],
   },
-  {
-    title: "Đối tác",
-    base: "/admin/supplier",
-    icon: Handshake,
-    children: [
-      { title: "List Đối tác", url: "/admin/supplier" },
-      { title: "Edit Đối tác", url: "/admin/supplier/edit" },
-    ],
-  },
+  // {
+  //   title: "Đối tác",
+  //   base: "/admin/supplier",
+  //   icon: Handshake,
+  //   children: [
+  //     { title: "List Đối tác", url: "/admin/supplier" },
+  //     { title: "Edit Đối tác", url: "/admin/supplier/edit" },
+  //   ],
+  // },
 ];
 
 export function AppSidebar() {

@@ -15,7 +15,7 @@ export const AppSelect = (props: AppSelectProps) => {
     return (
         <Select onValueChange={(value) => props.onChange(value)} defaultValue={props.valueSelect}> 
             <SelectTrigger className={`${props.className} text-sm font-bold text-${props.txtColor ?? 'black'}`}>
-                <SelectValue placeholder={props.placeholder}/>
+                <SelectValue placeholder={props.placeholder}>{props.valueSelect}</SelectValue>
             </SelectTrigger>
             <SelectContent>
                 {

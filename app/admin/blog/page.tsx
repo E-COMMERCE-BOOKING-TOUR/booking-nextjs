@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { MapPin, Calendar, ImagePlus } from "lucide-react";
+import { MapPin, Calendar, ImagePlus, Handshake, ThumbsUp, MessageSquareMore } from "lucide-react";
+import { IArticle } from "@/types/response/article.type";
+import { useEffect, useState } from "react";
+import { adminApi } from "@/apis/admin";
 
 const items = [
   { title: "Alpine Escape hihuhuh ihuiadiad adh iasdajdand aidasd ja", location: "Swiss Alps, Switzerland", image: "https://images.unsplash.com/photo-1500417148159-68083bd7333f?q=80&w=1080&auto=format&fit=crop" },
@@ -23,6 +26,20 @@ const items = [
 ];
 
 export default function AdminBlog() {
+
+  const [articles, setArticles] = useState<IArticle[]>([]);
+
+  useEffect(() => {
+        (async () => {
+            try {
+                const resArticles = await adminApi.getAllArticle();
+                setArticles(resArticles);
+            } catch (e) {
+                throw new Error('Error get notification: ' + e);
+            }
+        })();
+    }, []);
+
   return (
     <div className="flex flex-col gap-4">
         <CardHeader className="border-b">
@@ -43,17 +60,18 @@ export default function AdminBlog() {
         </CardHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {items.map((it) => (
-          <Card key={it.title} 
+        {articles.map((it) => (
+          <Card key={it.id} 
           className="hover:bg-muted/100"
           onClick={() => {console.log(it)}}>
             <CardContent className="">
               <div className="overflow-hidden rounded-lg border">
-                <img src={it.image} alt={it.title} className="h-40 w-full object-cover" />
+                <img src={ 'https://images.unsplash.com/photo-1528127269322-539801943592' } alt={it.title} className="h-40 w-full object-cover" />
               </div>
               <div className="mt-3">
                 <div className="font-medium">{it.title}</div>
-                <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><MapPin className="size-3" /> {it.location}</div>
+                <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><ThumbsUp className="size-3" /> {it.count_likes}</div>
+                <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><MessageSquareMore className="size-3" /> {it.count_comments}</div>
               </div>
             </CardContent>
           </Card>

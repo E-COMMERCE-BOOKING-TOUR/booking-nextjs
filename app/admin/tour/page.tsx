@@ -7,26 +7,35 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { Search, ChevronDown } from "lucide-react";
+import { ITour } from "@/types/response/tour.type";
+import { adminApi } from "@/apis/admin";
 
 export default function AdminTourList() {
   const [openId, setOpenId] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
-  const [tours, setTours] = useState([
-    { id: 1, name: "Alpine Escape", location: "Swiss Alps, Switzerland", days: 7, status: "Đang mở", tags: { popular: true, discount: false, featured: true } },
-    { id: 2, name: "Bali Beach Escape", location: "Bali, Indonesia", days: 8, status: "Đã đủ", tags: { popular: true, discount: true, featured: false } },
-    { id: 3, name: "Caribbean Cruise", location: "Caribbean Sea", days: 5, status: "Đóng", tags: { popular: false, discount: false, featured: false } },
-    { id: 4, name: "Greek Island Hopping", location: "Santorini, Greece", days: 6, status: "Hủy", tags: { popular: false, discount: true, featured: false } },
-  ]);
+
+  const [tours, setTours] = useState<ITour[]>([]);
+  
+      useEffect(() => {
+          (async () => {
+              try {
+                  const resTour = await adminApi.getTour();
+                  setTours(resTour);
+              } catch (e) {
+                  throw new Error('Error get notification: ' + e);
+              }
+          })();
+      }, []);
 
   const StatusBadge = ({ s }: { s: string }) => {
     const base = "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium";
-    const cls = s === "Đang mở" ? "bg-green-500/15 text-green-700" : s === "Đã đủ" ? "bg-orange-500/15 text-orange-700" : s === "Đóng" ? "bg-gray-500/15 text-gray-700" : "bg-red-500/15 text-red-700";
+    const cls = s === "active" ? "bg-green-500/15 text-green-700" : s === "raw" ? "bg-orange-500/15 text-orange-700" : s === "inactive" ? "bg-gray-500/15 text-gray-700" : "bg-red-500/15 text-red-700";
     return <span className={`${base} ${cls}`}>{s}</span>;
   };
 
-  const toggleTag = (id: number, key: keyof (typeof tours)[0]["tags"]) => {
-    setTours((prev) => prev.map((t) => (t.id === id ? { ...t, tags: { ...t.tags, [key]: !t.tags[key] } } : t)));
-  };
+  // const toggleTag = (id: number, key: keyof (typeof tours)[0]["status"]) => {
+  //   setTours((prev) => prev.map((t) => (t.id === id ? { ...t, status: { ...t.status, [key]: !t.status[key] } } : t)));
+  // };
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
@@ -45,6 +54,8 @@ export default function AdminTourList() {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [openId]);
+
+
 
   return (
     <div className="w-full flex flex-col gap-4">
@@ -69,18 +80,18 @@ export default function AdminTourList() {
                   <th className="py-3 font-medium">Địa điểm</th>
                   <th className="py-3 font-medium">Số ngày</th>
                   <th className="py-3 font-medium">Trạng thái</th>
-                  <th className="py-3 font-medium">Tùy chọn</th>
+                  {/* <th className="py-3 font-medium">Tùy chọn</th> */}
                   <th className="py-3 font-medium">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {tours.map((t) => (
                   <tr key={t.id} className="hover:bg-muted/30 cursor-pointer" onClick={() => console.log(t)}>
-                    <td className="py-3 font-medium">{t.name}</td>
-                    <td className="py-3">{t.location}</td>
-                    <td className="py-3">{t.days} ngày</td>
+                    <td className="py-3 font-medium">{t.title}</td>
+                    <td className="py-3">{t.address}</td>
+                    <td className="py-3">{t.duration_days} ngày</td>
                     <td className="py-3"><StatusBadge s={t.status} /></td>
-                    <td className="py-3">
+                    {/* <td className="py-3">
                       <div ref={openId === t.id ? dropdownRef : null} className="relative inline-block" onClick={(e) => e.stopPropagation()}>
                         <Button variant="secondary" size="sm" className="gap-2" onClick={(e) => { e.stopPropagation(); setOpenId(openId === t.id ? null : t.id); }}>
                           Tùy chọn <ChevronDown className="size-4" />
@@ -94,7 +105,7 @@ export default function AdminTourList() {
                           </div>
                         )}
                       </div>
-                    </td>
+                    </td> */}
                     <td className="py-3">
                       <a href="/admin/tour-detail" onClick={(e) => e.stopPropagation()}>
                         <Button size="sm" variant="ghost">Edit</Button>
