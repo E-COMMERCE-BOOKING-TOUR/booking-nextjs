@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   Box,
   Button,
@@ -12,6 +12,7 @@ import {
   Portal,
 } from "@chakra-ui/react";
 import { FaSearch, FaMapMarkerAlt, FaCalendarAlt, FaUsers } from "react-icons/fa";
+import { useRouter } from "next/navigation";
 
 interface SearchData {
   destination: string;
@@ -22,15 +23,21 @@ interface SearchData {
   children: number;
 }
 
-export default function SearchInput() {
+interface SearchInputProps {
+  defaultDestination?: string;
+}
+
+export default function SearchInput({ defaultDestination = "" }: SearchInputProps = {}) {
   const initialCheckOut = useMemo(() => {
     const date = new Date();
     date.setDate(date.getDate() + 1);
     return date;
   }, []);
 
+  const router = useRouter();
+
   const [searchData, setSearchData] = useState<SearchData>({
-    destination: "",
+    destination: defaultDestination,
     checkIn: new Date(),
     checkOut: initialCheckOut,
     rooms: 1,
@@ -51,9 +58,25 @@ export default function SearchInput() {
     return Math.round(diff / 86400000);
   };
 
-  const handleSearch = () => {
-    console.log("Search:", searchData);
-  };
+  const toDateParam = (date: Date) => date.toISOString().split("T")[0];
+
+  const handleSearch = useCallback(() => {
+    const params = new URLSearchParams();
+    const destination = searchData.destination.trim();
+
+    if (destination) {
+      params.set("keyword", destination);
+    }
+
+    params.set("checkIn", toDateParam(searchData.checkIn));
+    params.set("checkOut", toDateParam(searchData.checkOut));
+    params.set("rooms", String(searchData.rooms));
+    params.set("adults", String(searchData.adults));
+    params.set("children", String(searchData.children));
+
+    const queryString = params.toString();
+    router.push(queryString ? `/tour/list?${queryString}` : "/tour/list");
+  }, [router, searchData]);
 
   return (
     <HStack
@@ -101,6 +124,12 @@ export default function SearchInput() {
           onChange={(e) =>
             setSearchData({ ...searchData, destination: e.target.value })
           }
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              handleSearch();
+            }
+          }}
         />
       </VStack>
 

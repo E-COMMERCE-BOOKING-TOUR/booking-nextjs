@@ -99,3 +99,10 @@ export interface IRelatedTour {
     tags: string[];
     slug: string;
 }
+
+export interface ITourSearchResponse {
+    data: ITourPopular[];
+    total: number;
+    limit: number;
+    offset: number;
+}

@@ -1,6 +1,97 @@
 import fetchC from "@/libs/fetchC";
+import { ITour } from "@/types/response/tour.type";
 import { IBaseResponseData } from "@/types/base.type";
-import { ITourLatest, ITourPopular, ITourDetail, ITourReview, ITourReviewCategory, IRelatedTour } from "@/types/response/tour";
+import { ITourLatest, ITourPopular, ITourDetail, ITourReview, ITourReviewCategory, IRelatedTour, ITourSearchResponse } from "@/types/response/tour";
+
+export type ITourSearchParams = {
+    keyword?: string;
+    destinations?: string[];
+    tags?: string[];
+    minPrice?: number;
+    maxPrice?: number;
+    minRating?: number;
+    limit?: number;
+    offset?: number;
+    sort?: 'popular' | 'price_asc' | 'price_desc' | 'rating_desc' | 'newest';
+};
+
+const toQueryRecord = (params?: ITourSearchParams): Record<string, string> | undefined => {
+    if (!params) {
+        return undefined;
+    }
+
+    const query: Record<string, string> = {};
+
+    if (params.keyword) {
+        query.keyword = params.keyword;
+    }
+
+    if (params.destinations?.length) {
+        query.destinations = params.destinations.join(',');
+    }
+
+    if (params.tags?.length) {
+        query.tags = params.tags.join(',');
+    }
+
+    if (typeof params.minPrice === 'number') {
+        query.minPrice = params.minPrice.toString();
+    }
+
+    if (typeof params.maxPrice === 'number') {
+        query.maxPrice = params.maxPrice.toString();
+    }
+
+    if (typeof params.minRating === 'number') {
+        query.minRating = params.minRating.toString();
+    }
+
+    if (typeof params.limit === 'number') {
+        query.limit = params.limit.toString();
+    }
+
+    if (typeof params.offset === 'number') {
+        query.offset = params.offset.toString();
+    }
+
+    if (params.sort) {
+        query.sort = params.sort;
+    }
+
+    return Object.keys(query).length ? query : undefined;
+};
+
+type CreateTourDTO = {
+  title: string;
+  description: string;
+  summary: string;
+  map_url?: string | null;
+  slug: string;
+  address: string;
+  score_rating?: number | null;
+  tax: number;
+  is_visible: boolean;
+  published_at?: string | null;
+  status: "draft" | "active" | "inactive";
+  duration_hours?: number | null;
+  duration_days?: number | null;
+  min_pax: number;
+  max_pax?: number | null;
+  country_id: number;
+  division_id: number;
+  currency_id: number;
+  supplier_id: number;
+  tour_category_ids?: number[];
+  images?: { image_url: string; sort_no?: number; is_cover?: boolean }[];
+};
+
+export const tourApi = {
+  create: async (dto: CreateTourDTO) => {
+    const url = "/tour/create";
+    const res: ITour = await fetchC.post(url, dto, { cache: "no-store" });
+    return res;
+  },
+};
 
 const tour = {
     latest: async (): Promise<IBaseResponseData<ITourLatest>> => {
@@ -16,6 +107,14 @@ const tour = {
     detail: async (slug: string): Promise<ITourDetail> => {
         const url = `/user/tour/${slug}`;
         const res = await fetchC.get(url);
+        return res;
+    },
+    search: async (params?: ITourSearchParams): Promise<ITourSearchResponse> => {
+        const url = `/user/tour/search/list`;
+        const res = await fetchC.get(url, {
+            params: toQueryRecord(params),
+            BaseURL: process.env.NEXT_PUBLIC_API_BACKEND,
+        });
         return res;
     },
     reviews: async (slug: string): Promise<ITourReview[]> => {
@@ -36,3 +135,4 @@ const tour = {
 }
 
 export default tour;
+export type { CreateTourDTO };

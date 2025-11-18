@@ -148,7 +148,7 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
 
     return (
         <Container maxW="7xl" mx="auto" px={4} py={6}>
-            <SearchInput />
+            <SearchInput defaultDestination={tour.location} />
 
             <Box bg="white" rounded="25px" p={4}>
                 <Breadcrumb

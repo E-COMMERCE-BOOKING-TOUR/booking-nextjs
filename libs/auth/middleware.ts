@@ -29,7 +29,7 @@ export default auth((req) => {
         return;
     }
 
-    if (isApiAdminRoute && req.auth?.user.role !== "ADMIN") {
+    if (isApiAdminRoute && req.auth?.user.role?.name.toLowerCase() !== "admin") {
         req.nextUrl.pathname = "/user-login";
         return Response.redirect(req.nextUrl);
     }
