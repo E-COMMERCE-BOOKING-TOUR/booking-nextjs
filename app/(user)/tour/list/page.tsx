@@ -18,7 +18,7 @@ import {
     Text,
     VStack,
 } from '@chakra-ui/react';
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, Suspense, useEffect, useMemo, useState } from 'react';
 import { FaStar } from 'react-icons/fa';
 import { FiCheck, FiChevronDown, FiMapPin, FiUsers } from 'react-icons/fi';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -219,7 +219,7 @@ const TourCard = memo(function TourCard({ tour }: { tour: ITourPopular }) {
 });
 TourCard.displayName = 'TourCard';
 
-export default function TourListPage() {
+function TourListContent() {
     const urlSearchParams = useSearchParams();
     const initialKeyword = (urlSearchParams.get('keyword') ?? '').trim();
 
@@ -691,5 +691,13 @@ export default function TourListPage() {
                 </Grid>
             </Box>
         </Box>
+    );
+}
+
+export default function TourListPage() {
+    return (
+        <Suspense fallback={<Box minH="100vh" py={10}><Skeleton height="500px" /></Box>}>
+            <TourListContent />
+        </Suspense>
     );
 }

@@ -4,7 +4,7 @@ import { IDivisionTrending } from "@/types/response/division";
 const division = {
     trending: async (limit: number = 6): Promise<IDivisionTrending[]> => {
         const url = `/user/division/trending?limit=${limit}`;
-        const res = await fetchC.get(url);
+        const res = await fetchC.get(url, { cache: 'no-store' });
         return Array.isArray(res) ? res : (res?.data || []);
     }
 }

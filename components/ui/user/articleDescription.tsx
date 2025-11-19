@@ -8,7 +8,7 @@ export default function ArticleDescription({ description }: { description: strin
             fontSize="sm"
             color="gray.600"
             lineHeight="1.6"
-            dangerouslySetInnerHTML={{ __html: description }}
+            // dangerouslySetInnerHTML={{ __html: description }}
             suppressHydrationWarning
             css={{
                 '& > *': {

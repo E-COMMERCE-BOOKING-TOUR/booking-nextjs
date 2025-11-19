@@ -101,7 +101,7 @@ const tour = {
     },
     popular: async (limit: number = 8): Promise<ITourPopular[]> => {
         const url = `/user/tour/popular?limit=${limit}`;
-        const res = await fetchC.get(url);
+        const res = await fetchC.get(url, { cache: 'no-store' });
         return Array.isArray(res) ? res : (res?.data || []);
     },
     detail: async (slug: string): Promise<ITourDetail> => {
