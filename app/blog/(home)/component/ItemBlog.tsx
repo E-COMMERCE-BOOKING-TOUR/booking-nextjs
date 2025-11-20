@@ -173,7 +173,7 @@ export default function ItemBlog(props: ItemBlogProps) {
                                 <Icon as={it.icon} color="whiteAlpha.800" />
                                 <Text color={'whiteAlpha.900'} fontWeight={'semibold'}> {it.label}</Text>
                             </HStack>
-                            <Text mt={1} color={'whiteAlpha.800'} fontSize={'sm'} noOfLines={1}>{it.subLabel}</Text>
+                            <Text mt={1} color={'whiteAlpha.800'} fontSize={'sm'} lineClamp={1}>{it.subLabel}</Text>
                         </Box>
                     ))}
                 </Grid>
