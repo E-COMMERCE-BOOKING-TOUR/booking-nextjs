@@ -143,9 +143,17 @@ export function PopUpComment({
             <Dialog.Body p={0}>
               <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }}>
                 <GridItem>
-                  <Box bg="black" w="full" h={{ base: "70vh", md: "80vh" }} position="relative">
+                  <Box 
+                  bg="black" 
+                  w="full" 
+                  h={{ base: "70vh", md: "80vh" }} 
+                  position="relative"
+                  display={"flex"}
+                  justifyContent={"center"}
+                  alignItems={"center"}
+                  >
                     {images && images.length > 0 ? (
-                      <Image src={images[imgIndex]} alt="tour" w="full" h="full" objectFit="cover" />
+                      <Image src={images[imgIndex]} alt="tour" h="full" objectFit="cover" />
                     ) : (
                       <Box w="full" h="full" bg="whiteAlpha.200" />
                     )}
