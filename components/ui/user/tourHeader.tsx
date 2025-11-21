@@ -6,6 +6,19 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { bookingApi, CreateBookingDTO } from "@/apis/booking";
 import { toaster } from "@/components/chakra/toaster";
+import { useSession } from "next-auth/react";
+
+interface TourVariant {
+    id: number;
+    name: string;
+    status: string;
+    prices: {
+        id: number;
+        pax_type_id: number;
+        price: number;
+        pax_type_name: string;
+    }[];
+}
 
 interface TourHeaderProps {
     title: string;
@@ -19,6 +32,7 @@ interface TourHeaderProps {
 
 export default function TourHeader({ title, location, rating, price, oldPrice, slug, variants }: TourHeaderProps) {
     const router = useRouter();
+    const { data: session } = useSession();
     const [startDate, setStartDate] = useState<string>('');
     const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
     const [paxQuantities, setPaxQuantities] = useState<Record<number, number>>({});
@@ -48,7 +62,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
     }, [selectedVariant]);
 
     const createBookingMutation = useMutation({
-        mutationFn: (data: CreateBookingDTO) => bookingApi.create(data),
+        mutationFn: (data: CreateBookingDTO) => bookingApi.create(data, session?.user?.token),
         onSuccess: (data: any) => {
             toaster.create({
                 title: "Booking created.",
