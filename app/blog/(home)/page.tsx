@@ -18,7 +18,7 @@ export default function Home() {
                     <ForYou />
                 </Tabs.Content>
                 <Tabs.Content value="projects">
-                    Manage your projects
+                    <ForYou />
                 </Tabs.Content>
             </Tabs.Root>
             {/* <ItemBlog 

@@ -29,7 +29,6 @@ export default function BlogSidebarRight({
   title = "What’s happening",
   items = defaultItems,
   className,
-  onShowMoreHref = "#",
 }: Readonly<BlogSidebarRightProps>) {
   return (
     <Box
@@ -64,9 +63,9 @@ export default function BlogSidebarRight({
         })}
       </VStack>
 
-      <Button as="a" variant="outline" colorScheme="blue" mt={2} px={2}>
-        <a href={onShowMoreHref}>Show more</a>
-      </Button>
+      {/* <Button as="a" variant="outline" colorScheme="blue" mt={2} px={2}>
+        <a href={onShowMoreHref} target="_blank">Show more</a>
+      </Button> */}
     </Box>
   )
 }

@@ -1,9 +1,9 @@
 "use client";
 import NextLink from "next/link";
-import { Box, HStack, VStack, Text, Image, Badge, Button, Icon, Avatar, Grid, IconButton } from "@chakra-ui/react";
+import { Box, HStack, VStack, Text, Image, Badge, Button, Icon, Avatar, Grid, IconButton, useDisclosure } from "@chakra-ui/react";
 import { FiMessageCircle, FiEye, FiThumbsUp, FiMapPin, FiCalendar, FiClock, FiCloud, FiShare2, FiBookmark, FiArrowRight } from "react-icons/fi";
 import type { IArticlePopular } from "@/types/response/article";
-import { ArrowRight, Bookmark } from "lucide-react";
+import { PopUpComment } from "./Comment";
 
 type ItemBlogProps = IArticlePopular & {
     href?: string;
@@ -99,9 +99,7 @@ const ImagesGrid = ({ data, title }: { data: string[]; title: string }) => {
 
 export default function ItemBlog(props: ItemBlogProps) {
     const { images, title, tags, timestamp, views, likes, comments, href, authorName = "John Doe", authorAvatar, tagLabel = "Epic Coder" } = props;
-
-
-
+    const { open, onOpen, onClose } = useDisclosure();
 
     const content = (
         <Box
@@ -178,11 +176,12 @@ export default function ItemBlog(props: ItemBlogProps) {
                     ))}
                 </Grid>
                 <HStack gap={4}>
-                    <Button size="sm" variant="ghost" ><Icon as={FiThumbsUp} />Like {likes ?? 0}</Button>
-                    <Button size="sm" variant="ghost" ><Icon as={FiMessageCircle} />Comment {comments ?? 0}</Button>
-                    <Button size="sm" variant="ghost" ><Icon as={FiShare2} />Share 0</Button>
+                    <Button size="sm" variant="ghost"><Icon as={FiThumbsUp} />Like {likes ?? 0}</Button>
+                    <Button size="sm" variant="ghost" onClick={onOpen}><Icon as={FiMessageCircle} />Comment {comments ?? 0}</Button>
+                    <Button size="sm" variant="ghost"><Icon as={FiShare2} />Share 0</Button>
                 </HStack>
             </VStack>
+            <PopUpComment isOpen={open}  onClose={onClose} tourId={props.id} images={images} />
         </Box>
     );
 
