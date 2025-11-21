@@ -11,19 +11,14 @@ export default function TopPageLayout({
 }>) {
     return (
         <Provider defaultTheme='dark'>
-            <Flex
-                flex={1}
-                justifyContent={'space-between'}
-                minH={'100vh'}
-                background={'black'}
-                color={'white'}>
-                <Flex flex={1}>
+            <Flex position="relative" flex={1} justifyContent="space-between" minH="100vh" alignItems="flex-start" background="black" color="white">
+                <Flex flex={1} position="sticky" top={0}>
                     <BlogSidebarLeft />
                 </Flex>
-                <Flex flex={2} justifyContent={'center'}>
+                <Flex flex={2} justifyContent="center">
                     {children}
                 </Flex>
-                <Flex flex={1}>
+                <Flex flex={1} position="sticky" top={0}>
                     <BlogSidebarRight />
                 </Flex>
             </Flex>
