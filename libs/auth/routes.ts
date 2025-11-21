@@ -4,7 +4,9 @@ export const authRoutes = ["/user-login", "/user-register"];
 
 export const userRoutes = [
   "/user",
-  // "/watch-history"
+  "/user-profile",
+  "/user-order",
+  "/user-order-detail",
 ];
 
 export const adminRoutes = ["/admin"];
