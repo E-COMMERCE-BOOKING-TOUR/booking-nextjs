@@ -16,9 +16,9 @@ export default {
                         const loginResponse = await authApi.login(username, password);
                         const accessToken = loginResponse.token.access_token;
                         const userInfoResponse = await userApi.info(accessToken);
-                        const userData = { 
-                            ...userInfoResponse, 
-                            token: accessToken 
+                        const userData = {
+                            ...userInfoResponse,
+                            accessToken: accessToken
                         };
                         return userData;
                     } catch (e) {
@@ -35,8 +35,8 @@ export default {
     ],
     callbacks: {
         jwt: async ({ token, user, trigger }) => {
-            if (trigger === "update" && token.token) {
-                const newInfo = await userApi.info(token.token);
+            if (trigger === "update" && token.accessToken) {
+                const newInfo = await userApi.info(token.accessToken);
                 if (typeof newInfo.full_name !== "undefined") {
                     token.name = newInfo.full_name;
                     token.email = newInfo.email;
@@ -51,7 +51,7 @@ export default {
                     username: user.username,
                     name: user.full_name,
                     email: user.email,
-                    token: user.token,
+                    accessToken: user.accessToken,
                     role: user.role
                 }
             }
@@ -64,7 +64,7 @@ export default {
                     uuid: token.uuid,
                     username: token.username,
                     email: token.email || session.user.email || "",
-                    token: token.token,
+                    accessToken: token.accessToken,
                     role: token.role
                 }
             }

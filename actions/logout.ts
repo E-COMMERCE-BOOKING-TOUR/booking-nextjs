@@ -11,7 +11,7 @@ const logout = async () => {
         await signOut({
             redirect: false
         });
-        await userApi.signOut(session?.user.token ?? "");
+        await userApi.signOut(session?.user.accessToken ?? "");
     } catch (error) {
         return { message: "Thất bại khi đăng xuất" }
     } finally {

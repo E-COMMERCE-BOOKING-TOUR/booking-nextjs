@@ -32,7 +32,7 @@ interface TourHeaderProps {
 
 export default function TourHeader({ title, location, rating, price, oldPrice, slug, variants }: TourHeaderProps) {
     const router = useRouter();
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const [startDate, setStartDate] = useState<string>('');
     const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
     const [paxQuantities, setPaxQuantities] = useState<Record<number, number>>({});
@@ -62,7 +62,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
     }, [selectedVariant]);
 
     const createBookingMutation = useMutation({
-        mutationFn: (data: CreateBookingDTO) => bookingApi.create(data, session?.user?.token),
+        mutationFn: (data: CreateBookingDTO) => bookingApi.create(data, session?.user?.accessToken),
         onSuccess: (data: any) => {
             toaster.create({
                 title: "Booking created.",
@@ -83,6 +83,17 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
     });
 
     const handleBooking = () => {
+        // Check if user is logged in
+        if (!session?.user?.accessToken) {
+            toaster.create({
+                title: "Please login first.",
+                description: "You need to be logged in to make a booking.",
+                type: "warning",
+                duration: 3000,
+            });
+            return;
+        }
+
         if (!startDate) {
             toaster.create({
                 title: "Please select a date.",

@@ -64,9 +64,9 @@ export default function Checkout() {
     const { data: session } = useSession();
 
     const { data: booking, isLoading, error } = useQuery({
-        queryKey: ["booking", bookingId, session?.user?.token],
-        queryFn: () => bookingApi.getDetail(Number(bookingId), session?.user?.token),
-        enabled: !!bookingId && !!session?.user?.token,
+        queryKey: ["booking", bookingId, session?.user?.accessToken],
+        queryFn: () => bookingApi.getDetail(Number(bookingId), session?.user?.accessToken),
+        enabled: !!bookingId && !!session?.user?.accessToken,
     });
 
     const [contactName, setContactName] = useState("");
@@ -122,7 +122,7 @@ export default function Checkout() {
     }, [booking?.hold_expires_at]);
 
     const confirmMutation = useMutation({
-        mutationFn: (data: any) => bookingApi.confirm(data, session?.user?.token),
+        mutationFn: (data: any) => bookingApi.confirm(data, session?.user?.accessToken),
         onSuccess: () => {
             setStep(2);
             toaster.create({
@@ -379,7 +379,6 @@ const SummaryAside = ({ children, booking }: { children?: ReactNode, booking: IB
 };
 
 const BookingSummaryCard = ({ booking }: { booking: IBookingDetail }) => {
-    console.log(booking)
     return <Box bg="white" borderRadius="15px">
         <Box p={8} border="1px solid" borderColor="gray.200">
             <Heading as="h2" fontSize="2xl" fontWeight="bold">Order summary</Heading>
