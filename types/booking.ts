@@ -1,0 +1,34 @@
+export interface IBookingDetail {
+    id: number;
+    contact_name: string;
+    contact_email: string;
+    contact_phone: string;
+    total_amount: number;
+    status: string;
+    payment_status: string;
+    currency: string;
+    tour_title: string;
+    tour_image: string;
+    tour_location: string;
+    start_date: string;
+    duration_days: number;
+    duration_hours: number;
+    hold_expires_at?: string;
+    items: {
+        variant_id: number;
+        pax_type_id: number;
+        tour_session_id: number;
+        quantity: number;
+        unit_price: number;
+        total_amount: number;
+        pax_type_name: string;
+    }[];
+}
+
+export interface IConfirmBooking {
+    booking_id: number;
+    contact_name: string;
+    contact_email: string;
+    contact_phone: string;
+    payment_method: string;
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Box,
   Button,
@@ -16,8 +16,8 @@ import { useRouter } from "next/navigation";
 
 interface SearchData {
   destination: string;
-  checkIn: Date;
-  checkOut: Date;
+  checkIn: Date | null;
+  checkOut: Date | null;
   rooms: number;
   adults: number;
   children: number;
@@ -28,24 +28,32 @@ interface SearchInputProps {
 }
 
 export default function SearchInput({ defaultDestination = "" }: SearchInputProps = {}) {
-  const initialCheckOut = useMemo(() => {
-    const date = new Date();
-    date.setDate(date.getDate() + 1);
-    return date;
-  }, []);
-
   const router = useRouter();
 
   const [searchData, setSearchData] = useState<SearchData>({
     destination: defaultDestination,
-    checkIn: new Date(),
-    checkOut: initialCheckOut,
+    checkIn: null,
+    checkOut: null,
     rooms: 1,
     adults: 2,
     children: 0,
   });
 
-  const formatDate = (date: Date) => {
+  // Initialize dates on client side only to avoid hydration mismatch
+  useEffect(() => {
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    setSearchData(prev => ({
+      ...prev,
+      checkIn: today,
+      checkOut: tomorrow,
+    }));
+  }, []);
+
+  const formatDate = (date: Date | null) => {
+    if (!date) return "Select date";
     return date.toLocaleDateString("en-US", {
       weekday: "short",
       month: "short",
@@ -54,11 +62,12 @@ export default function SearchInput({ defaultDestination = "" }: SearchInputProp
   };
 
   const getNightCount = () => {
+    if (!searchData.checkIn || !searchData.checkOut) return 0;
     const diff = searchData.checkOut.getTime() - searchData.checkIn.getTime();
     return Math.round(diff / 86400000);
   };
 
-  const toDateParam = (date: Date) => date.toISOString().split("T")[0];
+  const toDateParam = (date: Date | null) => date ? date.toISOString().split("T")[0] : "";
 
   const handleSearch = useCallback(() => {
     const params = new URLSearchParams();
@@ -172,7 +181,7 @@ export default function SearchInput({ defaultDestination = "" }: SearchInputProp
               <Popover.Body>
                 <Input
                   type="date"
-                  value={searchData.checkIn.toISOString().split("T")[0]}
+                  value={searchData.checkIn ? searchData.checkIn.toISOString().split("T")[0] : ""}
                   onChange={(e) =>
                     setSearchData({
                       ...searchData,
@@ -220,7 +229,7 @@ export default function SearchInput({ defaultDestination = "" }: SearchInputProp
               <Popover.Body>
                 <Input
                   type="date"
-                  value={searchData.checkOut.toISOString().split("T")[0]}
+                  value={searchData.checkOut ? searchData.checkOut.toISOString().split("T")[0] : ""}
                   onChange={(e) =>
                     setSearchData({
                       ...searchData,

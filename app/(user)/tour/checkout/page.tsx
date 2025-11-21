@@ -1,11 +1,17 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { Box, Button, Container, Grid, Steps, GridItem, Alert, Text, Heading, Stack, Flex, Checkbox, DataList, VStack, Image, HStack, RadioGroup, Icon, Input, Badge } from "@chakra-ui/react";
+import { useState, useEffect, ReactNode } from "react";
+import { Box, Button, Container, Grid, Steps, GridItem, Alert, Text, Heading, Stack, Flex, Checkbox, DataList, VStack, Image, HStack, RadioGroup, Icon, Badge, Spinner } from "@chakra-ui/react";
 import { InputUser } from "@/components/ui/user/form/input";
 import { InfoTip } from "@/components/chakra/toggleTip";
 import { FaCheckCircle } from "react-icons/fa";
-import type { IconType } from "react-icons";
+import { useSearchParams } from "next/navigation";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import bookingApi from "@/apis/booking";
+import { IBookingDetail } from "@/types/booking";
+import { toaster } from "@/components/chakra/toaster";
+import { numberFormat } from "@/libs/function";
+import { useSession } from "next-auth/react";
 
 const steps = [
     { title: "Traveler details", description: "Provide traveler and participant information" },
@@ -46,16 +52,142 @@ const whatsNext: { title: string; description: string; }[] = [
     },
 ];
 
+interface PassengerInfo {
+    full_name: string;
+    phone_number: string;
+}
+
 export default function Checkout() {
+    const searchParams = useSearchParams();
+    const bookingId = searchParams.get("bookingId");
+    const [step, setStep] = useState(0);
+    const { data: session } = useSession();
+
+    const { data: booking, isLoading, error } = useQuery({
+        queryKey: ["booking", bookingId, session?.user?.token],
+        queryFn: () => bookingApi.getDetail(Number(bookingId), session?.user?.token),
+        enabled: !!bookingId && !!session?.user?.token,
+    });
+
+    const [contactName, setContactName] = useState("");
+    const [contactEmail, setContactEmail] = useState("");
+    const [contactPhone, setContactPhone] = useState("");
+    const [paymentMethod, setPaymentMethod] = useState("card");
+    const [passengers, setPassengers] = useState<PassengerInfo[]>([]);
+    const [timeRemaining, setTimeRemaining] = useState<string>("");
+
+    useEffect(() => {
+        if (booking) {
+            setContactName(booking.contact_name || "");
+            setContactEmail(booking.contact_email || "");
+            setContactPhone(booking.contact_phone || "");
+
+            // Initialize passengers based on booking items
+            const initialPassengers: PassengerInfo[] = [];
+            booking.items.forEach(item => {
+                for (let i = 0; i < item.quantity; i++) {
+                    initialPassengers.push({
+                        full_name: "",
+                        phone_number: "",
+                    });
+                }
+            });
+            setPassengers(initialPassengers);
+        }
+    }, [booking]);
+
+    // Countdown timer for hold expiration
+    useEffect(() => {
+        if (!booking?.hold_expires_at) return;
+
+        const updateTimer = () => {
+            const now = new Date().getTime();
+            const expiresAt = new Date(booking.hold_expires_at!).getTime();
+            const diff = expiresAt - now;
+
+            if (diff <= 0) {
+                setTimeRemaining("Expired");
+                return;
+            }
+
+            const minutes = Math.floor(diff / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+            setTimeRemaining(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+        };
+
+        updateTimer();
+        const interval = setInterval(updateTimer, 1000);
+
+        return () => clearInterval(interval);
+    }, [booking?.hold_expires_at]);
+
+    const confirmMutation = useMutation({
+        mutationFn: (data: any) => bookingApi.confirm(data, session?.user?.token),
+        onSuccess: () => {
+            setStep(2);
+            toaster.create({
+                title: "Booking confirmed",
+                type: "success",
+            });
+        },
+        onError: (error) => {
+            toaster.create({
+                title: "Confirmation failed",
+                description: error.message,
+                type: "error",
+            });
+        },
+    });
+
+    const handleNext = () => {
+        if (step === 0) {
+            // Validate step 0
+            if (!contactName || !contactEmail || !contactPhone) {
+                toaster.create({ title: "Please fill in all contact information", type: "error" });
+                return;
+            }
+            // Validate passengers
+            const emptyPassengers = passengers.filter(p => !p.full_name.trim());
+            if (emptyPassengers.length > 0) {
+                toaster.create({ title: "Please fill in all traveler names", type: "error" });
+                return;
+            }
+            setStep(1);
+        } else if (step === 1) {
+            // Confirm booking
+            if (!bookingId) return;
+            confirmMutation.mutate({
+                booking_id: Number(bookingId),
+                contact_name: contactName,
+                contact_email: contactEmail,
+                contact_phone: contactPhone,
+                payment_method: paymentMethod,
+            });
+        }
+    };
+
+    const updatePassenger = (index: number, field: keyof PassengerInfo, value: string) => {
+        setPassengers(prev => {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], [field]: value };
+            return updated;
+        });
+    };
+
+    if (isLoading) return <Flex justify="center" align="center" minH="50vh"><Spinner size="xl" /></Flex>;
+    if (error || !booking) return <Container maxW="2xl" py={10}><Alert.Root status="error"><Alert.Title>Error loading booking details</Alert.Title></Alert.Root></Container>;
+
+    const bookingData = booking;
+
     return <Container maxW="2xl">
-        <Steps.Root count={steps.length}>
+        <Steps.Root count={steps.length} step={step}>
             <Steps.List mx="5rem" my={8}>
-                {steps.map((step, index) => (
-                    <Steps.Item key={index} index={index} title={step.title}>
+                {steps.map((s, index) => (
+                    <Steps.Item key={index} index={index} title={s.title}>
                         <Steps.Indicator />
                         <Box>
-                            <Steps.Title>{step.title}</Steps.Title>
-                            <Steps.Description>{step.description}</Steps.Description>
+                            <Steps.Title>{s.title}</Steps.Title>
+                            <Steps.Description>{s.description}</Steps.Description>
                         </Box>
                         <Steps.Separator />
                     </Steps.Item>
@@ -63,37 +195,46 @@ export default function Checkout() {
             </Steps.List>
             <Alert.Root status="info" title="Timed reservation">
                 <Alert.Indicator />
-                <Alert.Title>We'll hold your spot for <Text as="span" fontWeight="bold">14:15 minutes</Text></Alert.Title>
+                <Alert.Title>We'll hold your spot for <Text as="span" fontWeight="bold">{timeRemaining || "calculating..."}</Text></Alert.Title>
             </Alert.Root>
+
+            {/* Step 0: Traveler Details */}
             <Steps.Content index={0} mb={8}>
                 <Grid templateColumns="repeat(6, 1fr)" gap={4}>
                     <GridItem as={Flex} flexDirection="column" colSpan={{ base: 6, xl: 4 }} gap={4}>
                         <Box bg="white" p={8} borderRadius="15px">
-                            <Heading as="h2" fontSize="2xl" fontWeight="bold">Enter your personal details</Heading>
-                            <Stack mt={4}>
-                                <InputUser label="Full name" placeholder="Enter your full name" isRequired />
-                                <InputUser label="Email" placeholder="Enter your email" isRequired />
-                                <InputUser label="Phone" placeholder="+84 90 123 4567" isRequired helperText="We'll only contact you with essential updates or changes to your booking" />
+                            <Heading as="h2" fontSize="2xl" fontWeight="bold">Contact information</Heading>
+                            <Text mt={2} color="fg.muted">We'll send booking confirmation and updates to this contact</Text>
+                            <Stack mt={4} gap={4}>
+                                <InputUser label="Full name" placeholder="Enter your full name" isRequired value={contactName} onChange={(e) => setContactName(e.target.value)} />
+                                <InputUser label="Email" placeholder="Enter your email" isRequired value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
+                                <InputUser label="Phone" placeholder="+84 90 123 4567" isRequired helperText="We'll only contact you with essential updates or changes to your booking" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} />
                             </Stack>
                         </Box>
+
                         <Box bg="white" p={8} borderRadius="15px">
                             <Heading as="h2" fontSize="2xl" fontWeight="bold">Traveler details</Heading>
+                            <Text mt={2} color="fg.muted">Enter the names of all travelers as they appear on their ID</Text>
                             <Stack mt={4} gap={4}>
-                                <Stack gap={1}>
-                                    <InputUser label="Adult 1" placeholder="Full legal name" isRequired />
-                                    <InputUser placeholder="Phone number" />
-                                </Stack>
-                                <Stack gap={1}>
-                                    <InputUser label="Adult 2" placeholder="Full legal name" isRequired />
-                                    <InputUser placeholder="Phone number" />
-                                </Stack>
-                                <Stack gap={1}>
-                                    <InputUser label="Child 1" placeholder="Full legal name" isRequired />
-                                    <InputUser placeholder="Phone number" />
-                                </Stack>
+                                {passengers.map((passenger, index) => (
+                                    <Stack key={index} gap={1}>
+                                        <InputUser
+                                            label={`Traveler ${index + 1}`}
+                                            placeholder="Full legal name"
+                                            isRequired
+                                            value={passenger.full_name}
+                                            onChange={(e) => updatePassenger(index, 'full_name', e.target.value)}
+                                        />
+                                        <InputUser
+                                            placeholder="Phone number (optional)"
+                                            value={passenger.phone_number}
+                                            onChange={(e) => updatePassenger(index, 'phone_number', e.target.value)}
+                                        />
+                                    </Stack>
+                                ))}
                             </Stack>
 
-                            <Checkbox.Root gap="4" alignItems="flex-start" mt={4}>
+                            <Checkbox.Root gap="4" alignItems="flex-start" mt={6}>
                                 <Checkbox.HiddenInput />
                                 <Checkbox.Control />
                                 <Stack gap="1">
@@ -106,22 +247,22 @@ export default function Checkout() {
                         </Box>
                     </GridItem>
                     <GridItem colSpan={{ base: 6, xl: 2 }}>
-                        <SummaryAside>
-                            <Steps.NextTrigger asChild>
-                                <Button w="100%" borderRadius="15px" paddingY={6}>Continue to payment</Button>
-                            </Steps.NextTrigger>
+                        <SummaryAside booking={bookingData}>
+                            <Button w="100%" borderRadius="15px" paddingY={6} onClick={handleNext}>Continue to payment</Button>
                         </SummaryAside>
                     </GridItem>
                 </Grid>
             </Steps.Content>
+
+            {/* Step 1: Payment */}
             <Steps.Content index={1} mb={8}>
                 <Grid templateColumns="repeat(6, 1fr)" gap={4}>
                     <GridItem as={Stack} colSpan={{ base: 6, xl: 4 }} gap={4}>
                         <Box bg="white" p={8} borderRadius="15px">
                             <Heading as="h2" fontSize="2xl" fontWeight="bold">Choose how you'd like to pay</Heading>
-                            <Text mt={2} color="fg.muted">All transactions are encrypted and processed in VND.</Text>
+                            <Text mt={2} color="fg.muted">All transactions are encrypted and processed in {bookingData.currency}.</Text>
 
-                            <RadioGroup.Root>
+                            <RadioGroup.Root value={paymentMethod} onValueChange={(e) => setPaymentMethod(e.value as string)}>
                                 <Stack gap={3} mt={6}>
                                     {paymentMethods.map((method) => (
                                         <RadioGroup.Item key={method.value} value={method.value}>
@@ -136,6 +277,7 @@ export default function Checkout() {
 
                         <Box bg="white" p={8} borderRadius="15px">
                             <Heading as="h2" fontSize="2xl" fontWeight="bold">Payment details</Heading>
+                            {/* Simplified payment form for demo */}
                             <Stack mt={6} gap={4}>
                                 <InputUser label="Cardholder name" placeholder="Enter name exactly as it appears on card" isRequired />
                                 <InputUser label="Card number" placeholder="1234 5678 9012 3456" isRequired />
@@ -143,64 +285,23 @@ export default function Checkout() {
                                     <InputUser label="Expiration date" placeholder="MM / YY" isRequired />
                                     <InputUser label="CVV" placeholder="3-digit code" isRequired helperText="We never store this code." />
                                 </Grid>
-                                <InputUser label="Billing address" placeholder="Street, city, country" />
                             </Stack>
-
-                            <Flex mt={6} gap={4} align="flex-start" border="1px solid" borderColor="gray.200" borderRadius="15px" p={4}>
-                                {/* <Icon as={HiOutlineShieldCheck} boxSize={6} color="green.500" /> */}
-                                <Box>
-                                    <Text fontWeight="semibold">Your payment is secured</Text>
-                                    <Text fontSize="sm" color="fg.muted">We use 256-bit SSL encryption and comply with PCI DSS standards.</Text>
-                                </Box>
-                            </Flex>
-
-                            <Checkbox.Root gap="4" alignItems="flex-start" mt={4}>
-                                <Checkbox.HiddenInput />
-                                <Checkbox.Control />
-                                <Stack gap="1">
-                                    <Checkbox.Label>Save this card for faster checkout next time</Checkbox.Label>
-                                    <Box textStyle="sm" color="fg.muted">
-                                        You can manage saved payment methods in your profile settings.
-                                    </Box>
-                                </Stack>
-                            </Checkbox.Root>
                         </Box>
                     </GridItem>
                     <GridItem colSpan={{ base: 6, xl: 2 }}>
-                        <SummaryAside>
-                            <Box bg="white" borderRadius="15px" p={6}>
-                                <Heading as="h3" fontSize="lg">Price breakdown</Heading>
-                                <Stack mt={4} gap={3}>
-                                    <Flex justify="space-between">
-                                        <Text color="fg.muted">Tour price</Text>
-                                        <Text>80,000 VND</Text>
-                                    </Flex>
-                                    <Flex justify="space-between">
-                                        <Text color="fg.muted">Taxes & fees</Text>
-                                        <Text>15,000 VND</Text>
-                                    </Flex>
-                                    <Flex justify="space-between">
-                                        <Text color="fg.muted">Service protection</Text>
-                                        <Text>5,000 VND</Text>
-                                    </Flex>
-                                </Stack>
-                                <Flex justify="space-between" fontWeight="bold" mt={4}>
-                                    <Text>Total due today</Text>
-                                    <Text>100,000 VND</Text>
-                                </Flex>
-                            </Box>
+                        <SummaryAside booking={bookingData}>
                             <Stack direction={{ base: "column", md: "row" }} gap={3}>
-                                <Steps.PrevTrigger asChild>
-                                    <Button variant="outline">Back to details</Button>
-                                </Steps.PrevTrigger>
-                                <Steps.NextTrigger asChild>
-                                    <Button flex={1} colorPalette="blue">Pay 100,000 VND</Button>
-                                </Steps.NextTrigger>
+                                <Button variant="outline" onClick={() => setStep(0)}>Back to details</Button>
+                                <Button flex={1} colorPalette="blue" onClick={handleNext} loading={confirmMutation.isPending}>
+                                    Pay {numberFormat(bookingData.total_amount)} {bookingData.currency}
+                                </Button>
                             </Stack>
                         </SummaryAside>
                     </GridItem>
                 </Grid>
             </Steps.Content>
+
+            {/* Step 2: Confirmation */}
             <Steps.Content index={2} mb={8}>
                 <Grid templateColumns="repeat(6, 1fr)" gap={4}>
                     <GridItem as={Stack} colSpan={{ base: 6, xl: 4 }} gap={4}>
@@ -213,11 +314,11 @@ export default function Checkout() {
                                     <Icon as={FaCheckCircle} boxSize={10} color="green.500" />
                                     <Box>
                                         <Heading as="h2" fontSize="2xl" fontWeight="bold">You're all set!</Heading>
-                                        <Text color="fg.muted">Confirmation #HBX-20394</Text>
+                                        <Text color="fg.muted">Confirmation #{bookingData.id}</Text>
                                     </Box>
                                 </Flex>
                                 <Text color="fg.muted">
-                                    We've sent the receipt and voucher to <Text as="span" fontWeight="semibold" color="fg.emphasized">hello@traveler.com</Text>. Present the QR code on arrival with a valid ID.
+                                    We've sent the receipt and voucher to <Text as="span" fontWeight="semibold" color="fg.emphasized">{contactEmail}</Text>. Present the QR code on arrival with a valid ID.
                                 </Text>
                                 <Stack direction={{ base: "column", md: "row" }} gap={3}>
                                     <Button flex={1} colorPalette="blue">View booking</Button>
@@ -231,57 +332,31 @@ export default function Checkout() {
                             <DataList.Root mt={6}>
                                 <DataList.Item>
                                     <DataList.ItemLabel>Tour</DataList.ItemLabel>
-                                    <DataList.ItemValue>
-                                        Halong Bay cruise with seafood lunch
-                                    </DataList.ItemValue>
+                                    <DataList.ItemValue>{bookingData.tour_title}</DataList.ItemValue>
                                 </DataList.Item>
                                 <DataList.Item>
                                     <DataList.ItemLabel>Date & time</DataList.ItemLabel>
-                                    <DataList.ItemValue>Friday, October 31, 2025 - 11:40 AM</DataList.ItemValue>
+                                    <DataList.ItemValue>{new Date(bookingData.start_date).toLocaleString()}</DataList.ItemValue>
                                 </DataList.Item>
                                 <DataList.Item>
                                     <DataList.ItemLabel>Guests</DataList.ItemLabel>
-                                    <DataList.ItemValue>1 adult - 1 child</DataList.ItemValue>
+                                    <DataList.ItemValue>
+                                        {bookingData.items.map(item => `${item.quantity} x Pax`).join(', ')}
+                                    </DataList.ItemValue>
                                 </DataList.Item>
                                 <DataList.Item>
                                     <DataList.ItemLabel>Payment method</DataList.ItemLabel>
-                                    <DataList.ItemValue>Visa ending in 2002</DataList.ItemValue>
+                                    <DataList.ItemValue>{paymentMethod === 'card' ? 'Credit Card' : paymentMethod}</DataList.ItemValue>
                                 </DataList.Item>
                                 <DataList.Item>
                                     <DataList.ItemLabel>Lead traveler</DataList.ItemLabel>
-                                    <DataList.ItemValue>Nguyen Van A - +84 90 123 4567</DataList.ItemValue>
+                                    <DataList.ItemValue>{contactName} - {contactPhone}</DataList.ItemValue>
                                 </DataList.Item>
                             </DataList.Root>
                         </Box>
-
-                        <Box bg="white" p={8} borderRadius="15px">
-                            <Heading as="h2" fontSize="2xl" fontWeight="bold">What's next</Heading>
-                            <Stack mt={6} gap={4}>
-                                {whatsNext.map((item) => (
-                                    <Flex key={item.title} gap={4}>
-                                        <Box bg="gray.50" p={3} borderRadius="full">
-                                            {/* <Icon as={item.icon} boxSize={6} color="fg.muted" /> */}
-                                        </Box>
-                                        <Box>
-                                            <Text fontWeight="semibold">{item.title}</Text>
-                                            <Text fontSize="sm" color="fg.muted">{item.description}</Text>
-                                        </Box>
-                                    </Flex>
-                                ))}
-                            </Stack>
-                        </Box>
                     </GridItem>
                     <GridItem colSpan={{ base: 6, xl: 2 }}>
-                        <SummaryAside>
-                            <Box bg="white" borderRadius="15px" p={6}>
-                                <Heading as="h3" fontSize="lg">Need help?</Heading>
-                                <Text mt={2} color="fg.muted">Our support team is available 24/7 for urgent changes.</Text>
-                                <Stack mt={4} gap={3}>
-                                    <Button variant="outline">Chat with support</Button>
-                                    <Button variant="ghost">Call +84 96 000 888</Button>
-                                </Stack>
-                            </Box>
-
+                        <SummaryAside booking={bookingData}>
                             <Stack direction={{ base: "column", md: "row" }} gap={3}>
                                 <Button flex={1} variant="outline">Download invoice (PDF)</Button>
                                 <Button flex={1} colorPalette="green">Plan another trip</Button>
@@ -290,63 +365,66 @@ export default function Checkout() {
                     </GridItem>
                 </Grid>
             </Steps.Content>
-            <Steps.CompletedContent>
-                All steps are complete!
-            </Steps.CompletedContent>
         </Steps.Root>
     </Container>;
 }
 
-const SummaryAside = ({ children }: { children?: ReactNode }) => {
+const SummaryAside = ({ children, booking }: { children?: ReactNode, booking: IBookingDetail }) => {
     return <Box position="sticky" top={4}>
         <Stack gap={4}>
-            <BookingSummaryCard />
+            <BookingSummaryCard booking={booking} />
             {children}
         </Stack>
     </Box>;
 };
 
-const BookingSummaryCard = () => {
+const BookingSummaryCard = ({ booking }: { booking: IBookingDetail }) => {
+    console.log(booking)
     return <Box bg="white" borderRadius="15px">
         <Box p={8} border="1px solid" borderColor="gray.200">
             <Heading as="h2" fontSize="2xl" fontWeight="bold">Order summary</Heading>
             <VStack align="start" mt={4}>
                 <HStack>
-                    <Image src="/assets/images/icon.png" alt="Total" width={20} height={20} />
+                    <Image src={booking.tour_image} alt="Tour" width={20} height={20} objectFit="cover" borderRadius="md" />
                     <Box flex={1}>
-                        <Text fontSize="lg" fontWeight="bold">Total</Text>
-                        <Text>100,000 VND</Text>
+                        <Text fontSize="lg" fontWeight="bold">{booking.tour_title}</Text>
+                        <Text>{numberFormat(booking.total_amount, false)} {booking.currency}</Text>
                     </Box>
                 </HStack>
             </VStack>
             <DataList.Root orientation="horizontal" mt={4}>
                 <DataList.Item>
                     <DataList.ItemLabel>
-                        Pick-up location
-                        <InfoTip>This is some info</InfoTip>
+                        Location
                     </DataList.ItemLabel>
                     <DataList.ItemValue display="flex" flexDirection="column" gap={1}>
-                        <Text>Pick-up at Halong Port (without transfer from Hanoi)</Text>
-                        <Text fontSize="sm" color="fg.muted">Language: VietNam</Text>
+                        <Text>{booking.tour_location}</Text>
                     </DataList.ItemValue>
                 </DataList.Item>
                 <DataList.Item>
                     <DataList.ItemLabel>
                         Date
-                        <InfoTip>This is some info</InfoTip>
                     </DataList.ItemLabel>
                     <DataList.ItemValue display="flex" flexDirection="column" gap={1}>
-                        Friday, October 31, 2025 at 11:40 AM
+                        {new Date(booking.start_date).toLocaleDateString()}
+                    </DataList.ItemValue>
+                </DataList.Item>
+                <DataList.Item>
+                    <DataList.ItemLabel>
+                        Duration days
+                    </DataList.ItemLabel>
+                    <DataList.ItemValue display="flex" flexDirection="column" gap={1}>
+                        {booking.duration_days}
                     </DataList.ItemValue>
                 </DataList.Item>
                 <DataList.Item>
                     <DataList.ItemLabel>
                         Guests
-                        <InfoTip>This is some info</InfoTip>
                     </DataList.ItemLabel>
                     <DataList.ItemValue display="flex" flexDirection="column" gap={1}>
-                        <Text>1 adult (Age 9 - 99)</Text>
-                        <Text>1 child (Age 4 - 8)</Text>
+                        {booking.items.map((item, idx) => (
+                            <Text key={idx}>{item.quantity} x {item.pax_type_name}</Text>
+                        ))}
                     </DataList.ItemValue>
                 </DataList.Item>
             </DataList.Root>
@@ -354,7 +432,7 @@ const BookingSummaryCard = () => {
         <HStack justify="space-between" p={8} align="flex-start">
             <Heading as="h3" fontSize="xl" fontWeight="bold">Total</Heading>
             <VStack align="end">
-                <Text fontSize="xl" fontWeight="bold">100,000 VND</Text>
+                <Text fontSize="xl" fontWeight="bold">{numberFormat(booking.total_amount, false)} {booking.currency}</Text>
                 <Text fontSize="sm" color="fg.muted">All taxes and fees included</Text>
             </VStack>
         </HStack>
