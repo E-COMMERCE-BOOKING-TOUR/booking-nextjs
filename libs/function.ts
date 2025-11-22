@@ -39,3 +39,11 @@ export function objectToFormData(
     }
   }
 }
+
+export function dateFormat(timestamp?: string) {
+  return timestamp ? new Date(timestamp).toLocaleDateString('vi-VN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }) : ''
+}

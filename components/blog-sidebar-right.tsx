@@ -34,12 +34,12 @@ export default function BlogSidebarRight({
   return (
     <Box
       className={className}
+      padding={5}
       bg="blackAlpha.700"
       color="white"
       borderRadius="xl"
       borderWidth="1px"
       borderColor="whiteAlpha.200"
-      p={3}
       w="full"
     >
       <Text fontSize="lg" fontWeight="bold" px={2} py={1}>{title}</Text>
@@ -63,10 +63,6 @@ export default function BlogSidebarRight({
           )
         })}
       </VStack>
-
-      <Button as="a" variant="outline" colorScheme="blue" mt={2} px={2}>
-        <a href={onShowMoreHref}>Show more</a>
-      </Button>
     </Box>
   )
 }

@@ -26,12 +26,7 @@ const defaultItems: Item[] = [
     { key: "home", label: "Home", href: "#", icon: Home },
     { key: "explore", label: "Explore", href: "#", icon: Search },
     { key: "notifications", label: "Notifications", href: "#", icon: Bell },
-    { key: "messages", label: "Messages", href: "#", icon: MessageCircle },
-    { key: "grok", label: "Grok", href: "#", icon: Brain },
-    { key: "lists", label: "Lists", href: "#", icon: List },
     { key: "bookmarks", label: "Bookmarks", href: "#", icon: Bookmark },
-    { key: "communities", label: "Communities", href: "#", icon: Users },
-    { key: "premium", label: "Premium", href: "#", icon: Diamond },
     { key: "profile", label: "Profile", href: "#", icon: User },
     { key: "more", label: "More", href: "#", icon: MoreHorizontal },
 ]
@@ -48,8 +43,8 @@ export default function BlogSidebarLeft({
     className,
 }: Readonly<BlogSidebarLeftProps>) {
     return (
-        <Box className={className} w="240px">
-            <VStack align="stretch" gap={1}>
+        <Box className={className} padding={10}>
+            <VStack align="stretch" gap={5}>
                 {items.map((it) => {
                     const IconComp = it.icon
                     const isActive = active === it.key

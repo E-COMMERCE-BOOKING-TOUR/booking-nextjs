@@ -6,6 +6,10 @@ const article = {
         const url = `/user/article/popular?limit=${limit}`;
         const res = await fetchC.get(url);
         return Array.isArray(res) ? res : (res?.data || []);
+    },
+    create: async (data: { title: string; content: string; images?: { image_url: string }[] }) => {
+        const url = `/user/article/create`;
+        return await fetchC.post(url, data);
     }
 }
 

@@ -1,7 +1,7 @@
 import { Box, Container, Grid, GridItem, HStack, Text, VStack } from '@chakra-ui/react';
 import { SearchInput, TourItem, ArticleItem, TravelList, HeaderList } from '@/components/ui/user';
 import Header from './components/header';
-import RecentSearch from './components/recentSearch';
+// import RecentSearch from './components/recentSearch';
 import BannerHeader from './components/bannerHeader';
 import { Diagonal } from '@/components/layout/user';
 import tour from '@/apis/tour';
@@ -10,7 +10,7 @@ import division from '@/apis/division';
 
 export default async function TopPage() {
   const popularTours = await tour.popular(8);
-  const popularArticles = await article.popular(4);
+  // const popularArticles = await article.popular(4);
   const trendingDestinations = await division.trending(6);
 
   return (
@@ -18,7 +18,7 @@ export default async function TopPage() {
       <Container maxW="2xl" mx="auto">
         <Header />
         <SearchInput />
-        <RecentSearch />
+        {/* <RecentSearch /> */}
         <BannerHeader />
         <div>
           <HeaderList
@@ -50,7 +50,7 @@ export default async function TopPage() {
             )}
           </Grid>
         </div>
-        <div>
+        {/* <div>
           <HeaderList
             title="Popular Articles"
             description="Travellers searching for Vietnam also booked these"
@@ -100,7 +100,7 @@ export default async function TopPage() {
               No popular articles available at the moment
             </Text>
           )}
-        </div>
+        </div> */}
       </Container>
       <VStack borderBottomRadius="100px" backgroundImage="url('/assets/images/background/v960-ning-30.jpg')" backgroundSize="cover" backgroundPosition="center" backgroundRepeat="no-repeat" backgroundAttachment="fixed" paddingBottom="5rem" position="relative" zIndex={2}>
         <Container maxW="2xl" mx="auto">

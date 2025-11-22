@@ -1,9 +1,11 @@
 "use client";
 import NextLink from "next/link";
-import { Box, HStack, VStack, Text, Image, Badge, Button, Icon, Avatar, Grid, IconButton } from "@chakra-ui/react";
+import { Box, HStack, VStack, Text, Image, Badge, Button, Icon, Avatar, Grid, IconButton, useDisclosure } from "@chakra-ui/react";
 import { FiMessageCircle, FiEye, FiThumbsUp, FiMapPin, FiCalendar, FiClock, FiCloud, FiShare2, FiBookmark, FiArrowRight } from "react-icons/fi";
 import type { IArticlePopular } from "@/types/response/article";
 import { ArrowRight, Bookmark } from "lucide-react";
+import { dateFormat } from "@/libs/function";
+import { PopUpComment } from "./comments";
 
 type ItemBlogProps = IArticlePopular & {
     href?: string;
@@ -11,14 +13,8 @@ type ItemBlogProps = IArticlePopular & {
     authorAvatar?: string;
     tagLabel?: string;
     images?: string[];
+    tourId?: string;
 }
-
-const inforTour = [
-    { key: 'city', label: 'City', icon: FiMapPin, subLabel: 'Ho Chi Minh City'},
-    { key: 'date', label: 'Date', icon: FiCalendar, subLabel: '2023-12-01' },
-    { key: 'time', label: 'Time', icon: FiClock, subLabel: '10:00 AM' },
-    { key: 'weather', label: 'Weather', icon: FiCloud, subLabel: 'Sunny' },
-]
 
 function TagList({ tags }: { tags: string[] }) {
     return (
@@ -52,7 +48,7 @@ const ImagesGrid = ({ data, title }: { data: string[]; title: string }) => {
     }
     if (n === 2) {
         return (
-            <Grid templateColumns="1fr 1fr" gap={2} borderRadius="md" overflow="hidden" mb={3}>
+            <Grid templateColumns="1fr 1fr" gap={1} borderRadius="md" overflow="hidden" mb={3}>
                 <Box>
                     <Image src={data[0]} alt={title} w="full" h="300px" objectFit="cover" />
                 </Box>
@@ -82,7 +78,7 @@ const ImagesGrid = ({ data, title }: { data: string[]; title: string }) => {
     const shown = data.slice(0, 4);
     const extra = data.length - shown.length;
     return (
-        <Grid templateColumns="1fr 1fr" gap={2} borderRadius="md" overflow="hidden" mb={3}>
+        <Grid templateColumns="1fr 1fr" gap={1} borderRadius="md" overflow="hidden" mb={3}>
             {shown.map((src, i) => (
                 <Box key={i} position="relative">
                     <Image src={src} alt={title} w="full" h="200px" objectFit="cover" />
@@ -98,10 +94,8 @@ const ImagesGrid = ({ data, title }: { data: string[]; title: string }) => {
 };
 
 export default function ItemBlog(props: ItemBlogProps) {
-    const { images, title, tags, timestamp, views, likes, comments, href, authorName = "John Doe", authorAvatar, tagLabel = "Epic Coder" } = props;
-
-
-
+    const { images, title, tags, timestamp, views, likes, comments, href, user, id } = props;
+    const { open, onOpen, onClose } = useDisclosure();
 
     const content = (
         <Box
@@ -117,24 +111,21 @@ export default function ItemBlog(props: ItemBlogProps) {
         >
             {/* Header */}
             <HStack align="center" gap={5} mb={2} justifyContent={'center'}>
-                {authorAvatar ? (
+                {user?.avatar ? (
                     <Avatar.Root size="sm">
-                        <Avatar.Fallback name={authorName} />
-                        <Avatar.Image src={authorAvatar} />
+                        <Avatar.Fallback name={user.name} />
+                        <Avatar.Image src={user.avatar} />
                     </Avatar.Root>
                 ) : (
                     <Avatar.Root size="sm">
-                        <Avatar.Image src={authorAvatar} />
+                        <Avatar.Image src={user?.avatar} />
+                        <Avatar.Fallback name={user?.name || "Unknown"} />
                     </Avatar.Root>
                 )}
                 <VStack align="start" gap={0} flex={1}>
-                    <Text fontWeight="semibold">{authorName}</Text>
+                    <Text fontWeight="bold" color="white">{user?.name || "John Doe"}</Text>
                     <HStack gap={2} fontSize="xs" color="gray.600">
-                        <NextLink href="#" className="underline">
-                            {tagLabel}
-                        </NextLink>
-                        <Text>•</Text>
-                        {timestamp ? <Text>{timestamp}</Text> : null}
+                        {timestamp ? <Text>{dateFormat(timestamp)}</Text> : null}
                     </HStack>
                 </VStack>
                 <HStack gap={2}>
@@ -157,14 +148,17 @@ export default function ItemBlog(props: ItemBlogProps) {
 
             {/* Footer options */}
             <VStack align="stretch" gap={4}>
-                <Grid templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }} gap={2} w="full">
-                    {inforTour?.map((it) => (
+                <Grid templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }} gap={0} w="full">
+                    {[
+                        { key: 'city', label: 'City', icon: FiMapPin, subLabel: 'Ho Chi Minh City' },
+                        { key: 'date', label: 'Date', icon: FiCalendar, subLabel: dateFormat(timestamp) },
+                        { key: 'weather', label: 'Weather', icon: FiCloud, subLabel: 'Sunny' },
+                    ]?.map((it) => (
                         <Box
                             key={it.key}
                             bg="whiteAlpha.200"
                             borderWidth={"1px"}
                             borderColor={'whiteAlpha.300'}
-                            borderRadius={'md'}
                             px={3}
                             py={2}
                             minH={16}
@@ -178,21 +172,14 @@ export default function ItemBlog(props: ItemBlogProps) {
                     ))}
                 </Grid>
                 <HStack gap={4}>
-                    <Button size="sm" variant="ghost" ><Icon as={FiThumbsUp} />Like {likes ?? 0}</Button>
-                    <Button size="sm" variant="ghost" ><Icon as={FiMessageCircle} />Comment {comments ?? 0}</Button>
-                    <Button size="sm" variant="ghost" ><Icon as={FiShare2} />Share 0</Button>
+                    <Button size="sm" variant="ghost" gap={2}><Icon as={FiThumbsUp} />{likes ?? 0}</Button>
+                    <Button size="sm" variant="ghost" gap={2} onClick={onOpen}><Icon as={FiMessageCircle} />{comments ?? 0}</Button>
+                    <Button size="sm" variant="ghost" gap={2}><Icon as={FiShare2} />0</Button>
                 </HStack>
             </VStack>
+            <PopUpComment isOpen={open} onClose={onClose} tourId={Number(id)} images={images} />
         </Box>
     );
-
-    if (href) {
-        return (
-            <Box as={NextLink} _hover={{ textDecoration: "none" }}>
-                <a href={href}>{content}</a>
-            </Box>
-        );
-    }
 
     return content;
 }
@@ -218,7 +205,7 @@ ItemBlog.large = function Large(props: ItemBlogProps) {
                 <Text fontSize="xl" fontWeight="bold" mt={2}>{title}</Text>
                 <Text fontSize="sm" color="gray.700" mt={1}>{description}</Text>
                 <HStack mt={3} justify="space-between">
-                    <HStack gap={3}>
+                    <HStack gap={1}>
                         <Stat icon={FiEye} value={views} />
                         <Stat icon={FiThumbsUp} value={likes} />
                         <Stat icon={FiMessageCircle} value={comments} />
@@ -228,14 +215,6 @@ ItemBlog.large = function Large(props: ItemBlogProps) {
             </Box>
         </Box>
     );
-
-    if (href) {
-        return (
-            <Box as={NextLink} _hover={{ textDecoration: "none" }}>
-                <a href={href}>{content}</a>
-            </Box>
-        );
-    }
 
     return content;
 }

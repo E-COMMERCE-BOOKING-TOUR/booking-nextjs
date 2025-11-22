@@ -22,7 +22,7 @@ const navItems: NavItem[] = [
   },
   {
     name: 'Popular Articles',
-    link: '/popular-articles',
+    link: '/social',
   },
   {
     name: 'Help',

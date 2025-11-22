@@ -54,8 +54,9 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                 initialQuantities[p.pax_type_id] = 0;
             });
             // Default 1 adult if available (assuming adult is usually the first or has specific ID, but here just first)
-            if (selectedVariant.prices.length > 0) {
-                initialQuantities[selectedVariant.prices[0].pax_type_id] = 1;
+            const firstValidPrice = selectedVariant.prices.find(p => p.price > 0);
+            if (firstValidPrice) {
+                initialQuantities[firstValidPrice.pax_type_id] = 1;
             }
             setPaxQuantities(initialQuantities);
         }
@@ -233,7 +234,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                             <Box>
                                                 <Text fontSize="sm" mb={1} fontWeight="bold">Passengers</Text>
                                                 <VStack gap={2} align="stretch">
-                                                    {selectedVariant.prices.map(p => (
+                                                    {selectedVariant.prices.filter(p => p.price > 0).map(p => (
                                                         <HStack key={p.id} justify="space-between">
                                                             <Text>{p.pax_type_name} ({p.price.toLocaleString()} VND)</Text>
                                                             <Input

@@ -21,18 +21,6 @@ export default function Home() {
                     Manage your projects
                 </Tabs.Content>
             </Tabs.Root>
-            {/* <ItemBlog 
-        id={1}
-        title="Título del artículo"
-        description="Descripción del artículo"
-        image="https://picsum.photos/200/300"
-        href="/blog/1"
-        tags={["tag1", "tag2"]}
-        timestamp="2023-01-01"
-        views={100}
-        likes={50}
-        comments={20}
-      /> */}
         </Box>
     );
 }
