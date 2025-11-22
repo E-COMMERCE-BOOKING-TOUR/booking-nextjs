@@ -32,41 +32,43 @@ export default function BlogSidebarRight({
   onShowMoreHref = "#",
 }: Readonly<BlogSidebarRightProps>) {
   return (
-    <Box
-      className={className}
-      bg="blackAlpha.700"
-      color="white"
-      borderRadius="xl"
-      borderWidth="1px"
-      borderColor="whiteAlpha.200"
-      p={3}
-      w="full"
-    >
-      <Text fontSize="lg" fontWeight="bold" px={2} py={1}>{title}</Text>
+    <Box w={"full"} padding={5}>
+      <Box
+        className={className}
+        bg="blackAlpha.700"
+        color="white"
+        borderRadius="xl"
+        borderWidth="1px"
+        borderColor="whiteAlpha.200"
+        p={3}
+        w="full"
+      >
+        <Text fontSize="lg" fontWeight="bold" px={2} py={1}>{title}</Text>
 
-      <VStack align="stretch" mt={1} wordSpacing={2}>
-        {items.map((it) => {
-          const top = it.context ? `${it.context} · Trending` : it.region ? `Trending in ${it.region}` : "Trending"
-          return (
-            <Box key={it.id} px={2} py={3} borderRadius="md" _hover={{ bg: "whiteAlpha.100" }}>
-              <HStack justify="space-between" align="start">
-                <VStack align="start" wordSpacing={0.5}>
-                  <Text fontSize="xs" color="whiteAlpha.700">{top}</Text>
-                  <Text fontSize="md" fontWeight="semibold">{it.label}</Text>
-                  <Text fontSize="xs" color="whiteAlpha.700">{it.posts}</Text>
-                </VStack>
-                <Button variant="ghost" size="sm" px={2} aria-label="more" _hover={{ bg: "whiteAlpha.200" }}>
-                  <Icon as={MoreHorizontal} />
-                </Button>
-              </HStack>
-            </Box>
-          )
-        })}
-      </VStack>
+        <VStack align="stretch" mt={1} wordSpacing={2}>
+          {items.map((it) => {
+            const top = it.context ? `${it.context} · Trending` : it.region ? `Trending in ${it.region}` : "Trending"
+            return (
+              <Box key={it.id} px={2} py={3} borderRadius="md" _hover={{ bg: "whiteAlpha.100" }}>
+                <HStack justify="space-between" align="start">
+                  <VStack align="start" wordSpacing={0.5}>
+                    <Text fontSize="xs" color="whiteAlpha.700">{top}</Text>
+                    <Text fontSize="md" fontWeight="semibold">{it.label}</Text>
+                    <Text fontSize="xs" color="whiteAlpha.700">{it.posts}</Text>
+                  </VStack>
+                  <Button variant="ghost" size="sm" px={2} aria-label="more" _hover={{ bg: "whiteAlpha.200" }}>
+                    <Icon as={MoreHorizontal} />
+                  </Button>
+                </HStack>
+              </Box>
+            )
+          })}
+        </VStack>
 
-      <Button as="a" variant="outline" colorScheme="blue" mt={2} px={2}>
-        <a href={onShowMoreHref}>Show more</a>
-      </Button>
+        <Button variant="outline" colorScheme="blue" mt={2} px={2} asChild>
+          <a href={onShowMoreHref}>Show more</a>
+        </Button>
+      </Box>
     </Box>
   )
 }

@@ -49,7 +49,7 @@ export default function BlogSidebarLeft({
 }: Readonly<BlogSidebarLeftProps>) {
     return (
         <Box className={className} w="240px">
-            <VStack align="stretch" gap={1}>
+            <VStack align="stretch" gap={5} padding={5}>
                 {items.map((it) => {
                     const IconComp = it.icon
                     const isActive = active === it.key

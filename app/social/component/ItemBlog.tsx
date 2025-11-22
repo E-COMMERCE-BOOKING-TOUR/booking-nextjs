@@ -52,7 +52,7 @@ const ImagesGrid = ({ data, title }: { data: string[]; title: string }) => {
     }
     if (n === 2) {
         return (
-            <Grid templateColumns="1fr 1fr" gap={2} borderRadius="md" overflow="hidden" mb={3}>
+            <Grid templateColumns="1fr 1fr" gap={1} borderRadius="md" overflow="hidden" mb={3}>
                 <Box>
                     <Image src={data[0]} alt={title} w="full" h="300px" objectFit="cover" />
                 </Box>
@@ -82,7 +82,7 @@ const ImagesGrid = ({ data, title }: { data: string[]; title: string }) => {
     const shown = data.slice(0, 4);
     const extra = data.length - shown.length;
     return (
-        <Grid templateColumns="1fr 1fr" gap={2} borderRadius="md" overflow="hidden" mb={3}>
+        <Grid templateColumns="1fr 1fr" gap={1} borderRadius="md" overflow="hidden" mb={3}>
             {shown.map((src, i) => (
                 <Box key={i} position="relative">
                     <Image src={src} alt={title} w="full" h="200px" objectFit="cover" />
