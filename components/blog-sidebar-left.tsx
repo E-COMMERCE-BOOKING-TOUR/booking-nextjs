@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Button, HStack, Icon, Text, VStack } from "@chakra-ui/react"
+import { Box, Button, HStack, Icon, Text, VStack, Avatar } from "@chakra-ui/react"
 import {
     Home,
     Search,
@@ -43,7 +43,27 @@ export default function BlogSidebarLeft({
     className,
 }: Readonly<BlogSidebarLeftProps>) {
     return (
-        <Box className={className} padding={10}>
+        <Box className={className} w="full" paddingY={5}>
+            <Button
+                w="full"
+                paddingX={5}
+                marginBottom={15}
+                variant="ghost"
+                borderRadius="sm"
+                justifyContent="flex-start"
+                alignItems="center"
+                color="blackAlpha.900"
+                _hover={{ bg: "blackAlpha.100" }}
+                fontWeight="semibold"
+            >
+                <HStack w="full" gap={3}>
+                    <Avatar.Root size="md">
+                        <Avatar.Image src="https://picsum.photos/100/100" />
+                        <Avatar.Fallback name="John Doe" />
+                    </Avatar.Root>
+                    <Text>John Doe</Text>
+                </HStack>
+            </Button>
             <VStack align="stretch" gap={5}>
                 {items.map((it) => {
                     const IconComp = it.icon
@@ -51,11 +71,14 @@ export default function BlogSidebarLeft({
                     return (
                         <Button
                             key={it.key}
+                            w="full"
+                            paddingX={10}
                             variant="ghost"
                             borderRadius="full"
                             justifyContent="flex-start"
-                            color="whiteAlpha.900"
-                            _hover={{ bg: "whiteAlpha.100" }}
+                            alignItems="center"
+                            color="blackAlpha.900"
+                            _hover={{ bg: "blackAlpha.100" }}
                             fontWeight={isActive ? "semibold" : "medium"}
                         >
                             <a href={it.href} className=" w-full flex items-center gap-3">

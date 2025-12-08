@@ -6,6 +6,7 @@ import ItemBlog from "./ItemBlog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import article from "@/apis/article";
 import { toaster } from "@/components/chakra/toaster";
+import { articles as testArticles } from "./dataTest";
 
 const ForYou = () => {
     const [content, setContent] = useState("");
@@ -13,9 +14,29 @@ const ForYou = () => {
     const [showDescription, setShowDescription] = useState(false);
     const [description, setDescription] = useState("");
 
+    // const { data: articles, isLoading } = useQuery({
+    //     queryKey: ['popular-articles'],
+    //     queryFn: () => article.popular(10)
+    // });
+
     const { data: articles, isLoading } = useQuery({
         queryKey: ['popular-articles'],
-        queryFn: () => article.popular(10)
+        queryFn: async () => {
+            const list = Array.isArray(testArticles) ? testArticles.slice(0, 10) : [];
+            return list.map((a: any) => ({
+                id: a?._id?.$oid || a?._id || a?.id || a?.title,
+                title: a?.title ?? "",
+                description: a?.content ?? "",
+                image: a?.images?.[0]?.image_url || "",
+                images: Array.isArray(a?.images) ? a.images.map((img: any) => img?.image_url).filter(Boolean) : [],
+                tags: [],
+                timestamp: a?.created_at,
+                views: a?.count_views ?? 0,
+                likes: a?.count_likes ?? 0,
+                comments: a?.count_comments ?? 0,
+                user: { name: "Unknown", avatar: "" },
+            }));
+        }
     });
 
     const queryClient = useQueryClient();
@@ -72,7 +93,7 @@ const ForYou = () => {
 
     return (
         <VStack align="stretch" gap={3}>
-            <Box bg="blackAlpha.600" color="white" p={4} borderRadius="lg">
+            <Box bg="blackAlpha.300" color="white" p={4} borderRadius="lg">
                 <HStack align="flex-start" gap={3}>
                     <Box
                         bg="pink.600"
@@ -100,7 +121,7 @@ const ForYou = () => {
                                     <Button size="sm" variant="outline" colorScheme="gray"><Icon as={FiEdit} />Edit</Button>
                                 </HStack>
                                 <Button size="sm" variant="ghost" position="absolute" top={2} right={2} onClick={() => removeImage(0)}>
-                                    <Icon as={FiX} />
+                                    <Icon as={FiX} color="blackAlpha.700" />
                                 </Button>
                                 <Image src={images[0]} alt="preview" w="full" h="auto" objectFit="cover" />
                             </Box>
@@ -111,12 +132,12 @@ const ForYou = () => {
                         <HStack justify="space-between" align="center">
                             <HStack gap={3}>
                                 <Button as="label" variant="ghost" colorScheme="whiteAlpha" px={2}>
-                                    <Icon as={FiImage} />
+                                    <Icon as={FiImage} color="blackAlpha.700" />
                                     <Input type="file" accept="image/*" multiple display="none" onChange={(e) => onSelectFiles(e.target.files)} />
                                 </Button>
-                                <Button variant="ghost" colorScheme="whiteAlpha" px={2}><Icon as={FiSmile} /></Button>
-                                <Button variant="ghost" colorScheme="whiteAlpha" px={2}><Icon as={FiCalendar} /></Button>
-                                <Button variant="ghost" colorScheme="whiteAlpha" px={2}><Icon as={FiMapPin} /></Button>
+                                <Button variant="ghost" colorScheme="whiteAlpha" px={2}><Icon as={FiSmile} color="blackAlpha.700" /></Button>
+                                <Button variant="ghost" colorScheme="whiteAlpha" px={2}><Icon as={FiCalendar} color="blackAlpha.700" /></Button>
+                                <Button variant="ghost" colorScheme="whiteAlpha" px={2}><Icon as={FiMapPin} color="wblackAlpha.700hite" /></Button>
                             </HStack>
 
                             <Button

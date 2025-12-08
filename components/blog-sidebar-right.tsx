@@ -35,6 +35,7 @@ export default function BlogSidebarRight({
     <Box
       className={className}
       padding={5}
+      marginTop={5}
       bg="blackAlpha.700"
       color="white"
       borderRadius="xl"

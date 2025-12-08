@@ -99,7 +99,7 @@ export default function ItemBlog(props: ItemBlogProps) {
 
     const content = (
         <Box
-            bg="blackAlpha.600"
+            bg="blackAlpha.300"
             color="black"
             borderRadius="md"
             p={4}
@@ -112,14 +112,14 @@ export default function ItemBlog(props: ItemBlogProps) {
             {/* Header */}
             <HStack align="center" gap={5} mb={2} justifyContent={'center'}>
                 {user?.avatar ? (
-                    <Avatar.Root size="sm">
+                    <Avatar.Root size="md">
                         <Avatar.Fallback name={user.name} />
                         <Avatar.Image src={user.avatar} />
                     </Avatar.Root>
                 ) : (
-                    <Avatar.Root size="sm">
-                        <Avatar.Image src={user?.avatar} />
+                    <Avatar.Root size="md">
                         <Avatar.Fallback name={user?.name || "Unknown"} />
+                        {user?.avatar ? <Avatar.Image src={user.avatar} /> : null}
                     </Avatar.Root>
                 )}
                 <VStack align="start" gap={0} flex={1}>
@@ -129,10 +129,10 @@ export default function ItemBlog(props: ItemBlogProps) {
                     </HStack>
                 </VStack>
                 <HStack gap={2}>
-                    <Button size="sm" bg={'none'} borderWidth={1} borderColor={'white'}>
+                    <Button size="md" bg={'whiteAlpha.300'} borderWidth={1} borderColor={'white'}>
                         <FiBookmark size={25} color="white" />
                     </Button>
-                    <Button size="sm" bg={'none'} borderWidth={1} borderColor={'white'}>
+                    <Button size="md" bg={'whiteAlpha.300'} borderWidth={1} borderColor={'white'}>
                         <Text color={'white'}>View Tour</Text>
                         <FiArrowRight size={25} color="white" />
                     </Button>
@@ -140,7 +140,7 @@ export default function ItemBlog(props: ItemBlogProps) {
             </HStack>
 
             {/* Text */}
-            <Text fontSize="sm" color="white" mb={3}>
+            <Text fontSize="md" color="white" mb={3}>
                 {title}
             </Text>
 
@@ -156,9 +156,9 @@ export default function ItemBlog(props: ItemBlogProps) {
                     ]?.map((it) => (
                         <Box
                             key={it.key}
-                            bg="whiteAlpha.200"
+                            bg="blackAlpha.400"
                             borderWidth={"1px"}
-                            borderColor={'whiteAlpha.300'}
+                            borderColor={'whiteAlpha.600'}
                             px={3}
                             py={2}
                             minH={16}
@@ -172,9 +172,9 @@ export default function ItemBlog(props: ItemBlogProps) {
                     ))}
                 </Grid>
                 <HStack gap={4}>
-                    <Button size="sm" variant="ghost" gap={2}><Icon as={FiThumbsUp} />{likes ?? 0}</Button>
-                    <Button size="sm" variant="ghost" gap={2} onClick={onOpen}><Icon as={FiMessageCircle} />{comments ?? 0}</Button>
-                    <Button size="sm" variant="ghost" gap={2}><Icon as={FiShare2} />0</Button>
+                    <Button size="xl" variant="ghost" gap={2} color={'whiteAlpha.800'} _hover={{color: 'blackAlpha.800'}}><Icon as={FiThumbsUp}/>{likes ?? 0}</Button>
+                    <Button size="xl" variant="ghost" gap={2} color={'whiteAlpha.800'} _hover={{color: 'blackAlpha.800'}} onClick={onOpen}><Icon as={FiMessageCircle}/>{comments ?? 0}</Button>
+                    <Button size="xl" variant="ghost" gap={2} color={'whiteAlpha.800'} _hover={{color: 'blackAlpha.800'}}><Icon as={FiShare2}/>0</Button>
                 </HStack>
             </VStack>
             <PopUpComment isOpen={open} onClose={onClose} tourId={Number(id)} images={images} />

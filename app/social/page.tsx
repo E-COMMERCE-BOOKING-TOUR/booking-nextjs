@@ -7,10 +7,10 @@ export default function Home() {
         <Box w={'full'}>
             <Tabs.Root w={'full'} defaultValue="members" justify={'center'}>
                 <Tabs.List w={'full'}>
-                    <Tabs.Trigger value="members" w={'full'}>
+                    <Tabs.Trigger value="members" w={'full'} h={50}>
                         <Text w={'full'} textAlign={'center'}>For you</Text>
                     </Tabs.Trigger>
-                    <Tabs.Trigger value="projects" w={'full'}>
+                    <Tabs.Trigger value="projects" w={'full'} h={50}>
                         <Text w={'full'} textAlign={'center'}>Following</Text>
                     </Tabs.Trigger>
                 </Tabs.List>
