@@ -8,13 +8,13 @@ import TourMapSection from "@/components/ui/user/tourMapSection";
 import TourDescription from "@/components/ui/user/tourDescription";
 import RelatedToursSwiper from "@/components/ui/user/relatedToursSwiper";
 import tourApi from "@/apis/tour";
-import { notFound } from 'next/navigation'
+import { notFound } from "next/navigation";
 
-interface TourDetailPageProps {
-    params: Promise<{ slug: string }>;
-}
+type TourDetailPageProps = {
+    params: { slug: string };
+};
 
-interface TourData {
+type TourData = {
     title: string;
     location: string;
     price: number;
@@ -56,9 +56,9 @@ interface TourData {
             pax_type_name: string;
         }[];
     }[];
-}
+};
 
-interface RelatedTour {
+type RelatedTour = {
     id: string;
     image: string;
     title: string;
@@ -71,9 +71,9 @@ interface RelatedTour {
     currentPrice: number;
     tags: string[];
     slug: string;
-}
+};
 
-interface Review {
+type Review = {
     id: string;
     userName: string;
     userAvatar: string;
@@ -82,60 +82,41 @@ interface Review {
     title: string;
     content: string;
     verified: boolean;
-}
+};
 
-interface ReviewCategory {
+type ReviewCategory = {
     label: string;
     score: number;
-}
+};
 
-function normalizeTourDetailResponse(response: unknown): any | null {
-    if (!response) {
-        return null;
-    }
+const normalizeDetail = (response: unknown): any | null => {
+    if (!response || typeof response !== "object" || Array.isArray(response)) return null;
+    const payload = "data" in (response as any) ? (response as any).data : response;
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
+    return typeof (payload as any).title === "string" ? payload : null;
+};
 
-    const detailPayload =
-        typeof response === "object" &&
-            response !== null &&
-            "data" in response &&
-            !Array.isArray((response as { data?: unknown }).data)
-            ? (response as { data?: any }).data
-            : response;
-
-    if (
-        !detailPayload ||
-        typeof detailPayload !== "object" ||
-        Array.isArray(detailPayload)
-    ) {
-        return null;
-    }
-
-    const detail = detailPayload as any;
-    const hasMinimalFields =
-        typeof detail.title === "string" && detail.title.trim().length > 0;
-
-    return hasMinimalFields ? detail : null;
-}
-
-function extractStatusCode(error: unknown): number | undefined {
+const statusCodeOf = (error: unknown): number | undefined => {
     if (typeof error === "object" && error !== null) {
-        const structuredError = error as {
-            response?: { status?: number };
-            status?: number;
-        };
-        return structuredError.response?.status ?? structuredError.status;
+        const e = error as { response?: { status?: number }; status?: number };
+        return e.response?.status ?? e.status;
     }
-    return undefined;
-}
+};
 
-async function getTourData(slug: string): Promise<TourData> {
+const safeGet = async <T,>(fn: () => Promise<T>, fallback: T) => {
+    try {
+        return await fn();
+    } catch (error) {
+        console.error("Fetch failed:", error);
+        return fallback;
+    }
+};
+
+const getTourData = async (slug: string): Promise<TourData> => {
     try {
         const tourDetailResponse = await tourApi.detail(slug);
-        const tourDetail = normalizeTourDetailResponse(tourDetailResponse);
-
-        if (!tourDetail) {
-            notFound();
-        }
+        const tourDetail = normalizeDetail(tourDetailResponse);
+        if (!tourDetail) notFound();
 
         return {
             title: tourDetail.title,
@@ -165,65 +146,34 @@ async function getTourData(slug: string): Promise<TourData> {
                 capacity: "",
             },
             meetingPoint: tourDetail.meetingPoint ?? "",
-            variants: tourDetail.variants?.map((v: any) => ({
-                id: v.id,
-                name: v.name,
-                status: v.status,
-                prices: v.prices.map((p: any) => ({
-                    id: p.id,
-                    pax_type_id: p.pax_type_id,
-                    price: p.price,
-                    pax_type_name: p.pax_type_name
-                }))
-            })) || [],
+            variants:
+                tourDetail.variants?.map((v: any) => ({
+                    id: v.id,
+                    name: v.name,
+                    status: v.status,
+                    prices: v.prices.map((p: any) => ({
+                        id: p.id,
+                        pax_type_id: p.pax_type_id,
+                        price: p.price,
+                        pax_type_name: p.pax_type_name,
+                    })),
+                })) || [],
         };
-    } catch (error: unknown) {
+    } catch (error) {
         console.error("Error fetching tour data:", error);
-        const statusCode = extractStatusCode(error);
-        if (statusCode === 404) {
-            notFound();
-        }
+        if (statusCodeOf(error) === 404) notFound();
         throw error;
     }
-}
-
-async function getReviews(slug: string): Promise<Review[]> {
-    try {
-        const reviews = await tourApi.reviews(slug);
-        return reviews;
-    } catch (error: unknown) {
-        console.error("Error fetching reviews:", error);
-        return [];
-    }
-}
-
-async function getReviewCategories(slug: string): Promise<ReviewCategory[]> {
-    try {
-        const categories = await tourApi.reviewCategories(slug);
-        return categories;
-    } catch (error: unknown) {
-        console.error("Error fetching review categories:", error);
-        return [];
-    }
-}
-
-async function getRelatedTours(slug: string): Promise<RelatedTour[]> {
-    try {
-        const relatedTours = await tourApi.related(slug);
-        return relatedTours;
-    } catch (error: unknown) {
-        console.error("Error fetching related tours:", error);
-        return [];
-    }
-}
+};
 
 export default async function TourDetailPage({ params }: TourDetailPageProps) {
-    const { slug } = await params;
+    const slug = params.slug;
+
     const [tour, relatedTours, reviews, reviewCategories] = await Promise.all([
         getTourData(slug),
-        getRelatedTours(slug),
-        getReviews(slug),
-        getReviewCategories(slug),
+        safeGet(() => tourApi.related(slug), [] as RelatedTour[]),
+        safeGet(() => tourApi.reviews(slug), [] as Review[]),
+        safeGet(() => tourApi.reviewCategories(slug), [] as ReviewCategory[]),
     ]);
 
     if (!tour) {
@@ -271,7 +221,6 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
                 </Grid>
             </Box>
 
-            {/* Description */}
             <Box bg="white" rounded="25px" p={4} mt={6}>
                 <TourDescription
                     description={tour.description}
@@ -282,7 +231,6 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
                     meetingPoint={tour.meetingPoint}
                 />
 
-                {/* Related Tours */}
                 <VStack align="stretch" gap={6} mt={12} mb={8}>
                     <Heading as="h2" size="xl" fontWeight="bold">
                         Related tours in London
@@ -291,7 +239,6 @@ export default async function TourDetailPage({ params }: TourDetailPageProps) {
                 </VStack>
             </Box>
 
-            {/* Comments */}
             <Box bg="white" rounded="25px" p={4} mt={6}>
                 <TourReviews
                     averageRating={tour.rating}

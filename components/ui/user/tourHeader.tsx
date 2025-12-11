@@ -1,12 +1,13 @@
 'use client'
 import { Box, Flex, Heading, Text, Button, Badge, HStack, VStack, Input, Dialog, Portal } from "@chakra-ui/react";
 import StarRating from "./starRating";
-import { useMutation } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { bookingApi, CreateBookingDTO } from "@/apis/booking";
+import { CreateBookingDTO } from "@/apis/booking";
 import { toaster } from "@/components/chakra/toaster";
 import { useSession } from "next-auth/react";
+import { createBooking } from "@/actions/booking";
+import { useTransition } from "react";
 
 interface TourVariant {
     id: number;
@@ -32,10 +33,11 @@ interface TourHeaderProps {
 
 export default function TourHeader({ title, location, rating, price, oldPrice, slug, variants }: TourHeaderProps) {
     const router = useRouter();
-    const { data: session, status } = useSession();
+    const { data: session } = useSession();
     const [startDate, setStartDate] = useState<string>('');
     const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
     const [paxQuantities, setPaxQuantities] = useState<Record<number, number>>({});
+    const [isPending, startTransition] = useTransition();
 
     // Set default variant if only one exists
     useEffect(() => {
@@ -62,39 +64,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
         }
     }, [selectedVariant]);
 
-    const createBookingMutation = useMutation({
-        mutationFn: (data: CreateBookingDTO) => bookingApi.create(data, session?.user?.accessToken),
-        onSuccess: (data: any) => {
-            toaster.create({
-                title: "Booking created.",
-                description: "Redirecting to checkout...",
-                type: "success",
-                duration: 3000,
-            });
-            router.push(`/tour/checkout?bookingId=${data.id}`);
-        },
-        onError: (error: any) => {
-            toaster.create({
-                title: "Booking failed.",
-                description: error.message || "Something went wrong.",
-                type: "error",
-                duration: 3000,
-            });
-        }
-    });
-
     const handleBooking = () => {
-        // Check if user is logged in
-        if (!session?.user?.accessToken) {
-            toaster.create({
-                title: "Please login first.",
-                description: "You need to be logged in to make a booking.",
-                type: "warning",
-                duration: 3000,
-            });
-            return;
-        }
-
         if (!startDate) {
             toaster.create({
                 title: "Please select a date.",
@@ -128,10 +98,34 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
             return;
         }
 
-        createBookingMutation.mutate({
-            startDate,
-            pax,
-            variantId: selectedVariantId
+        startTransition(async () => {
+            const result = await createBooking({
+                startDate,
+                pax,
+                variantId: selectedVariantId
+            });
+
+            if (!result.ok) {
+                toaster.create({
+                    title: "Booking failed.",
+                    description: result.message,
+                    type: "error",
+                    duration: 3000,
+                });
+
+                if (result.code === "UNAUTHENTICATED") {
+                    router.push("/user-login");
+                }
+                return;
+            }
+
+            toaster.create({
+                title: "Booking created.",
+                description: "Redirecting to checkout...",
+                type: "success",
+                duration: 3000,
+            });
+            router.push(`/tour/checkout?bookingId=${result.data.id}`);
         });
     };
 
@@ -260,9 +254,9 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                         bg="main"
                                         color="white"
                                         onClick={handleBooking}
-                                        disabled={createBookingMutation.isPending}
+                                        disabled={isPending}
                                     >
-                                        {createBookingMutation.isPending ? "Booking..." : "Confirm Booking"}
+                                        {isPending ? "Booking..." : "Confirm Booking"}
                                     </Button>
                                 </Dialog.Footer>
                                 <Dialog.CloseTrigger />
