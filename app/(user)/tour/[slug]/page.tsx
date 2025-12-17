@@ -10,10 +10,6 @@ import RelatedToursSwiper from "@/components/ui/user/relatedToursSwiper";
 import tourApi from "@/apis/tour";
 import { notFound } from "next/navigation";
 
-type TourDetailPageProps = {
-    params: { slug: string };
-};
-
 type TourData = {
     title: string;
     location: string;
@@ -166,9 +162,8 @@ const getTourData = async (slug: string): Promise<TourData> => {
     }
 };
 
-export default async function TourDetailPage({ params }: TourDetailPageProps) {
-    const slug = params.slug;
-
+export default async function TourDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
     const [tour, relatedTours, reviews, reviewCategories] = await Promise.all([
         getTourData(slug),
         safeGet(() => tourApi.related(slug), [] as RelatedTour[]),

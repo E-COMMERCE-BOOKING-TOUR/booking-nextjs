@@ -8,6 +8,7 @@ import { toaster } from "@/components/chakra/toaster";
 import { useSession } from "next-auth/react";
 import { createBooking } from "@/actions/booking";
 import { useTransition } from "react";
+import logout from "@/actions/logout";
 
 interface TourVariant {
     id: number;
@@ -114,7 +115,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                 });
 
                 if (result.code === "UNAUTHENTICATED") {
-                    router.push("/user-login");
+                    logout("/user-login");
                 }
                 return;
             }
@@ -125,7 +126,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                 type: "success",
                 duration: 3000,
             });
-            router.push(`/tour/checkout?bookingId=${result.data.id}`);
+            router.push('/checkout');
         });
     };
 
@@ -174,7 +175,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                     </VStack>
                 </HStack>
 
-                <Dialog.Root size="md">
+                <Dialog.Root size="md" lazyMount unmountOnExit>
                     <Dialog.Trigger asChild>
                         <Button
                             bg="main"

@@ -1,6 +1,5 @@
 import fetchC from "@/libs/fetchC";
-import { IBaseResponseData } from "@/types/base.type";
-import { IBookingDetail, IConfirmBooking } from "@/types/booking";
+import { IBookingDetail, IConfirmBooking, IPaymentMethod } from "@/types/booking";
 import { getAuthHeaders } from "@/libs/auth/authHeaders";
 
 export type CreateBookingDTO = {
@@ -9,6 +8,25 @@ export type CreateBookingDTO = {
     variantId?: number;
 };
 
+export type UpdateContactDTO = {
+    contact_name: string;
+    contact_email: string;
+    contact_phone: string;
+};
+
+export type UpdatePaymentDTO = {
+    payment_method: string;
+    booking_payment_id: number;
+};
+
+type BookingResult =
+    | { ok: true; data: IBookingDetail }
+    | { ok: false; error: string; redirectTo?: string };
+
+type PaymentMethodsResult =
+    | { ok: true; data: IPaymentMethod[] }
+    | { ok: false; error: string; redirectTo?: string };
+
 export const bookingApi = {
     create: async (dto: CreateBookingDTO, token?: string) => {
         const url = "/user/booking/create";
@@ -16,6 +34,78 @@ export const bookingApi = {
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         const res = await fetchC.post(url, dto, { headers: authHeaders.headers });
         return res;
+    },
+    getCurrent: async (token?: string): Promise<BookingResult> => {
+        const url = "/user/booking/current";
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) {
+            return { ok: false, error: authHeaders.message, redirectTo: "/user-login" }
+        }
+        try {
+            const bookingInfo: IBookingDetail = await fetchC.get(url, { headers: authHeaders.headers });
+            return {
+                ok: true, data: bookingInfo
+            };
+        } catch (error) {
+            return {
+                ok: false,
+                error: (error as Error)?.message || "Failed to fetch booking"
+            };
+        }
+    },
+    updateContact: async (dto: UpdateContactDTO, token?: string): Promise<BookingResult> => {
+        const url = "/user/booking/current/contact-info";
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) {
+            return { ok: false, error: authHeaders.message, redirectTo: "/user-login" }
+        }
+        try {
+            const res = await fetchC.post(url, dto, { headers: authHeaders.headers });
+            return {
+                ok: true, data: res
+            };
+        } catch (error) {
+            return {
+                ok: false,
+                error: (error as Error)?.message || "Failed to update contact"
+            };
+        }
+    },
+    updatePayment: async (dto: UpdatePaymentDTO, token?: string): Promise<BookingResult> => {
+        const url = "/user/booking/current/payment-method";
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) {
+            return { ok: false, error: authHeaders.message, redirectTo: "/user-login" }
+        }
+        try {
+            const res = await fetchC.post(url, dto, { headers: authHeaders.headers });
+            return {
+                ok: true, data: res
+            };
+        } catch (error) {
+            return {
+                ok: false,
+                error: (error as Error)?.message || "Failed to update payment"
+            };
+        }
+    },
+    confirmCurrent: async (token?: string): Promise<BookingResult> => {
+        const url = "/user/booking/current/confirm";
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) {
+            return { ok: false, error: authHeaders.message, redirectTo: "/user-login" }
+        }
+        try {
+            const res = await fetchC.post(url, {}, { headers: authHeaders.headers });
+            return {
+                ok: true, data: res
+            };
+        } catch (error) {
+            return {
+                ok: false,
+                error: (error as Error)?.message || "Failed to confirm booking"
+            };
+        }
     },
     getDetail: async (id: number, token?: string) => {
         const url = `/user/booking/${id}`;
@@ -30,6 +120,22 @@ export const bookingApi = {
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         const res = await fetchC.post(url, dto, { headers: authHeaders.headers });
         return res;
+    },
+    getPaymentMethods: async (token?: string): Promise<PaymentMethodsResult> => {
+        const url = "/user/booking/payment-methods";
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) {
+            return { ok: false, error: authHeaders.message, redirectTo: "/user-login" };
+        }
+        try {
+            const paymentMethods: IPaymentMethod[] = await fetchC.get(url, { headers: authHeaders.headers });
+            return { ok: true, data: paymentMethods };
+        } catch (error) {
+            return {
+                ok: false,
+                error: (error as Error)?.message || "Failed to fetch payment methods"
+            };
+        }
     },
 };
 

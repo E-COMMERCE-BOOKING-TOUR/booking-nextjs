@@ -73,7 +73,7 @@ export default async function UserNavbar() {
 
 const UserMenu = ({ user }: { user: IUserAuth }) => {
   return (
-    <Menu.Root>
+    <Menu.Root lazyMount unmountOnExit>
       <Menu.Trigger asChild>
         <Button variant="outline" size="sm">
           {user.name}

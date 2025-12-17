@@ -19,5 +19,3 @@ export const getServerAuth = async () => {
         accessTokenExpires: session.user.accessTokenExpires,
     };
 };
-
-

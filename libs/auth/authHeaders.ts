@@ -22,5 +22,3 @@ export const getAuthHeaders = async (token?: string): Promise<AuthHeaderResult> 
         headers: { Authorization: `Bearer ${accessToken}` },
     };
 };
-
-

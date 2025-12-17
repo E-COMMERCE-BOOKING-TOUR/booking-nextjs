@@ -32,3 +32,11 @@ export interface IConfirmBooking {
     contact_phone: string;
     payment_method: string;
 }
+
+export interface IPaymentMethod {
+    id: number;
+    payment_method_name: string;
+    rule_min: number;
+    rule_max: number;
+    currency: string;
+}
