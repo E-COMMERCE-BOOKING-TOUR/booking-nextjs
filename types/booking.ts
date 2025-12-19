@@ -1,3 +1,9 @@
+export interface IBookingPassenger {
+    full_name: string;
+    phone_number: string;
+    pax_type_name: string;
+}
+
 export interface IBookingDetail {
     id: number;
     contact_name: string;
@@ -23,6 +29,12 @@ export interface IBookingDetail {
         total_amount: number;
         pax_type_name: string;
     }[];
+    passengers: IBookingPassenger[];
+    booking_payment?: {
+        id: number;
+        payment_method_name: string;
+    };
+    payment_method?: string;
 }
 
 export interface IConfirmBooking {

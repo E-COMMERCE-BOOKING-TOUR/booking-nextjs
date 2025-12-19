@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Box, Button, Container, Heading, Stack, Text, Flex, RadioGroup } from "@chakra-ui/react";
+import { Box, Button, Container, Heading, Stack, Text, Flex, RadioGroup, Steps, SimpleGrid } from "@chakra-ui/react";
 import { useSession } from "next-auth/react";
 import { useMutation } from "@tanstack/react-query";
 import bookingApi, { UpdatePaymentDTO } from "@/apis/booking";
@@ -11,6 +11,9 @@ import { IBookingDetail, IPaymentMethod } from "@/types/booking";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { BookingSummaryCard } from "@/components/ui/user/BookingSummaryCard";
+import { useBookingExpiry } from "@/hooks/useBookingExpiry";
+import { BookingExpiryManager } from "@/components/ui/user/BookingExpiryManager";
 
 // Zod schema for form validation
 const checkoutPaymentSchema = z.object({
@@ -45,9 +48,17 @@ function getEligibilityMessage(method: IPaymentMethod, totalAmount: number, curr
     return null;
 }
 
+const steps = [
+    { label: "Input information", description: "Please provide your contact and traveler information" },
+    { label: "Payment method", description: "Select your payment method" },
+    { label: "Confirmation", description: "Review your booking information" },
+    { label: "Complete", description: "Your booking is complete" },
+];
+
 export default function CheckoutPaymentClient({ initialBooking, paymentMethods }: Props) {
     const router = useRouter();
     const { data: session } = useSession();
+    const { isExpired, handleExpire } = useBookingExpiry(initialBooking.hold_expires_at);
 
     // Find first eligible payment method as default
     const defaultPaymentId = paymentMethods.find(m =>
@@ -88,6 +99,15 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
     });
 
     const onSubmit = (data: CheckoutPaymentFormData) => {
+        if (isExpired) {
+            toaster.create({
+                title: "Booking expired",
+                description: "Your booking hold has expired. Please start a new booking.",
+                type: "error",
+            });
+            return;
+        }
+
         const selectedMethod = paymentMethods.find(m => m.id === data.booking_payment_id);
         if (!selectedMethod) {
             toaster.create({
@@ -111,106 +131,124 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
     };
 
     return (
-        <Container maxW="2xl" py={10}>
-            <Heading as="h1" size="2xl" mb={2}>Checkout - Step 2 of 3</Heading>
-            <Text color="fg.muted" mb={8}>Select your payment method</Text>
+        <Container maxW="2xl" position="relative" py={10}>
+            <BookingExpiryManager isExpired={isExpired} onExpire={handleExpire} expiresAt={initialBooking.hold_expires_at} />
+            {/* Steps */}
+            <Steps.Root defaultStep={1} count={steps.length} colorPalette="blue" my="2rem" paddingX="3rem" width="100%">
+                <Steps.List>
+                    {steps.map((step, index) => (
+                        <Steps.Item key={index} index={index}>
+                            <Steps.Indicator />
+                            <Steps.Title>{step.label}</Steps.Title>
+                            <Steps.Separator />
+                        </Steps.Item>
+                    ))}
+                </Steps.List>
+            </Steps.Root>
 
-            <form onSubmit={handleSubmit(onSubmit)} noValidate>
-                <Stack gap={6}>
-                    <Box bg="white" p={8} borderRadius="15px">
-                        <Heading as="h2" fontSize="2xl" fontWeight="bold">Choose how you'd like to pay</Heading>
-                        <Text mt={2} color="fg.muted">
-                            Order total: <Text as="span" fontWeight="bold">{numberFormat(initialBooking.total_amount)} {initialBooking.currency}</Text>
-                        </Text>
-
-                        {paymentMethods.length === 0 ? (
-                            <Box mt={6} p={4} bg="yellow.50" borderRadius="md">
-                                <Text color="yellow.800">No payment methods available at this time.</Text>
-                            </Box>
-                        ) : (
-                            <RadioGroup.Root
-                                value={selectedPaymentId?.toString()}
-                                onValueChange={(e) => handleSelectPayment(Number(e.value))}
-                            >
-                                <Stack gap={3} mt={6}>
-                                    {paymentMethods.map((method) => {
-                                        const isEligible = isPaymentMethodEligible(method, initialBooking.total_amount);
-                                        const eligibilityMessage = getEligibilityMessage(method, initialBooking.total_amount, initialBooking.currency);
-
-                                        return (
-                                            <Box
-                                                key={method.id}
-                                                p={4}
-                                                borderWidth="1px"
-                                                borderRadius="md"
-                                                borderColor={selectedPaymentId === method.id ? "blue.500" : "gray.200"}
-                                                bg={!isEligible ? "gray.50" : "white"}
-                                                opacity={!isEligible ? 0.6 : 1}
-                                                cursor={isEligible ? "pointer" : "not-allowed"}
-                                                onClick={() => isEligible && handleSelectPayment(method.id)}
-                                                _hover={isEligible ? { borderColor: "blue.300" } : undefined}
-                                            >
-                                                <RadioGroup.Item value={method.id.toString()} disabled={!isEligible}>
-                                                    <RadioGroup.ItemHiddenInput />
-                                                    <Flex align="center" gap={3}>
-                                                        <RadioGroup.ItemIndicator />
-                                                        <Box flex={1}>
-                                                            <Text fontWeight="semibold" color={!isEligible ? "gray.500" : "inherit"}>
-                                                                {method.payment_method_name}
-                                                            </Text>
-                                                            {eligibilityMessage && (
-                                                                <Text fontSize="sm" color="red.500">
-                                                                    {eligibilityMessage}
-                                                                </Text>
-                                                            )}
-                                                            {isEligible && Number(method.rule_min) > 0 && (
-                                                                <Text fontSize="sm" color="fg.muted">
-                                                                    Min: {numberFormat(method.rule_min)} {method.currency}
-                                                                    {Number(method.rule_max) > 0 && ` - Max: ${numberFormat(method.rule_max)} ${method.currency}`}
-                                                                </Text>
-                                                            )}
-                                                        </Box>
-                                                    </Flex>
-                                                </RadioGroup.Item>
-                                            </Box>
-                                        );
-                                    })}
-                                </Stack>
-                            </RadioGroup.Root>
-                        )}
-                        {errors.booking_payment_id && (
-                            <Text color="red.500" fontSize="sm" mt={2}>{errors.booking_payment_id.message}</Text>
-                        )}
-                    </Box>
-
-                    {selectedPayment && (
-                        <Box bg="blue.50" p={4} borderRadius="md">
-                            <Text fontWeight="semibold" color="blue.800">
-                                Selected: {selectedPayment.payment_method_name}
+            <SimpleGrid templateColumns={{ base: "1fr", md: "repeat(12, 1fr)" }} gap={4}>
+                {/* Left Column: Payment Form */}
+                <Stack gridColumn={{ base: "1 / -1", md: "1 / 9" }} boxShadow="sm" rounded="2xl" marginBottom="2rem" bg="white">
+                    <form onSubmit={handleSubmit(onSubmit)} noValidate>
+                        <Box p={5} borderRadius="15px">
+                            <Heading as="h2" fontSize="2xl" fontWeight="bold">Choose how you'd like to pay</Heading>
+                            <Text mt={2} color="fg.muted">
+                                Order total: <Text as="span" fontWeight="bold">{numberFormat(initialBooking.total_amount)} {initialBooking.currency}</Text>
                             </Text>
-                        </Box>
-                    )}
 
-                    <Flex justify="space-between" gap={3}>
-                        <Button
-                            variant="outline"
-                            size="lg"
-                            onClick={() => router.push("/checkout")}
-                        >
-                            Back to Details
-                        </Button>
-                        <Button
-                            size="lg"
-                            colorPalette="blue"
-                            type="submit"
-                            loading={updatePaymentMutation.isPending}
-                            disabled={!selectedPaymentId || paymentMethods.length === 0}
-                        >
-                            Continue to Review ({numberFormat(initialBooking.total_amount)} {initialBooking.currency})
-                        </Button>
-                    </Flex>
+                            {paymentMethods.length === 0 ? (
+                                <Box mt={6} p={4} bg="yellow.50" borderRadius="md">
+                                    <Text color="yellow.800">No payment methods available at this time.</Text>
+                                </Box>
+                            ) : (
+                                <RadioGroup.Root
+                                    value={selectedPaymentId?.toString()}
+                                    onValueChange={(e) => handleSelectPayment(Number(e.value))}
+                                >
+                                    <Stack gap={3} mt={6}>
+                                        {paymentMethods.map((method) => {
+                                            const isEligible = isPaymentMethodEligible(method, initialBooking.total_amount);
+                                            const eligibilityMessage = getEligibilityMessage(method, initialBooking.total_amount, initialBooking.currency);
+
+                                            return (
+                                                <Box
+                                                    key={method.id}
+                                                    p={4}
+                                                    borderWidth="1px"
+                                                    borderRadius="md"
+                                                    borderColor={selectedPaymentId === method.id ? "blue.500" : "gray.200"}
+                                                    bg={!isEligible ? "gray.50" : "white"}
+                                                    opacity={!isEligible ? 0.6 : 1}
+                                                    cursor={isEligible ? "pointer" : "not-allowed"}
+                                                    onClick={() => isEligible && handleSelectPayment(method.id)}
+                                                    _hover={isEligible ? { borderColor: "blue.300" } : undefined}
+                                                >
+                                                    <RadioGroup.Item value={method.id.toString()} disabled={!isEligible}>
+                                                        <RadioGroup.ItemHiddenInput />
+                                                        <Flex align="center" gap={3}>
+                                                            <RadioGroup.ItemIndicator />
+                                                            <Box flex={1}>
+                                                                <Text fontWeight="semibold" color={!isEligible ? "gray.500" : "inherit"}>
+                                                                    {method.payment_method_name}
+                                                                </Text>
+                                                                {eligibilityMessage && (
+                                                                    <Text fontSize="sm" color="red.500">
+                                                                        {eligibilityMessage}
+                                                                    </Text>
+                                                                )}
+                                                                {isEligible && Number(method.rule_min) > 0 && (
+                                                                    <Text fontSize="sm" color="fg.muted">
+                                                                        Min: {numberFormat(method.rule_min)} {method.currency}
+                                                                        {Number(method.rule_max) > 0 && ` - Max: ${numberFormat(method.rule_max)} ${method.currency}`}
+                                                                    </Text>
+                                                                )}
+                                                            </Box>
+                                                        </Flex>
+                                                    </RadioGroup.Item>
+                                                </Box>
+                                            );
+                                        })}
+                                    </Stack>
+                                </RadioGroup.Root>
+                            )}
+                            {errors.booking_payment_id && (
+                                <Text color="red.500" fontSize="sm" mt={2}>{errors.booking_payment_id.message}</Text>
+                            )}
+
+                            {selectedPayment && (
+                                <Box bg="blue.50" p={4} borderRadius="md" mt={4}>
+                                    <Text fontWeight="semibold" color="blue.800">
+                                        Selected: {selectedPayment.payment_method_name}
+                                    </Text>
+                                </Box>
+                            )}
+                        </Box>
+
+                        <Flex justify="space-between" gap={3} p={5} pt={0}>
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={() => router.push("/checkout")}
+                            >
+                                Back to Details
+                            </Button>
+                            <Button
+                                size="lg"
+                                type="submit"
+                                loading={updatePaymentMutation.isPending}
+                                disabled={!selectedPaymentId || paymentMethods.length === 0}
+                            >
+                                Continue to Review ({numberFormat(initialBooking.total_amount)} {initialBooking.currency})
+                            </Button>
+                        </Flex>
+                    </form>
                 </Stack>
-            </form>
+
+                {/* Right Column: Booking Summary */}
+                <Stack gridColumn={{ base: "1 / -1", md: "9 / -1" }}>
+                    <BookingSummaryCard booking={initialBooking} />
+                </Stack>
+            </SimpleGrid>
         </Container>
     );
 }

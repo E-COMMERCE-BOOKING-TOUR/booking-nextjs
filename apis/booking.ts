@@ -12,6 +12,10 @@ export type UpdateContactDTO = {
     contact_name: string;
     contact_email: string;
     contact_phone: string;
+    passengers?: {
+        full_name: string;
+        phone_number?: string;
+    }[];
 };
 
 export type UpdatePaymentDTO = {
@@ -42,7 +46,7 @@ export const bookingApi = {
             return { ok: false, error: authHeaders.message, redirectTo: "/user-login" }
         }
         try {
-            const bookingInfo: IBookingDetail = await fetchC.get(url, { headers: authHeaders.headers });
+            const bookingInfo: IBookingDetail = await fetchC.get(url, { headers: authHeaders.headers, cache: 'no-store' });
             return {
                 ok: true, data: bookingInfo
             };
@@ -134,6 +138,22 @@ export const bookingApi = {
             return {
                 ok: false,
                 error: (error as Error)?.message || "Failed to fetch payment methods"
+            };
+        }
+    },
+    cancelCurrent: async (token?: string): Promise<{ ok: boolean; message?: string; error?: string }> => {
+        const url = "/user/booking/current/cancel";
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) {
+            return { ok: false, error: authHeaders.message };
+        }
+        try {
+            const res = await fetchC.post(url, {}, { headers: authHeaders.headers });
+            return { ok: true, message: res.message || "Booking cancelled" };
+        } catch (error) {
+            return {
+                ok: false,
+                error: (error as Error)?.message || "Failed to cancel booking"
             };
         }
     },

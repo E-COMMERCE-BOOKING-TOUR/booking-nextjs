@@ -196,6 +196,7 @@ export default async function TourDetailPage({ params }: { params: Promise<{ slu
                     oldPrice={tour.oldPrice}
                     slug={slug}
                     variants={tour.variants}
+                    durationDays={tour.details.duration ? parseInt(tour.details.duration) : 1} // Fallback parsing or use tour.durationDays if mapped
                 />
 
                 <Grid templateColumns={{ base: "repeat(4, 1fr)", lg: "repeat(4, 1fr)" }} gap={2} mt={6}>

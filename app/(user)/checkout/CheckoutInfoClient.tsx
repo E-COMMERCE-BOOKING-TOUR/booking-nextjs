@@ -1,17 +1,22 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Box, Button, Container, Heading, Stack, Text, Flex, Steps, SimpleGrid, Checkbox, VStack, HStack, Image, DataList } from "@chakra-ui/react";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { Box, Button, Container, Heading, Stack, Text, Flex, Steps, SimpleGrid, Checkbox, VStack, HStack, Image, DataList, Dialog, Portal } from "@chakra-ui/react";
 import { InputUser } from "@/components/ui/user/form/input";
+import CountdownTimer from "@/components/ui/user/CountdownTimer";
 import { useSession } from "next-auth/react";
 import { useMutation } from "@tanstack/react-query";
 import bookingApi, { UpdateContactDTO } from "@/apis/booking";
 import { toaster } from "@/components/chakra/toaster";
 import { IBookingDetail } from "@/types/booking";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { numberFormat } from "@/libs/function";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
+import { BookingSummaryCard } from "@/components/ui/user/BookingSummaryCard";
+import { useBookingExpiry } from "@/hooks/useBookingExpiry";
+import { BookingExpiryManager } from "@/components/ui/user/BookingExpiryManager";
 
 // Zod schema for form validation
 const passengerSchema = z.object({
@@ -55,26 +60,45 @@ const steps: { label: string; description: string }[] = [
 export default function CheckoutInfoClient({ initialBooking }: Props) {
     const router = useRouter();
     const { data: session } = useSession();
+
+
+    // Helper to determine passenger structure based on booking items
+    const passengerStructure = useMemo(() => {
+        return initialBooking.items.flatMap(item =>
+            Array(item.quantity).fill({
+                pax_type_name: item.pax_type_name
+            })
+        );
+    }, [initialBooking.items]);
+
     const {
         register,
         handleSubmit,
         getValues,
+        control,
         formState: { errors },
     } = useForm<CheckoutInfoFormData>({
-        resolver: zodResolver(checkoutInfoSchema),
+        resolver: standardSchemaResolver(checkoutInfoSchema),
         defaultValues: {
             contact_name: initialBooking.contact_name || "",
             contact_email: initialBooking.contact_email || "",
             contact_phone: initialBooking.contact_phone || "",
-            passengers: initialBooking.items.map(() => ({
-                full_name: "",
-                phone_number: "",
-            })),
+            passengers: initialBooking.passengers?.length > 0
+                ? initialBooking.passengers.map(p => ({
+                    full_name: p.full_name,
+                    phone_number: p.phone_number || "",
+                }))
+                : passengerStructure.map(() => ({
+                    full_name: "",
+                    phone_number: "",
+                })),
             agree_terms: false,
         },
     });
 
-    console.log("errors", errors);
+
+
+    const { isExpired, handleExpire } = useBookingExpiry(initialBooking.hold_expires_at);
 
     // Update contact info mutation
     const updateContactMutation = useMutation({
@@ -84,6 +108,7 @@ export default function CheckoutInfoClient({ initialBooking }: Props) {
                 title: "Contact information saved",
                 type: "success",
             });
+            // Keep expiry in localStorage as user proceeds to payment
             router.push("/checkout/payment");
         },
         onError: (error: any) => {
@@ -95,17 +120,59 @@ export default function CheckoutInfoClient({ initialBooking }: Props) {
         },
     });
 
+    // Cancel booking mutation
+    const cancelBookingMutation = useMutation({
+        mutationFn: () => bookingApi.cancelCurrent(session?.user?.accessToken),
+        onSuccess: (result) => {
+            if (result.ok) {
+                toaster.create({
+                    title: "Booking cancelled",
+                    description: "Your booking has been cancelled and inventory hold released.",
+                    type: "success",
+                });
+                handleExpire(); // Ensure cleanup
+                router.push("/");
+            } else {
+                toaster.create({
+                    title: "Failed to cancel booking",
+                    description: result.error,
+                    type: "error",
+                });
+            }
+        },
+        onError: (error: any) => {
+            toaster.create({
+                title: "Failed to cancel booking",
+                description: error.message,
+                type: "error",
+            });
+        },
+    });
+
     const onSubmit = (data: CheckoutInfoFormData) => {
+        // Block API calls if booking has expired
+        if (isExpired) {
+            toaster.create({
+                title: "Booking expired",
+                description: "Your booking hold has expired. Please start a new booking.",
+                type: "error",
+            });
+            return;
+        }
         updateContactMutation.mutate({
             contact_name: data.contact_name,
             contact_email: data.contact_email,
             contact_phone: data.contact_phone,
+            passengers: data.passengers,
         });
     };
 
+    console.log("isExpired", isExpired);
+
     return (
-        <Container maxW="2xl">
-            <Steps.Root defaultStep={0} colorPalette="blue" marginBottom="2rem" paddingX="3rem" width="100%">
+        <Container maxW="2xl" position="relative">
+            <BookingExpiryManager isExpired={isExpired} onExpire={handleExpire} expiresAt={initialBooking.hold_expires_at} />
+            <Steps.Root defaultStep={0} colorPalette="blue" my="2rem" paddingX="3rem" width="100%">
                 <Steps.List>
                     {steps.map((step, index) => (
                         <Steps.Item key={index} index={index}>
@@ -154,7 +221,7 @@ export default function CheckoutInfoClient({ initialBooking }: Props) {
                                 {getValues("passengers").map((passenger, index) => (
                                     <Stack key={index} gap={1}>
                                         <InputUser
-                                            label={`Traveler ${index + 1}`}
+                                            label={`Traveler ${index + 1} - ${passengerStructure[index]?.pax_type_name}`}
                                             placeholder="Full legal name"
                                             isRequired
                                             error={errors.passengers?.[index]?.full_name?.message}
@@ -169,24 +236,46 @@ export default function CheckoutInfoClient({ initialBooking }: Props) {
                             </Stack>
                         </Box>
                         <Box p={5} borderRadius="15px" paddingTop={0}>
-                            <Checkbox.Root gap="4" alignItems="flex-start" invalid={!!errors.agree_terms?.message}>
-                                <Checkbox.HiddenInput />
-                                <Checkbox.Control {...register("agree_terms")} />
-                                <Stack gap="1">
-                                    <Checkbox.Label>I agree to the terms and conditions</Checkbox.Label>
-                                    <Box textStyle="sm" color="fg.muted">
-                                        By clicking this, you agree to our Terms and Privacy Policy.
-                                    </Box>
-                                </Stack>
-                            </Checkbox.Root>
+                            <Controller
+                                control={control}
+                                name="agree_terms"
+                                render={({ field }) => (
+                                    <Checkbox.Root
+                                        gap="4"
+                                        alignItems="flex-start"
+                                        invalid={!!errors.agree_terms?.message}
+                                        checked={field.value}
+                                        onCheckedChange={({ checked }) => field.onChange(checked)}
+                                    >
+                                        <Checkbox.HiddenInput />
+                                        <Checkbox.Control />
+                                        <Stack gap="1">
+                                            <Checkbox.Label>I agree to the terms and conditions</Checkbox.Label>
+                                            <Box textStyle="sm" color="fg.muted">
+                                                By clicking this, you agree to our Terms and Privacy Policy.
+                                            </Box>
+                                        </Stack>
+                                    </Checkbox.Root>
+                                )}
+                            />
                         </Box>
-                        <Flex justify="flex-end" p={5} paddingTop={0}>
+                        <Flex justify="space-between" p={5} paddingTop={0} gap={4}>
                             <Button
                                 size="lg"
-                                colorPalette="blue"
+                                variant="outline"
+                                colorPalette="red"
+                                onClick={() => cancelBookingMutation.mutate()}
+                                loading={cancelBookingMutation.isPending}
+                                disabled={updateContactMutation.isPending}
+                            >
+                                Cancel Booking
+                            </Button>
+                            <Button
+                                size="lg"
                                 type="submit"
-                                width="100%"
+                                flex={1}
                                 loading={updateContactMutation.isPending}
+                                disabled={cancelBookingMutation.isPending}
                             >
                                 Continue to Payment
                             </Button>
@@ -202,63 +291,3 @@ export default function CheckoutInfoClient({ initialBooking }: Props) {
     );
 }
 
-
-const BookingSummaryCard = ({ booking }: { booking: IBookingDetail }) => {
-    return <Box boxShadow="sm" rounded="2xl" overflow="hidden">
-        <Box p={8} borderBottom="1px solid" borderColor="gray.200">
-            <Heading as="h2" fontSize="2xl" fontWeight="bold">Order summary</Heading>
-            <VStack align="start" mt={4}>
-                <HStack>
-                    <Image src={booking.tour_image} alt="Tour" width={20} height={20} objectFit="cover" borderRadius="md" />
-                    <Box flex={1}>
-                        <Text fontSize="lg" fontWeight="bold">{booking.tour_title}</Text>
-                        <Text>{numberFormat(booking.total_amount, false)} {booking.currency}</Text>
-                    </Box>
-                </HStack>
-            </VStack>
-            <DataList.Root orientation="horizontal" mt={4}>
-                <DataList.Item>
-                    <DataList.ItemLabel>
-                        Location
-                    </DataList.ItemLabel>
-                    <DataList.ItemValue display="flex" flexDirection="column" gap={1}>
-                        <Text>{booking.tour_location}</Text>
-                    </DataList.ItemValue>
-                </DataList.Item>
-                <DataList.Item>
-                    <DataList.ItemLabel>
-                        Date
-                    </DataList.ItemLabel>
-                    <DataList.ItemValue display="flex" flexDirection="column" gap={1}>
-                        {new Date(booking.start_date).toLocaleDateString()}
-                    </DataList.ItemValue>
-                </DataList.Item>
-                <DataList.Item>
-                    <DataList.ItemLabel>
-                        Duration days
-                    </DataList.ItemLabel>
-                    <DataList.ItemValue display="flex" flexDirection="column" gap={1}>
-                        {booking.duration_days}
-                    </DataList.ItemValue>
-                </DataList.Item>
-                <DataList.Item>
-                    <DataList.ItemLabel>
-                        Guests
-                    </DataList.ItemLabel>
-                    <DataList.ItemValue display="flex" flexDirection="column" gap={1}>
-                        {booking.items.map((item, idx) => (
-                            <Text key={idx}>{item.quantity} x {item.pax_type_name}</Text>
-                        ))}
-                    </DataList.ItemValue>
-                </DataList.Item>
-            </DataList.Root>
-        </Box>
-        <HStack justify="space-between" p={8} align="flex-start">
-            <Heading as="h3" fontSize="xl" fontWeight="bold">Total</Heading>
-            <VStack align="end">
-                <Text fontSize="xl" fontWeight="bold">{numberFormat(booking.total_amount, false)} {booking.currency}</Text>
-                <Text fontSize="sm" color="fg.muted">All taxes and fees included</Text>
-            </VStack>
-        </HStack>
-    </Box>;
-};
