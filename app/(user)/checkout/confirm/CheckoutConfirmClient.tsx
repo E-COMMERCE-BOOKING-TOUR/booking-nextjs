@@ -114,6 +114,15 @@ export default function CheckoutConfirmClient({ initialBooking }: Props) {
                                         {initialBooking.booking_payment?.payment_method_name || initialBooking.payment_method || "Not selected"}
                                     </DataList.ItemValue>
                                 </DataList.Item>
+                                {initialBooking.payment_information?.last4 && (
+                                    <DataList.Item>
+                                        <DataList.ItemLabel>Card</DataList.ItemLabel>
+                                        <DataList.ItemValue>
+                                            {initialBooking.payment_information.brand} **** {initialBooking.payment_information.last4}
+                                            {initialBooking.payment_information.expiry_date && ` (Exp: ${initialBooking.payment_information.expiry_date})`}
+                                        </DataList.ItemValue>
+                                    </DataList.Item>
+                                )}
                                 <DataList.Item>
                                     <DataList.ItemLabel>Payment Status</DataList.ItemLabel>
                                     <DataList.ItemValue textTransform="capitalize">
@@ -121,6 +130,13 @@ export default function CheckoutConfirmClient({ initialBooking }: Props) {
                                     </DataList.ItemValue>
                                 </DataList.Item>
                             </DataList.Root>
+                            {initialBooking.payment_information?.last4 && (
+                                <Box mt={3} p={3} bg="orange.50" borderRadius="md">
+                                    <Text fontSize="sm" color="orange.700">
+                                        Your card will be charged upon confirmation.
+                                    </Text>
+                                </Box>
+                            )}
                         </Box>
 
                         <Flex justify="space-between" gap={3} p={5} pt={0}>

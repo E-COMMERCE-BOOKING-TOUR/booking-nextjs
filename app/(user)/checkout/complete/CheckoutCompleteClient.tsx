@@ -1,10 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Button, Container, Heading, Stack, Text, Flex, Icon, Badge, SimpleGrid, Steps } from "@chakra-ui/react";
+import { Box, Button, Container, Heading, Stack, Text, Flex, Icon, Badge, SimpleGrid, Steps, DownloadTrigger } from "@chakra-ui/react";
 import { FaCheckCircle } from "react-icons/fa";
 import { IBookingDetail } from "@/types/booking";
 import { BookingSummaryCard } from "@/components/ui/user/BookingSummaryCard";
+import bookingApi from "@/apis/booking";
+import { toaster } from "@/components/chakra/toaster";
+import { useSession } from "next-auth/react";
 
 interface Props {
     initialBooking: IBookingDetail;
@@ -19,6 +23,31 @@ const steps = [
 
 export default function CheckoutCompleteClient({ initialBooking }: Props) {
     const router = useRouter();
+    const { data: session } = useSession();
+
+    const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false);
+    const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
+
+    const fetchDownloadData = async (type: 'receipt' | 'invoice') => {
+        const setLoading = type === 'receipt' ? setIsDownloadingReceipt : setIsDownloadingInvoice;
+        setLoading(true);
+        try {
+            const blob = type === 'receipt'
+                ? await bookingApi.downloadReceipt(initialBooking.id, session?.user?.accessToken)
+                : await bookingApi.downloadInvoice(initialBooking.id, session?.user?.accessToken);
+            return blob;
+        } catch (error) {
+            console.error(error);
+            toaster.create({
+                title: "Error",
+                description: `Failed to download ${type}. Please try again later.`,
+                type: "error",
+            });
+            throw error;
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <Container maxW="2xl" position="relative" py={10}>
@@ -59,9 +88,20 @@ export default function CheckoutCompleteClient({ initialBooking }: Props) {
                                 <Button colorPalette="blue" size="lg" onClick={() => router.push("/user-order")}>
                                     View My Bookings
                                 </Button>
-                                <Button variant="outline" size="lg">
-                                    Download Receipt
-                                </Button>
+                                <DownloadTrigger
+                                    data={() => fetchDownloadData('receipt')}
+                                    fileName={`receipt-${initialBooking.id}.pdf`}
+                                    mimeType="application/pdf"
+                                    asChild
+                                >
+                                    <Button
+                                        variant="outline"
+                                        size="lg"
+                                        loading={isDownloadingReceipt}
+                                    >
+                                        Download Receipt
+                                    </Button>
+                                </DownloadTrigger>
                             </Stack>
                         </Box>
 
@@ -72,9 +112,19 @@ export default function CheckoutCompleteClient({ initialBooking }: Props) {
                                 <Button variant="outline" onClick={() => router.push("/")}>
                                     Plan Another Trip
                                 </Button>
-                                <Button variant="outline">
-                                    Download Invoice (PDF)
-                                </Button>
+                                <DownloadTrigger
+                                    data={() => fetchDownloadData('invoice')}
+                                    fileName={`invoice-${initialBooking.id}.pdf`}
+                                    mimeType="application/pdf"
+                                    asChild
+                                >
+                                    <Button
+                                        variant="outline"
+                                        loading={isDownloadingInvoice}
+                                    >
+                                        Download Invoice (PDF)
+                                    </Button>
+                                </DownloadTrigger>
                             </Stack>
                         </Box>
                     </Stack>

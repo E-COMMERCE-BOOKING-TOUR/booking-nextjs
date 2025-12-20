@@ -35,6 +35,12 @@ export interface IBookingDetail {
         payment_method_name: string;
     };
     payment_method?: string;
+    payment_information?: {
+        brand?: string;
+        last4?: string;
+        expiry_date?: string;
+        account_holder?: string;
+    };
 }
 
 export interface IConfirmBooking {

@@ -21,6 +21,7 @@ export type UpdateContactDTO = {
 export type UpdatePaymentDTO = {
     payment_method: string;
     booking_payment_id: number;
+    payment_information_id?: number;
 };
 
 type BookingResult =
@@ -156,6 +157,30 @@ export const bookingApi = {
                 error: (error as Error)?.message || "Failed to cancel booking"
             };
         }
+    },
+    downloadReceipt: async (id: number, token?: string) => {
+        const url = `${process.env.NEXT_PUBLIC_API_BACKEND}/user/booking/${id}/receipt`;
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+
+        const response = await fetch(url, {
+            headers: authHeaders.headers as any,
+        });
+
+        if (!response.ok) throw new Error("Failed to download receipt");
+        return await response.blob();
+    },
+    downloadInvoice: async (id: number, token?: string) => {
+        const url = `${process.env.NEXT_PUBLIC_API_BACKEND}/user/booking/${id}/invoice`;
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+
+        const response = await fetch(url, {
+            headers: authHeaders.headers as any,
+        });
+
+        if (!response.ok) throw new Error("Failed to download invoice");
+        return await response.blob();
     },
 };
 

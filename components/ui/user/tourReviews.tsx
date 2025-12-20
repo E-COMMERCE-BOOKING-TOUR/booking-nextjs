@@ -99,7 +99,7 @@ export default function TourReviews({
                             </Text>
                             <Box flex={1}>
                                 <Progress.Root
-                                    value={(category.score / 5) * 100}
+                                    value={Math.min((category.score / 5) * 100, 100)}
                                     size="sm"
                                     colorPalette="yellow"
                                 >

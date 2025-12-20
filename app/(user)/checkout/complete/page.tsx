@@ -9,7 +9,7 @@ export default async function CheckoutCompletePage() {
     if (!result.ok && result.redirectTo) {
         redirect(result.redirectTo);
     }
-
+    console.log(result)
     if (!result.ok) {
         return (
             <div className="container mx-auto max-w-2xl py-10">

@@ -24,6 +24,15 @@ const userApi = {
         });
         return res;
     },
+    addCard: async (token: string, authToken: string) => {
+        const url = "/user/payment/card";
+        const res: any = await fetchC.post(url, { token }, {
+            headers: {
+                "Authorization": "Bearer " + authToken
+            }
+        });
+        return res;
+    },
 }
 
 export { userApi }

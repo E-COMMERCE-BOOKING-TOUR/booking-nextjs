@@ -43,13 +43,18 @@ export function canAccessStep(status: string, step: "info" | "payment" | "confir
     const currentStepOrder = STEP_ORDER[status] ?? 1;
     const requiredOrder = stepRequirements[step];
 
-    // For complete page, must be exactly confirmed
+    // If confirmed, ONLY allow complete page
+    if (status === "confirmed") {
+        return step === "complete";
+    }
+
+    // For complete page, must be exactly confirmed (handled above, but keeping for clarity)
     if (step === "complete") {
         return status === "confirmed";
     }
 
     // For other pages: allow if current progress >= required step
-    // This allows going back to previous steps
+    // This allows going back to previous steps BEFORE confirmation
     return currentStepOrder >= requiredOrder;
 }
 
