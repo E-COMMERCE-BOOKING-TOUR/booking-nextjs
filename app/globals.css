@@ -2,54 +2,53 @@ input,
 textarea,
 select,
 button {
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none;
+  box-shadow: none;
 }
 
 input:hover,
 input:active,
 input:focus,
 input:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none;
+  box-shadow: none;
 }
 
 textarea:hover,
 textarea:active,
 textarea:focus,
 textarea:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none;
+  box-shadow: none;
 }
 
 select:hover,
 select:active,
 select:focus,
 select:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none;
+  box-shadow: none;
 }
 
 button:hover,
 button:active,
 button:focus,
 button:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none;
+  box-shadow: none;
 }
 
 a:hover,
 a:active,
 a:focus,
 a:focus-visible {
-  outline: none !important;
-  text-decoration: none !important;
+  outline: none;
+  text-decoration: none;
 }
 
 *:focus,
 *:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none;
 }
 
 input[type="text"],

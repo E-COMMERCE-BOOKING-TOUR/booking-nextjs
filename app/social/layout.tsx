@@ -3,6 +3,7 @@ import BlogSidebarRight from '@/components/blog-sidebar-right';
 import { Provider } from '@/components/chakra/provider';
 import { Toaster } from '@/components/chakra/toaster';
 import { Flex } from '@chakra-ui/react';
+import '../globals.css';
 
 export default function TopPageLayout({
     children,
