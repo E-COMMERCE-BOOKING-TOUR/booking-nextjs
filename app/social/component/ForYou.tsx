@@ -3,7 +3,8 @@ import { Box, Text, VStack, HStack, Button, Icon, Textarea, Image, Input, List, 
 import { useState } from "react";
 import { FiEdit, FiX, FiUsers, FiTag, FiImage, FiSmile, FiCalendar, FiMapPin } from "react-icons/fi";
 import ItemBlog from "./ItemBlog";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
+import type { IArticlePopular } from "@/types/response/article";
 import article from "@/apis/article";
 import { toaster } from "@/components/chakra/toaster";
 import { articles as testArticles } from "./dataTest";
@@ -14,29 +15,43 @@ const ForYou = () => {
     const [showDescription, setShowDescription] = useState(false);
     const [description, setDescription] = useState("");
 
-    // const { data: articles, isLoading } = useQuery({
-    //     queryKey: ['popular-articles'],
-    //     queryFn: () => article.popular(10)
-    // });
-
-    const { data: articles, isLoading } = useQuery({
-        queryKey: ['popular-articles'],
-        queryFn: async () => {
-            const list = Array.isArray(testArticles) ? testArticles.slice(0, 10) : [];
-            return list.map((a: any) => ({
-                id: a?._id?.$oid || a?._id || a?.id || a?.title,
-                title: a?.title ?? "",
-                description: a?.content ?? "",
-                image: a?.images?.[0]?.image_url || "",
-                images: Array.isArray(a?.images) ? a.images.map((img: any) => img?.image_url).filter(Boolean) : [],
-                tags: [],
-                timestamp: a?.created_at,
-                views: a?.count_views ?? 0,
-                likes: a?.count_likes ?? 0,
-                comments: a?.count_comments ?? 0,
-                user: { name: "Unknown", avatar: "" },
-            }));
-        }
+    const [seenRef] = useState(new Set<string>());
+    const { data: pages, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery<IArticlePopular[]>({
+        queryKey: ['popular-articles-infinite'],
+        initialPageParam: 0,
+        getNextPageParam: (_lastPage, allPages) => allPages.length,
+        staleTime: 1000 * 60 * 5,
+        gcTime: 1000 * 60 * 30,
+        refetchOnWindowFocus: false,
+        retry: 1,
+        queryFn: async ({ pageParam }): Promise<IArticlePopular[]> => {
+            const list = Array.isArray(testArticles) ? testArticles : [];
+            const result: IArticlePopular[] = [];
+            const attempts = new Set<number>();
+            while (result.length < 5 && attempts.size < list.length) {
+                const idx = Math.floor(Math.random() * list.length);
+                if (attempts.has(idx)) continue;
+                attempts.add(idx);
+                const a = list[idx];
+                const id = String(a?._id?.$oid || a?._id || a?.title || idx + '-' + pageParam);
+                if (seenRef.has(id)) continue;
+                seenRef.add(id);
+                result.push({
+                    id,
+                    title: a?.title ?? "",
+                    description: a?.content ?? "",
+                    image: a?.images?.[0]?.image_url || "",
+                    images: Array.isArray(a?.images) ? a.images.map((img: any) => img?.image_url).filter(Boolean) : [],
+                    tags: [],
+                    timestamp: a?.created_at,
+                    views: a?.count_views ?? 0,
+                    likes: a?.count_likes ?? 0,
+                    comments: a?.count_comments ?? 0,
+                    user: { name: "Unknown", avatar: "" },
+                });
+            }
+            return result;
+        },
     });
 
     const queryClient = useQueryClient();
@@ -93,7 +108,7 @@ const ForYou = () => {
 
     return (
         <VStack align="stretch" gap={3}>
-            <Box bg="blackAlpha.300" color="white" p={4} borderRadius="lg">
+            <Box bg="white" color="black" p={4} borderRadius="lg">
                 <HStack align="flex-start" gap={3}>
                     <Box
                         bg="pink.600"
@@ -161,8 +176,8 @@ const ForYou = () => {
             ) : (
                 <List.Root w="full" variant="marker" gap={3} display="flex" flexDirection="column" alignItems={'center'}>
                     {
-                        articles?.map((item) => (
-                            <List.Item key={item.id}
+                        pages?.pages?.flat()?.map((item: IArticlePopular, index: number) => (
+                            <List.Item key={index.toString()}
                                 w="full"
                                 display={'flex'}
                                 alignItems={'center'}
@@ -184,6 +199,9 @@ const ForYou = () => {
                             </List.Item>
                         ))
                     }
+                    <Button onClick={() => fetchNextPage()} disabled={!hasNextPage || isFetchingNextPage} variant="outline">
+                        {isFetchingNextPage ? 'Loading...' : hasNextPage ? 'Load more' : 'No more'}
+                    </Button>
                 </List.Root>
             )}
         </VStack>

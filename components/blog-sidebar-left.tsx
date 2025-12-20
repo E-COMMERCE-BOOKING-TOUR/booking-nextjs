@@ -43,10 +43,10 @@ export default function BlogSidebarLeft({
     className,
 }: Readonly<BlogSidebarLeftProps>) {
     return (
-        <Box className={className} w="full" paddingY={5}>
+        <Box className={className} w="full" h="100vh" paddingY={5} backgroundColor="whiteAlpha.400" ml={-5}>
             <Button
                 w="full"
-                paddingX={5}
+                paddingEnd={3}
                 marginBottom={15}
                 variant="ghost"
                 borderRadius="sm"
@@ -57,11 +57,11 @@ export default function BlogSidebarLeft({
                 fontWeight="semibold"
             >
                 <HStack w="full" gap={3}>
-                    <Avatar.Root size="md">
+                    <Avatar.Root size="lg">
                         <Avatar.Image src="https://picsum.photos/100/100" />
                         <Avatar.Fallback name="John Doe" />
                     </Avatar.Root>
-                    <Text>John Doe</Text>
+                    <Text fontSize={"md"}>John Doe</Text>
                 </HStack>
             </Button>
             <VStack align="stretch" gap={5}>
@@ -72,7 +72,7 @@ export default function BlogSidebarLeft({
                         <Button
                             key={it.key}
                             w="full"
-                            paddingX={10}
+                            paddingEnd={10}
                             variant="ghost"
                             borderRadius="full"
                             justifyContent="flex-start"
@@ -84,7 +84,7 @@ export default function BlogSidebarLeft({
                             <a href={it.href} className=" w-full flex items-center gap-3">
                                 <HStack w="full">
                                     <Icon as={IconComp} boxSize={5} />
-                                    <Text>{it.label}</Text>
+                                    <Text fontSize={"lg"}>{it.label}</Text>
                                 </HStack>
                             </a>
                         </Button>

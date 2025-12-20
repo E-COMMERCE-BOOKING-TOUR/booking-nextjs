@@ -41,8 +41,8 @@ const ImagesGrid = ({ data, title }: { data: string[]; title: string }) => {
     const n = data.length;
     if (n === 1) {
         return (
-            <Box borderRadius="md" overflow="hidden" mb={3} paddingX={100}>
-                <Image src={data[0]} alt={title} w="full" h="auto" objectFit="cover" />
+            <Box borderRadius="md" w="full" display="flex" justifyContent="center" alignItems="center" overflow="hidden" mb={3} paddingX={100}>
+                <Image src={data[0]} alt={title} w="300px" h="auto" objectFit="cover" />
             </Box>
         );
     }
@@ -99,7 +99,7 @@ export default function ItemBlog(props: ItemBlogProps) {
 
     const content = (
         <Box
-            bg="blackAlpha.300"
+            bg="white"
             color="black"
             borderRadius="md"
             p={4}
@@ -123,24 +123,24 @@ export default function ItemBlog(props: ItemBlogProps) {
                     </Avatar.Root>
                 )}
                 <VStack align="start" gap={0} flex={1}>
-                    <Text fontWeight="bold" color="white">{user?.name || "John Doe"}</Text>
+                    <Text fontWeight="bold" color="black">{user?.name || "John Doe"}</Text>
                     <HStack gap={2} fontSize="xs" color="gray.600">
                         {timestamp ? <Text>{dateFormat(timestamp)}</Text> : null}
                     </HStack>
                 </VStack>
                 <HStack gap={2}>
-                    <Button size="md" bg={'whiteAlpha.300'} borderWidth={1} borderColor={'white'}>
-                        <FiBookmark size={25} color="white" />
+                    <Button size="md" bg={'blackAlpha.300'} >
+                        <FiBookmark size={25} color="black" />
                     </Button>
-                    <Button size="md" bg={'whiteAlpha.300'} borderWidth={1} borderColor={'white'}>
-                        <Text color={'white'}>View Tour</Text>
-                        <FiArrowRight size={25} color="white" />
+                    <Button size="md" bg={'blackAlpha.300'} >
+                        <Text color={'black'}>View Tour</Text>
+                        <FiArrowRight size={25} color="black" />
                     </Button>
                 </HStack>
             </HStack>
 
             {/* Text */}
-            <Text fontSize="md" color="white" mb={3}>
+            <Text fontSize="md" color="black" mb={3}>
                 {title}
             </Text>
 
@@ -148,7 +148,7 @@ export default function ItemBlog(props: ItemBlogProps) {
 
             {/* Footer options */}
             <VStack align="stretch" gap={4}>
-                <Grid templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }} gap={0} w="full">
+                <Grid templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }} gap={1} w="full">
                     {[
                         { key: 'city', label: 'City', icon: FiMapPin, subLabel: 'Ho Chi Minh City' },
                         { key: 'date', label: 'Date', icon: FiCalendar, subLabel: dateFormat(timestamp) },
@@ -156,25 +156,25 @@ export default function ItemBlog(props: ItemBlogProps) {
                     ]?.map((it) => (
                         <Box
                             key={it.key}
-                            bg="blackAlpha.400"
+                            bg="blackAlpha.100"
                             borderWidth={"1px"}
-                            borderColor={'whiteAlpha.600'}
+                            borderColor={'black.600'}
                             px={3}
                             py={2}
                             minH={16}
                         >
                             <HStack gap={2} align="center">
-                                <Icon as={it.icon} color="whiteAlpha.800" />
-                                <Text color={'whiteAlpha.900'} fontWeight={'semibold'}> {it.label}</Text>
+                                <Icon as={it.icon} color="blackAlpha.800" />
+                                <Text color={'blackAlpha.900'} fontWeight={'semibold'}> {it.label}</Text>
                             </HStack>
-                            <Text mt={1} color={'whiteAlpha.800'} fontSize={'sm'} lineClamp={1}>{it.subLabel}</Text>
+                            <Text mt={1} color={'blackAlpha.800'} fontSize={'sm'} lineClamp={1}>{it.subLabel}</Text>
                         </Box>
                     ))}
                 </Grid>
                 <HStack gap={4}>
-                    <Button size="xl" variant="ghost" gap={2} color={'whiteAlpha.800'} _hover={{color: 'blackAlpha.800'}}><Icon as={FiThumbsUp}/>{likes ?? 0}</Button>
-                    <Button size="xl" variant="ghost" gap={2} color={'whiteAlpha.800'} _hover={{color: 'blackAlpha.800'}} onClick={onOpen}><Icon as={FiMessageCircle}/>{comments ?? 0}</Button>
-                    <Button size="xl" variant="ghost" gap={2} color={'whiteAlpha.800'} _hover={{color: 'blackAlpha.800'}}><Icon as={FiShare2}/>0</Button>
+                    <Button size="xl" variant="ghost" gap={2} color={'blackAlpha.800'} _hover={{color: 'blackAlpha.800'}}><Icon as={FiThumbsUp}/>{likes ?? 0}</Button>
+                    <Button size="xl" variant="ghost" gap={2} color={'blackAlpha.800'} _hover={{color: 'blackAlpha.800'}} onClick={onOpen}><Icon as={FiMessageCircle}/>{comments ?? 0}</Button>
+                    <Button size="xl" variant="ghost" gap={2} color={'blackAlpha.800'} _hover={{color: 'blackAlpha.800'}}><Icon as={FiShare2}/>0</Button>
                 </HStack>
             </VStack>
             <PopUpComment isOpen={open} onClose={onClose} tourId={Number(id)} images={images} />

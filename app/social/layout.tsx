@@ -11,14 +11,14 @@ export default function TopPageLayout({
 }>) {
     return (
         <Provider defaultTheme='dark'>
-            <Flex position="relative" flex={1} gap={5} justifyContent="center" minH="100vh" alignItems="flex-start" color="white">
-                <Flex w="275px" position="sticky" top={0} display={{ base: 'none', md: 'flex' }} justifyContent="flex-end">
+            <Flex position="relative" flex={1} gap={5} paddingEnd={5} justifyContent="center" minH="100vh" alignItems="flex-start" color="white">
+                <Flex w="375px" position="sticky" top={0} display={{ base: 'none', md: 'flex' }} justifyContent="flex-end">
                     <BlogSidebarLeft className='w-full'/>
                 </Flex>
-                <Flex w="full" maxW="800px" borderX="1px solid" borderColor="whiteAlpha.200" minH="100vh" direction="column">
+                <Flex w="full" maxW="800px" minH="100vh" direction="column">
                     {children}
                 </Flex>
-                <Flex w="275px" position="sticky" top={0} display={{ base: 'none', lg: 'flex' }}>
+                <Flex w="500px" position="sticky" top={0} display={{ base: 'none', lg: 'flex' }}>
                     <BlogSidebarRight />
                 </Flex>
             </Flex>

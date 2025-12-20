@@ -57,7 +57,7 @@ export default function BlogSidebarRight({
                   <Text fontSize="xs" color="whiteAlpha.700">{it.posts}</Text>
                 </VStack>
                 <Button variant="ghost" size="sm" px={2} aria-label="more" _hover={{ bg: "whiteAlpha.200" }}>
-                  <Icon as={MoreHorizontal} />
+                  <Icon as={MoreHorizontal} color="whiteAlpha.700" />
                 </Button>
               </HStack>
             </Box>
