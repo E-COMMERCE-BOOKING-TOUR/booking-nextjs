@@ -1,63 +1,54 @@
-body {
-  background: url('/assets/images/background/v960-ning-30.jpg') no-repeat center center fixed;
-  background-size: cover;
-  background-attachment: fixed;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
 input,
 textarea,
 select,
 button {
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none;
+  box-shadow: none;
 }
 
 input:hover,
 input:active,
 input:focus,
 input:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none;
+  box-shadow: none;
 }
 
 textarea:hover,
 textarea:active,
 textarea:focus,
 textarea:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none;
+  box-shadow: none;
 }
 
 select:hover,
 select:active,
 select:focus,
 select:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none;
+  box-shadow: none;
 }
 
 button:hover,
 button:active,
 button:focus,
 button:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none;
+  box-shadow: none;
 }
 
 a:hover,
 a:active,
 a:focus,
 a:focus-visible {
-  outline: none !important;
-  text-decoration: none !important;
+  outline: none;
+  text-decoration: none;
 }
 
 *:focus,
 *:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none;
 }
 
 input[type="text"],
@@ -112,4 +103,3 @@ select {
   border-radius: 4px;
   opacity: 1;
 }
-

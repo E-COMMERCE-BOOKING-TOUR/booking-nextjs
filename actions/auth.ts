@@ -1,8 +1,7 @@
-"use server"
+"use server";
 
-import { signOut } from "@/libs/auth/auth"
+import logoutAction from "./logout";
 
-export const logout = async () => {
-    await signOut({ redirectTo: "/" })
-}
+export const logout = logoutAction;
+
 

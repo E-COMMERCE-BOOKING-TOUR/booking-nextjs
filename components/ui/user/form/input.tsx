@@ -1,14 +1,34 @@
 'use client'
-import { Field, Input } from "@chakra-ui/react"
 
-export const InputUser = ({ label, placeholder, isRequired, helperText, value, onChange }: { label?: string, placeholder: string, isRequired?: boolean, helperText?: string, value?: string, onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void }) => {
-    return <Field.Root required={isRequired}>
-        {label && (
-            <Field.Label>
-                {label} <Field.RequiredIndicator />
-            </Field.Label>
-        )}
-        <Input placeholder={placeholder} value={value} onChange={onChange || undefined} />
-        {helperText && <Field.HelperText>{helperText}</Field.HelperText>}
-    </Field.Root>
+import { forwardRef } from "react";
+import { Field, Input, InputProps } from "@chakra-ui/react"
+
+interface InputUserProps extends Omit<InputProps, 'label'> {
+    label?: string;
+    isRequired?: boolean;
+    helperText?: string;
+    error?: string;
 }
+
+export const InputUser = forwardRef<HTMLInputElement, InputUserProps>(
+    ({ label, isRequired, helperText, error, ...inputProps }, ref) => {
+        return (
+            <Field.Root required={isRequired} invalid={!!error}>
+                {label && (
+                    <Field.Label>
+                        {label} {isRequired && <Field.RequiredIndicator />}
+                    </Field.Label>
+                )}
+
+                <Input ref={ref} {...inputProps} />
+
+                {error && <Field.ErrorText>{error}</Field.ErrorText>}
+                {helperText && !error && (
+                    <Field.HelperText>{helperText}</Field.HelperText>
+                )}
+            </Field.Root>
+        );
+    }
+);
+
+InputUser.displayName = "InputUser";

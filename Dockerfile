@@ -1,7 +1,7 @@
 # ==================================
 # Dependencies Stage
 # ==================================
-FROM node:20-alpine AS deps
+FROM node:24.11.1-slim AS deps
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ RUN npm ci
 # ==================================
 # Build Stage
 # ==================================
-FROM node:20-alpine AS builder
+FROM node:24.11.1-slim AS builder
 
 WORKDIR /app
 
@@ -30,15 +30,15 @@ RUN npm run build
 # ==================================
 # Production Stage
 # ==================================
-FROM node:20-alpine AS production
+FROM node:24.11.1-slim AS production
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 
 # Create non-root user for security
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
+RUN groupadd -r --gid 1001 nodejs && \
+    useradd -r --uid 1001 --gid nodejs --shell /bin/bash nextjs
 
 # Copy package files
 COPY package*.json ./
@@ -73,7 +73,7 @@ CMD ["npm", "start"]
 # ==================================
 # Development Stage
 # ==================================
-FROM node:20-alpine AS development
+FROM node:24.11.1-slim AS development
 
 WORKDIR /app
 

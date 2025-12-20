@@ -23,6 +23,16 @@ const authApi = {
             cache: "no-store"
         });
         return res;
+    },
+    refresh: async (refreshToken: string) => {
+        const url = "/auth/refresh";
+        const res: IResponseAuth = await fetchC.post(url, {}, {
+            cache: "no-store",
+            headers: {
+                "Authorization": "Bearer " + refreshToken
+            }
+        });
+        return res;
     }
 }
 

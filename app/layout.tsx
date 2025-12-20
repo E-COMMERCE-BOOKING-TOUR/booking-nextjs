@@ -1,9 +1,6 @@
 import TanstackProvider from "@/components/ui/tanstack";
 import { Metadata } from "next";
 import { SessionProvider } from "next-auth/react";
-import { Provider } from "@/components/chakra/provider";
-import { Toaster } from "@/components/chakra/toaster";
-import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Booking NextJS",
@@ -20,10 +17,7 @@ export default function RootLayout({
       <body>
         <SessionProvider>
           <TanstackProvider>
-            <Provider>
-              <Toaster />
-              {children}
-            </Provider>
+            {children}
           </TanstackProvider>
         </SessionProvider>
       </body>

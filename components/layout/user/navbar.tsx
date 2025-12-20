@@ -1,5 +1,8 @@
 import { Button, Flex, Image, Menu, VStack, HStack, Box } from '@chakra-ui/react';
 import NextLink from 'next/link';
+import bookingApi from '@/apis/booking';
+import { IBookingDetail } from '@/types/booking';
+import { ResumeBookingButton } from './resumeBookingButton';
 import { NavItem } from './navItem';
 import { auth } from '@/libs/auth/auth';
 import { IUserAuth } from '@/types/response/auth.type';
@@ -35,6 +38,18 @@ export default async function UserNavbar() {
   const user = session?.user;
   const isLoggedIn = !!user;
 
+  let activeBooking: IBookingDetail | null = null;
+  if (isLoggedIn && (user as any)?.accessToken) {
+    try {
+      const res = await bookingApi.getCurrent((user as any).accessToken);
+      if (res.ok) {
+        activeBooking = res.data;
+      }
+    } catch (error) {
+      console.error("Failed to fetch active booking:", error);
+    }
+  }
+
   return (
     <>
       <Flex justifyContent="space-between" alignItems="center" padding={{ base: 5, md: 10 }} position="relative">
@@ -49,7 +64,10 @@ export default async function UserNavbar() {
           {/* Authentication Buttons */}
           <Flex gap={2}>
             {isLoggedIn ? (
-              <UserMenu user={user} />
+              <>
+                <ResumeBookingButton booking={activeBooking} mr={2} />
+                <UserMenu user={user} />
+              </>
             ) : (
               <>
                 <Button asChild variant="ghost">
@@ -63,7 +81,7 @@ export default async function UserNavbar() {
           </Flex>
           {/* Mobile Drawer */}
           <Box display={{ base: "block", md: "none" }} marginLeft={3}>
-            <MobileDrawer />
+            <MobileDrawer activeBooking={activeBooking} />
           </Box>
         </HStack>
       </Flex>
@@ -71,9 +89,10 @@ export default async function UserNavbar() {
   );
 }
 
+// UserMenu needs to be a client component due to Menu's auto-generated IDs
 const UserMenu = ({ user }: { user: IUserAuth }) => {
   return (
-    <Menu.Root>
+    <Menu.Root lazyMount unmountOnExit id="user-menu">
       <Menu.Trigger asChild>
         <Button variant="outline" size="sm">
           {user.name}

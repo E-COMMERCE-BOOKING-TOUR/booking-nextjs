@@ -1,12 +1,15 @@
 'use client'
-import { Box, Flex, Heading, Text, Button, Badge, HStack, VStack, Input, Dialog, Portal } from "@chakra-ui/react";
+import { Box, Flex, Heading, Text, Button, Badge, HStack, VStack, Dialog, Portal, Input } from "@chakra-ui/react";
+import TourCalendar from "./TourCalendar";
 import StarRating from "./starRating";
-import { useMutation } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { bookingApi, CreateBookingDTO } from "@/apis/booking";
+import { CreateBookingDTO } from "@/apis/booking";
 import { toaster } from "@/components/chakra/toaster";
 import { useSession } from "next-auth/react";
+import { createBooking } from "@/actions/booking";
+import { useTransition } from "react";
+import logout from "@/actions/logout";
 
 interface TourVariant {
     id: number;
@@ -28,14 +31,39 @@ interface TourHeaderProps {
     oldPrice?: number;
     slug: string;
     variants: TourVariant[];
+    durationDays: number;
 }
 
-export default function TourHeader({ title, location, rating, price, oldPrice, slug, variants }: TourHeaderProps) {
+export default function TourHeader({ title, location, rating, price, oldPrice, slug, variants, durationDays }: TourHeaderProps) {
     const router = useRouter();
-    const { data: session, status } = useSession();
+    const { data: session } = useSession();
     const [startDate, setStartDate] = useState<string>('');
     const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
     const [paxQuantities, setPaxQuantities] = useState<Record<number, number>>({});
+    const [isPending, startTransition] = useTransition();
+
+    // Dialog states
+    const [isBookingOpen, setIsBookingOpen] = useState(false);
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
+    // Open calendar dialog (close booking dialog first)
+    const openCalendar = () => {
+        setIsBookingOpen(false);
+        setIsCalendarOpen(true); // Open immediately
+    };
+
+    // Close calendar and reopen booking dialog
+    const closeCalendar = () => {
+        setIsCalendarOpen(false);
+        setIsBookingOpen(true); // Open immediately
+    };
+
+    // Handle date selection from calendar
+    const handleDateSelect = (start: Date, end: Date) => {
+        const dateStr = start.toLocaleDateString('en-CA');
+        setStartDate(dateStr);
+        closeCalendar();
+    };
 
     // Set default variant if only one exists
     useEffect(() => {
@@ -62,39 +90,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
         }
     }, [selectedVariant]);
 
-    const createBookingMutation = useMutation({
-        mutationFn: (data: CreateBookingDTO) => bookingApi.create(data, session?.user?.accessToken),
-        onSuccess: (data: any) => {
-            toaster.create({
-                title: "Booking created.",
-                description: "Redirecting to checkout...",
-                type: "success",
-                duration: 3000,
-            });
-            router.push(`/tour/checkout?bookingId=${data.id}`);
-        },
-        onError: (error: any) => {
-            toaster.create({
-                title: "Booking failed.",
-                description: error.message || "Something went wrong.",
-                type: "error",
-                duration: 3000,
-            });
-        }
-    });
-
     const handleBooking = () => {
-        // Check if user is logged in
-        if (!session?.user?.accessToken) {
-            toaster.create({
-                title: "Please login first.",
-                description: "You need to be logged in to make a booking.",
-                type: "warning",
-                duration: 3000,
-            });
-            return;
-        }
-
         if (!startDate) {
             toaster.create({
                 title: "Please select a date.",
@@ -128,10 +124,34 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
             return;
         }
 
-        createBookingMutation.mutate({
-            startDate,
-            pax,
-            variantId: selectedVariantId
+        startTransition(async () => {
+            const result = await createBooking({
+                startDate,
+                pax,
+                variantId: selectedVariantId
+            });
+
+            if (!result.ok) {
+                toaster.create({
+                    title: "Booking failed.",
+                    description: result.message,
+                    type: "error",
+                    duration: 3000,
+                });
+
+                if (result.code === "UNAUTHENTICATED") {
+                    logout("/user-login");
+                }
+                return;
+            }
+
+            toaster.create({
+                title: "Booking created.",
+                description: "Redirecting to checkout...",
+                type: "success",
+                duration: 3000,
+            });
+            router.push('/checkout');
         });
     };
 
@@ -180,7 +200,16 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                     </VStack>
                 </HStack>
 
-                <Dialog.Root size="md">
+                {/* Book Tour Dialog */}
+                <Dialog.Root
+                    size="md"
+                    lazyMount
+                    unmountOnExit
+                    placement="center"
+                    motionPreset="slide-in-bottom"
+                    open={isBookingOpen}
+                    onOpenChange={(e) => setIsBookingOpen(e.open)}
+                >
                     <Dialog.Trigger asChild>
                         <Button
                             bg="main"
@@ -189,28 +218,43 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                             px={12}
                             py={8}
                             width="100%"
+                            onClick={() => setIsBookingOpen(true)}
                         >
                             Select Rooms
                         </Button>
                     </Dialog.Trigger>
                     <Portal>
-                        <Dialog.Backdrop />
+                        <Dialog.Backdrop bg="blackAlpha.600" backdropFilter="blur(4px)" />
                         <Dialog.Positioner>
-                            <Dialog.Content>
+                            <Dialog.Content borderRadius="xl" boxShadow="2xl">
                                 <Dialog.Header>
                                     <Dialog.Title>Book Tour</Dialog.Title>
                                 </Dialog.Header>
                                 <Dialog.Body>
                                     <VStack gap={4} align="stretch">
+                                        {/* Date Selection */}
                                         <Box>
-                                            <Text fontSize="sm" mb={1} fontWeight="bold">Date</Text>
-                                            <Input
-                                                type="date"
-                                                value={startDate}
-                                                onChange={(e) => setStartDate(e.target.value)}
-                                            />
+                                            <Text fontSize="sm" mb={2} fontWeight="bold">Select Date</Text>
+                                            {selectedVariant ? (
+                                                <>
+                                                    <Button
+                                                        variant="outline"
+                                                        width="full"
+                                                        justifyContent="flex-start"
+                                                        onClick={openCalendar}
+                                                    >
+                                                        {startDate
+                                                            ? new Date(startDate).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+                                                            : 'Click to select date...'
+                                                        }
+                                                    </Button>
+                                                </>
+                                            ) : (
+                                                <Text fontSize="sm" color="gray.500">Please select a variant first</Text>
+                                            )}
                                         </Box>
 
+                                        {/* Variant Selection */}
                                         {variants && variants.length > 1 && (
                                             <Box>
                                                 <Text fontSize="sm" mb={1} fontWeight="bold">Variant</Text>
@@ -230,6 +274,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                             </Box>
                                         )}
 
+                                        {/* Passengers */}
                                         {selectedVariant && (
                                             <Box>
                                                 <Text fontSize="sm" mb={1} fontWeight="bold">Passengers</Text>
@@ -260,9 +305,52 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                         bg="main"
                                         color="white"
                                         onClick={handleBooking}
-                                        disabled={createBookingMutation.isPending}
+                                        disabled={isPending}
                                     >
-                                        {createBookingMutation.isPending ? "Booking..." : "Confirm Booking"}
+                                        {isPending ? "Booking..." : "Confirm Booking"}
+                                    </Button>
+                                </Dialog.Footer>
+                                <Dialog.CloseTrigger />
+                            </Dialog.Content>
+                        </Dialog.Positioner>
+                    </Portal>
+                </Dialog.Root>
+
+                {/* Calendar Dialog */}
+                <Dialog.Root
+                    size="xl"
+                    lazyMount
+                    unmountOnExit
+                    placement="center"
+                    motionPreset="slide-in-bottom"
+                    open={isCalendarOpen}
+                    onOpenChange={(e) => {
+                        if (!e.open) {
+                            closeCalendar();
+                        }
+                    }}
+                >
+                    <Portal>
+                        <Dialog.Backdrop bg="blackAlpha.600" backdropFilter="blur(4px)" />
+                        <Dialog.Positioner>
+                            <Dialog.Content borderRadius="xl" boxShadow="2xl">
+                                <Dialog.Header>
+                                    <Dialog.Title>Select Travel Date</Dialog.Title>
+                                </Dialog.Header>
+                                <Dialog.Body>
+                                    {selectedVariant && (
+                                        <TourCalendar
+                                            tourSlug={slug}
+                                            variantId={selectedVariant.id}
+                                            durationDays={durationDays}
+                                            onSelectDate={handleDateSelect}
+                                            initialSelectedDate={startDate}
+                                        />
+                                    )}
+                                </Dialog.Body>
+                                <Dialog.Footer>
+                                    <Button variant="outline" onClick={closeCalendar}>
+                                        Back
                                     </Button>
                                 </Dialog.Footer>
                                 <Dialog.CloseTrigger />

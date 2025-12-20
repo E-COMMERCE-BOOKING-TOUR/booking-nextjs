@@ -71,7 +71,7 @@ export default function TourItem({
       </HStack>
       <VStack align="stretch" px={4} pb={4} gap={2}>
         <Link href={`/tour/${slug}`}>
-          <Text fontSize="lg" fontWeight="bold" lineHeight="1.3" lineClamp={2} color="gray.900" minH="3em">
+          <Text fontSize="md" fontWeight="bold" lineHeight="1.3" lineClamp={2} color="gray.900" minH="2rem">
             {title}
           </Text>
         </Link>
@@ -89,7 +89,7 @@ export default function TourItem({
               VND {originalPrice.toLocaleString()}
             </Text>
           )}
-          <Text fontSize="xl" fontWeight="bold" color="gray.900">
+          <Text fontSize="md" fontWeight="bold" color="gray.900">
             VND {currentPrice.toLocaleString()}
           </Text>
         </HStack>

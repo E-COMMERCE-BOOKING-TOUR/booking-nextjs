@@ -3,6 +3,13 @@ import { ITour } from "@/types/response/tour.type";
 import { IBaseResponseData } from "@/types/base.type";
 import { ITourLatest, ITourPopular, ITourDetail, ITourReview, ITourReviewCategory, IRelatedTour, ITourSearchResponse, ITourPrice } from "@/types/response/tour";
 
+export interface ITourSession {
+    date: string;
+    status: 'open' | 'full' | 'closed';
+    capacity_available: number;
+    price: number;
+}
+
 export type ITourSearchParams = {
     keyword?: string;
     destinations?: string[];
@@ -136,6 +143,17 @@ const tour = {
         const url = `/user/tour/${slug}/get-prices`;
         const res = await fetchC.get(url, { cache: 'no-store' });
         return res;
+    },
+    getSessions: async (slug: string, variantId: number, startDate?: string, endDate?: string): Promise<ITourSession[]> => {
+        const query = new URLSearchParams({
+            variant_id: variantId.toString(),
+        });
+        if (startDate) query.append('start_date', startDate);
+        if (endDate) query.append('end_date', endDate);
+
+        const url = `/user/tour/${slug}/sessions?${query.toString()}`;
+        const res = await fetchC.get(url, { cache: 'no-store' });
+        return Array.isArray(res) ? res : (res?.data || []);
     }
 }
 

@@ -96,7 +96,7 @@ export default function SearchInput({ defaultDestination = "" }: SearchInputProp
       gap={2}
       alignItems="stretch"
       mx="auto"
-      mb={10}
+      mb={5}
     >
       {/* Destination Field */}
       <VStack

@@ -25,7 +25,7 @@ export default async function TopPage() {
             title="Explore Popular Cities"
             description="Discover the best destinations for your next trip"
           />
-          <Grid templateColumns="repeat(4, 1fr)" gap={4}>
+          <Grid templateColumns={{ sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)", xl: "repeat(5, 1fr)" }} gap={4} paddingBottom="1rem">
             {Array.isArray(popularTours) && popularTours.length > 0 ? (
               popularTours.map((tourItem) => (
                 <TourItem
@@ -101,8 +101,8 @@ export default async function TopPage() {
             </Text>
           )}
         </div> */}
-      </Container>
-      <VStack borderBottomRadius="100px" backgroundImage="url('/assets/images/background/v960-ning-30.jpg')" backgroundSize="cover" backgroundPosition="center" backgroundRepeat="no-repeat" backgroundAttachment="fixed" paddingBottom="5rem" position="relative" zIndex={2}>
+      </Container >
+      <VStack borderBottomRadius="calc(100vw / 16)" backgroundColor="white" paddingBottom="calc(100vw / 16)" position="relative" zIndex={2}>
         <Container maxW="2xl" mx="auto">
           <HeaderList
             title="Trending destinations"
