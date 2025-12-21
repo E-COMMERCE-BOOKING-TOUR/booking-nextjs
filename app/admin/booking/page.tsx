@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardAction } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search} from "lucide-react";
+import { Search } from "lucide-react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 type ApiBooking = {
@@ -36,7 +36,7 @@ export default function AdminBooking() {
 
   const StatusSelect = ({ value, onValueChange }: { value: ApiBooking["status"]; onValueChange: (v: ApiBooking["status"]) => void }) => (
     <div onClick={(e) => e.stopPropagation()}>
-      <Select value={value} onValueChange={(v) => onValueChange(v as ApiBooking["status"]) }>
+      <Select value={value} onValueChange={(v) => onValueChange(v as ApiBooking["status"])}>
         <SelectTrigger className={statusBadgeCls(value)}>
           <SelectValue placeholder="Status" />
         </SelectTrigger>
@@ -53,7 +53,7 @@ export default function AdminBooking() {
 
   const PaymentStatusSelect = ({ value, onValueChange }: { value: ApiBooking["payment_status"]; onValueChange: (v: ApiBooking["payment_status"]) => void }) => (
     <div onClick={(e) => e.stopPropagation()}>
-      <Select value={value} onValueChange={(v) => onValueChange(v as ApiBooking["payment_status"]) }>
+      <Select value={value} onValueChange={(v) => onValueChange(v as ApiBooking["payment_status"])}>
         <SelectTrigger className={paymentBadgeCls(value)}>
           <SelectValue placeholder="Payment" />
         </SelectTrigger>
@@ -90,7 +90,7 @@ export default function AdminBooking() {
     document.addEventListener("keydown", onKey);
     return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
   }, [detailOpen]);
-  
+
   return (
     <div className="flex flex-col gap-4">
       <CardAction className="w-full flex items-center gap-2 justify-between">

@@ -10,7 +10,7 @@ export default function AdminDashboardLayout({
     return (
         <SidebarProvider>
             <AppSidebar />
-            <main className="w-full flex-1 p-4">
+            <main className="w-full flex-1 p-7">
                 {/* <SidebarTrigger size={"icon-lg"} /> */}
                 {children}
             </main>
