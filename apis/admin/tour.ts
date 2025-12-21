@@ -23,9 +23,6 @@ export const adminTourApi = {
     uploadImage: async (formData: FormData, token?: string) => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
-        // Note: fetchC.postFormData might handle headers differently or need specific content-type handling override
-        // usually FormData sets its own Content-Type with boundary, so we might need to be careful not to override it if getAuthHeaders sets 'Content-Type': 'application/json'
-        // But getAuthHeaders likely just returns Authorization. Let's assume it's safe or fetchC handles merging.
         return fetchC.postFormData("/admin/tour/upload", formData, { headers: authHeaders.headers });
     },
     create: async (data: any, token?: string) => {
@@ -33,23 +30,32 @@ export const adminTourApi = {
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.post("/admin/tour/create", data, { headers: authHeaders.headers });
     },
-
-    // Variants
-    addVariant: async (tourId: number, data: any, token?: string) => {
+    getAll: async (params?: { keyword?: string, status?: string, page?: number, limit?: number, sortBy?: string, sortOrder?: string }, token?: string) => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
-        return fetchC.post(`/admin/tour/addVariant/${tourId}`, data, { headers: authHeaders.headers });
+        return fetchC.get("/admin/tour/getAll", {
+            headers: authHeaders.headers,
+            params: params as any
+        });
     },
-    setVariantPaxTypePrice: async (data: { tour_variant_id: number, pax_type_id: number, price: number }, token?: string) => {
+    getById: async (id: number | string, token?: string) => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
-        return fetchC.post("/admin/tour/setVariantPaxTypePrice", data, { headers: authHeaders.headers });
+        return fetchC.get(`/admin/tour/getById/${id}`, { headers: authHeaders.headers });
     },
-
-    // Sessions
-    bulkAddSessions: async (sessions: any[], token?: string) => {
+    update: async (id: number | string, data: any, token?: string) => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
-        return fetchC.post("/admin/tour/bulkAddSessions", sessions, { headers: authHeaders.headers });
-    }
+        return fetchC.put(`/admin/tour/update/${id}`, data, { headers: authHeaders.headers });
+    },
+    updateStatus: async (id: number | string, status: string, token?: string) => {
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+        return fetchC.patch(`/admin/tour/status/${id}`, { status }, { headers: authHeaders.headers });
+    },
+    remove: async (id: number | string, token?: string) => {
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+        return fetchC.delete(`/admin/tour/remove/${id}`, { headers: authHeaders.headers });
+    },
 };

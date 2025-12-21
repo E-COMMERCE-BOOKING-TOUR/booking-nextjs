@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Ban, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Ban, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/libs/utils';
 
@@ -9,6 +9,7 @@ interface SchedulingCalendarProps {
     ranges: { start: string, end: string }[];
     excluded: string[];
     onToggleDate: (date: string) => void;
+    durationDays?: number;
 }
 
 const DAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
@@ -17,7 +18,7 @@ const MONTHS = [
     'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
 ];
 
-export default function SchedulingCalendar({ ranges, excluded, onToggleDate }: SchedulingCalendarProps) {
+export default function SchedulingCalendar({ ranges, excluded, onToggleDate, durationDays = 0 }: SchedulingCalendarProps) {
     const [currentDate, setCurrentDate] = useState(new Date());
 
     const year = currentDate.getFullYear();
@@ -59,11 +60,33 @@ export default function SchedulingCalendar({ ranges, excluded, onToggleDate }: S
                 dateStr,
                 day: i,
                 isInRange: isDateInRange(dateStr),
-                isExcluded: excluded.includes(dateStr)
+                isExcluded: excluded.includes(dateStr),
+                isUnbookable: false // Placeholder
             });
         }
+
+        // Second pass for multi-day tours to detect unbookable sessions
+        if (durationDays > 1) {
+            days.forEach((d, idx) => {
+                if (d && d.isInRange && !d.isExcluded) {
+                    // Check next (durationDays - 1) days
+                    for (let j = 1; j < durationDays; j++) {
+                        const checkDate = new Date(d.date);
+                        checkDate.setDate(checkDate.getDate() + j);
+                        const checkDateStr = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
+
+                        const isNextDayAvailable = isDateInRange(checkDateStr) && !excluded.includes(checkDateStr);
+                        if (!isNextDayAvailable) {
+                            d.isUnbookable = true;
+                            break;
+                        }
+                    }
+                }
+            });
+        }
+
         return days;
-    }, [year, month, ranges, excluded]);
+    }, [year, month, ranges, excluded, durationDays]);
 
     return (
         <div className="w-full bg-card/20 border border-white/5 rounded-2xl p-4 backdrop-blur-sm">
@@ -113,8 +136,11 @@ export default function SchedulingCalendar({ ranges, excluded, onToggleDate }: S
                         >
                             <span className="text-sm font-medium z-10">{d.day}</span>
                             {isActive && (
-                                <div className="absolute top-1 right-1">
-                                    <div className="h-1 w-1 rounded-full bg-emerald-500" />
+                                <div className="absolute top-1 right-1 flex flex-col items-end gap-1">
+                                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                    {d.isUnbookable && (
+                                        <AlertTriangle className="h-3 w-3 text-amber-500 animate-pulse" />
+                                    )}
                                 </div>
                             )}
                             {isExcluded && (
@@ -133,6 +159,10 @@ export default function SchedulingCalendar({ ranges, excluded, onToggleDate }: S
                 <div className="flex items-center gap-1.5">
                     <div className="h-2 w-2 rounded-full bg-red-500" />
                     <span>Đã loại trừ (Excluded)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <AlertTriangle className="h-3 w-3 text-amber-500" />
+                    <span>Thiếu ngày liên tiếp (Unbookable)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <div className="h-2 w-2 rounded-full bg-white/10" />

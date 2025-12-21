@@ -5,6 +5,7 @@ import { useState, useMemo } from "react";
 import tour, { ITourSession } from "@/apis/tour";
 import { useQuery } from "@tanstack/react-query";
 import { BsChevronLeft, BsChevronRight } from "react-icons/bs";
+import { toaster } from "@/components/chakra/toaster";
 
 interface TourCalendarProps {
     tourSlug: string;
@@ -79,9 +80,32 @@ export default function TourCalendar({ tourSlug, variantId, durationDays, onSele
         const dateStr = formatDate(date);
         const session = sessionMap.get(dateStr);
 
-        // Check if disabled
+        // Check if start date is disabled
         if (!session || session.status !== 'open' || session.capacity_available <= 0) return;
         if (date < new Date(new Date().setHours(0, 0, 0, 0))) return;
+
+        // Check if any day in the range is "off" (disabled)
+        if (durationDays > 1) {
+            for (let i = 1; i < durationDays; i++) {
+                const checkDate = new Date(date);
+                checkDate.setDate(checkDate.getDate() + i);
+                const checkDateStr = formatDate(checkDate);
+                const checkSession = sessionMap.get(checkDateStr);
+
+                // A day is considered "off" if there's no session or it's not open
+                const isOff = !checkSession || checkSession.status !== 'open' || checkSession.capacity_available <= 0;
+
+                if (isOff) {
+                    toaster.create({
+                        title: "Selected range includes off days",
+                        description: `The tour cannot run on ${checkDate.toLocaleDateString('vi-VN')}. Please choose another start date.`,
+                        type: "error",
+                        duration: 5000,
+                    });
+                    return;
+                }
+            }
+        }
 
         setSelectedStartDate(date);
 

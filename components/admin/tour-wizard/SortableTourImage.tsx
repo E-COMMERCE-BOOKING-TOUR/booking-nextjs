@@ -51,6 +51,7 @@ const SortableTourImage: React.FC<SortableTourImageProps> = ({ id, image, onRemo
                         {image.file ? 'Chờ upload' : 'Đã upload'}
                     </div>
                     <button
+                        type="button"
                         onClick={(e) => {
                             e.stopPropagation();
                             onRemove();

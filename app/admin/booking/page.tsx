@@ -1,200 +1,386 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { adminBookingApi } from '@/apis/admin/booking';
+import { useSession } from 'next-auth/react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Search,
+  MoreHorizontal,
+  Eye,
+  Trash2,
+  Calendar,
+  Users,
+  CreditCard,
+  ArrowUpDown,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Filter
+} from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from 'sonner';
+import Link from 'next/link';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-import { Card, CardContent, CardAction } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { useForm } from 'react-hook-form';
 
-type ApiBooking = {
-  id: number;
-  contact_name: string;
-  contact_email: string;
-  contact_phone: string;
-  total_amount: number;
-  status: "pending" | "confirmed" | "cancelled" | "expired";
-  payment_status: "unpaid" | "paid" | "refunded" | "partial";
-  user_id: number;
-  currency_id: number;
-  booking_payment_id: number;
+const StatusBadge = ({ status }: { status: string }) => {
+  switch (status) {
+    case 'confirmed':
+      return <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Đã xác nhận</Badge>;
+    case 'pending_confirm':
+      return <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">Chờ xác nhận</Badge>;
+    case 'pending_payment':
+      return <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20">Chờ thanh toán</Badge>;
+    case 'cancelled':
+      return <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20">Đã hủy</Badge>;
+    case 'expired':
+      return <Badge className="bg-slate-500/10 text-slate-500 border-slate-500/20">Hết hạn</Badge>;
+    default:
+      return <Badge className="bg-slate-500/10 text-slate-500 border-slate-500/20">{status}</Badge>;
+  }
 };
 
-export default function AdminBooking() {
-  const [rows, setRows] = useState<ApiBooking[]>([]);
-  const selectBase = "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium";
-  const statusBadgeCls = (s: ApiBooking["status"]) => s === "confirmed" ? "bg-green-500/15" : s === "pending" ? "bg-orange-500/15" : s === "cancelled" ? "bg-red-500/15" : "bg-gray-500/15";
-  const statusBadgeTxtCls = (s: ApiBooking["status"]) => s === "confirmed" ? "text-green-700" : s === "pending" ? "text-orange-700" : s === "cancelled" ? "text-red-700" : "text-gray-700";
-  const paymentBadgeCls = (s: ApiBooking["payment_status"]) => s === "paid" ? "bg-green-500/15" : s === "unpaid" ? "bg-red-500/15" : s === "refunded" ? "bg-purple-500/15" : "bg-orange-500/15";
-  const paymentBadgeTxtCls = (s: ApiBooking["payment_status"]) => s === "paid" ? "text-green-700" : s === "unpaid" ? "text-red-700" : s === "refunded" ? "text-purple-700" : "text-orange-700";
-  const statusOptions: ApiBooking["status"][] = ["pending", "confirmed", "cancelled", "expired"];
-  const paymentOptions: ApiBooking["payment_status"][] = ["unpaid", "paid", "refunded", "partial"];
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [detailRow, setDetailRow] = useState<ApiBooking | null>(null);
-  const detailRef = useRef<HTMLDivElement | null>(null);
+const PaymentBadge = ({ status }: { status: string }) => {
+  switch (status) {
+    case 'paid':
+      return <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Đã thanh toán</Badge>;
+    case 'unpaid':
+      return <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">Chưa thanh toán</Badge>;
+    case 'refunded':
+      return <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20">Đã hoàn tiền</Badge>;
+    default:
+      return <Badge className="bg-slate-500/10 text-slate-500 border-slate-500/20">{status}</Badge>;
+  }
+};
 
-  const StatusSelect = ({ value, onValueChange }: { value: ApiBooking["status"]; onValueChange: (v: ApiBooking["status"]) => void }) => (
-    <div onClick={(e) => e.stopPropagation()}>
-      <Select value={value} onValueChange={(v) => onValueChange(v as ApiBooking["status"])}>
-        <SelectTrigger className={statusBadgeCls(value)}>
-          <SelectValue placeholder="Status" />
-        </SelectTrigger>
-        <SelectContent>
-          {statusOptions.map((s) => (
-            <SelectItem key={s} value={s}>
-              <span className={statusBadgeTxtCls(s).replace(selectBase, "")}>{s}</span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
+interface FilterValues {
+  searchTerm: string;
+  statusFilter: string;
+  paymentFilter: string;
+  dateFilter: string;
+}
 
-  const PaymentStatusSelect = ({ value, onValueChange }: { value: ApiBooking["payment_status"]; onValueChange: (v: ApiBooking["payment_status"]) => void }) => (
-    <div onClick={(e) => e.stopPropagation()}>
-      <Select value={value} onValueChange={(v) => onValueChange(v as ApiBooking["payment_status"])}>
-        <SelectTrigger className={paymentBadgeCls(value)}>
-          <SelectValue placeholder="Payment" />
-        </SelectTrigger>
-        <SelectContent>
-          {paymentOptions.map((p) => (
-            <SelectItem key={p} value={p}>
-              <span className={paymentBadgeTxtCls(p).replace(selectBase, "")}>{p}</span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
+export default function AdminBookingListPage() {
+  const { data: session, status: sessionStatus } = useSession();
+  const token = session?.user?.accessToken;
+  const queryClient = useQueryClient();
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({
+    searchTerm: '',
+    statusFilter: 'all',
+    paymentFilter: 'all',
+    dateFilter: ''
+  });
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch("http://localhost:3000/api/v1/booking/getAll");
-        const data = await res.json();
-        setRows(Array.isArray(data) ? data : []);
-      } catch (e) {
-        setRows([]);
-      }
-    })();
-  }, []);
+  const { register, handleSubmit, setValue, watch, reset } = useForm<FilterValues>({
+    defaultValues: appliedFilters
+  });
 
-  useEffect(() => {
-    const onDown = (e: MouseEvent) => {
-      if (!detailRef.current) return;
-      if (detailOpen && !detailRef.current.contains(e.target as Node)) setDetailOpen(false);
+  const currentStatus = watch('statusFilter');
+  const currentPayment = watch('paymentFilter');
+
+  const { data: bookings = [], isLoading: isQueryLoading } = useQuery({
+    queryKey: ['admin-bookings', token],
+    queryFn: () => adminBookingApi.getAll(token),
+    enabled: !!token,
+  });
+
+  const isLoading = sessionStatus === 'loading' || isQueryLoading;
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => adminBookingApi.remove(id, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
+      toast.success('Xóa đơn hàng thành công');
+      setDeleteId(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Không thể xóa đơn hàng');
+    }
+  });
+
+  const confirmMutation = useMutation({
+    mutationFn: (id: number) => adminBookingApi.confirm(id, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
+      toast.success('Xác nhận đơn hàng thành công');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Không thể xác nhận đơn hàng');
+    }
+  });
+
+  const onSearch = (data: FilterValues) => {
+    setAppliedFilters(data);
+  };
+
+  const clearFilters = () => {
+    const defaultValues = {
+      searchTerm: '',
+      statusFilter: 'all',
+      paymentFilter: 'all',
+      dateFilter: ''
     };
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setDetailOpen(false); };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
-  }, [detailOpen]);
+    reset(defaultValues);
+    setAppliedFilters(defaultValues);
+  };
+
+  const filteredBookings = (bookings as any[]).filter(b => {
+    const { searchTerm, statusFilter, paymentFilter, dateFilter } = appliedFilters;
+
+    const matchesSearch = !searchTerm ||
+      b.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      b.contact_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      b.id.toString().includes(searchTerm);
+
+    const matchesStatus = statusFilter === 'all' || b.status === statusFilter;
+    const matchesPayment = paymentFilter === 'all' || b.payment_status === paymentFilter;
+
+    let matchesDate = true;
+    if (dateFilter) {
+      const bookingDate = new Date(b.created_at).toISOString().split('T')[0];
+      matchesDate = bookingDate === dateFilter;
+    }
+
+    return matchesSearch && matchesStatus && matchesPayment && matchesDate;
+  });
 
   return (
-    <div className="flex flex-col gap-4">
-      <CardAction className="w-full flex items-center gap-2 justify-between">
-        <div className="hidden sm:flex items-center gap-2">
-          <div className="relative">
-            <Search className="text-muted-foreground absolute left-2 top-1/2 size-4 -translate-y-1/2" />
-            <Input id="search" placeholder="Tìm kiếm booking" className="pl-8 w-[240px]" />
-          </div>
+    <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Quản Lý Đơn Hàng</h1>
+          <p className="text-muted-foreground mt-1 text-lg">Theo dõi và xử lý các yêu cầu đặt tour từ khách hàng.</p>
         </div>
-      </CardAction>
-      <Card>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="text-left text-muted-foreground">
-                  <th className="py-3 font-medium">ID</th>
-                  <th className="py-3 font-medium">Contact Name</th>
-                  <th className="py-3 font-medium">Email</th>
-                  <th className="py-3 font-medium">Phone</th>
-                  <th className="py-3 font-medium">Total</th>
-                  <th className="py-3 font-medium">Status</th>
-                  <th className="py-3 font-medium">Payment</th>
-                  <th className="py-3 font-medium">User ID</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {rows.map((row) => (
-                  <tr key={row.id} onClick={() => { setDetailRow(row); setDetailOpen(true); }} className="cursor-pointer hover:bg-muted/30 transition-colors">
-                    <td className="py-3 font-medium">{row.id}</td>
-                    <td className="py-3">{row.contact_name}</td>
-                    <td className="py-3">{row.contact_email}</td>
-                    <td className="py-3">{row.contact_phone}</td>
-                    <td className="py-3">{row.total_amount.toLocaleString()}</td>
-                    <td className="py-3">
-                      <StatusSelect value={row.status} onValueChange={(v) => setRows(prev => prev.map(r => r.id === row.id ? { ...r, status: v } : r))} />
-                    </td>
-                    <td className="py-3">
-                      <PaymentStatusSelect value={row.payment_status} onValueChange={(v) => setRows(prev => prev.map(r => r.id === row.id ? { ...r, payment_status: v } : r))} />
-                    </td>
-                    <td className="py-3">{row.user_id}</td>
+      </div>
+
+      <form onSubmit={handleSubmit(onSearch)} className="space-y-4">
+        <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
+          <CardHeader className="border-b border-white/5 pb-6">
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  placeholder="Tìm kiếm theo tên, email hoặc mã đơn..."
+                  className="pl-10 bg-white/5 border-white/10"
+                  {...register('searchTerm')}
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Select
+                  value={currentStatus}
+                  onValueChange={(val) => setValue('statusFilter', val)}
+                >
+                  <SelectTrigger className="w-[160px] bg-white/5 border-white/10">
+                    <SelectValue placeholder="Trạng thái" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                    <SelectItem value="pending_confirm">Chờ xác nhận</SelectItem>
+                    <SelectItem value="confirmed">Đã xác nhận</SelectItem>
+                    <SelectItem value="pending_payment">Chờ thanh toán</SelectItem>
+                    <SelectItem value="cancelled">Đã hủy</SelectItem>
+                    <SelectItem value="expired">Hết hạn</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={currentPayment}
+                  onValueChange={(val) => setValue('paymentFilter', val)}
+                >
+                  <SelectTrigger className="w-[180px] bg-white/5 border-white/10">
+                    <SelectValue placeholder="Thanh toán" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả thanh toán</SelectItem>
+                    <SelectItem value="paid">Đã thanh toán</SelectItem>
+                    <SelectItem value="unpaid">Chưa thanh toán</SelectItem>
+                    <SelectItem value="refunded">Đã hoàn tiền</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground z-10" />
+                  <Input
+                    type="date"
+                    className="pl-10 bg-white/5 border-white/10 w-[180px] [color-scheme:dark]"
+                    {...register('dateFilter')}
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 ml-auto">
+                  <Button type="submit" className="bg-primary hover:bg-primary/90">
+                    <Search className="mr-2 size-4" />
+                    Tìm kiếm
+                  </Button>
+
+                  {(appliedFilters.statusFilter !== 'all' || appliedFilters.paymentFilter !== 'all' || appliedFilters.dateFilter !== '' || appliedFilters.searchTerm !== '') && (
+                    <Button
+                      variant="ghost"
+                      type="button"
+                      onClick={clearFilters}
+                      className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
+                    >
+                      Xóa lọc
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-white/5 border-b border-white/5">
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Mã Đơn</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Khách Hàng</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Tour</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Trạng Thái</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Thanh Toán</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Tổng Tiền</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Ngày Đặt</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Thao Tác</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-            <div>Showing 1–8 of 238</div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm">Previous</Button>
-              <Button variant="secondary" size="sm">1</Button>
-              <Button variant="ghost" size="sm">2</Button>
-              <Button variant="ghost" size="sm">3</Button>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {isLoading ? (
+                    [...Array(5)].map((_, i) => (
+                      <tr key={i} className="animate-pulse">
+                        <td colSpan={8} className="px-6 py-4 h-16 bg-white/5"></td>
+                      </tr>
+                    ))
+                  ) : filteredBookings.map((booking) => (
+                    <tr key={booking.id} className="group hover:bg-white/[0.05] transition-all">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-xs font-mono font-bold text-primary">#{booking.id}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-foreground">{booking.contact_name}</span>
+                          <span className="text-[10px] text-muted-foreground">{booking.contact_email}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm font-medium text-foreground truncate max-w-[180px] block">
+                          {(booking as any).booking_items?.[0]?.tour_title || 'N/A'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <StatusBadge status={booking.status} />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <PaymentBadge status={booking.payment_status} />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm font-black text-foreground">
+                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(booking.total_amount))}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-xs text-muted-foreground font-medium">
+                          {new Date(booking.created_at).toLocaleDateString('vi-VN')}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="size-8 p-0">
+                              <MoreHorizontal className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
+                            <DropdownMenuItem asChild>
+                              <Link href={`/admin/booking/edit/${booking.id}`} className="cursor-pointer">
+                                <Eye className="mr-2 size-4" />
+                                Chi tiết
+                              </Link>
+                            </DropdownMenuItem>
+                            {booking.status === 'pending_confirm' && (
+                              <DropdownMenuItem
+                                onClick={() => confirmMutation.mutate(booking.id)}
+                                className="text-emerald-500 cursor-pointer"
+                              >
+                                <CheckCircle2 className="mr-2 size-4" />
+                                Xác nhận
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => setDeleteId(booking.id)}
+                              className="text-rose-500 cursor-pointer"
+                            >
+                              <Trash2 className="mr-2 size-4" />
+                              Xóa
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))}
+                  {!isLoading && filteredBookings.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="px-6 py-12 text-center text-muted-foreground italic">
+                        Không có đơn hàng nào được tìm thấy.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-      {detailOpen && detailRow && (
-        <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/50" />
-          <div className="fixed inset-0 flex items-center justify-center p-4">
-            <div ref={detailRef} className="bg-background rounded-md border shadow-xl w-[700px] max-w-[95vw]">
-              <div className="p-2 border-b">
-                <div className="flex items-center justify-between">
-                  <div className="text-lg font-semibold">Booking Detail</div>
-                  <Button variant="ghost" size="sm" onClick={() => setDetailOpen(false)}>Đóng</Button>
-                </div>
-              </div>
-              <div className="p-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div className="p-2 rounded-md border bg-muted/20">
-                    <div className="text-xs text-muted-foreground">Contact Name</div>
-                    <div className="text-sm font-medium">{detailRow.contact_name}</div>
-                  </div>
-                  <div className="p-2 rounded-md border bg-muted/20">
-                    <div className="text-xs text-muted-foreground">Contact Email</div>
-                    <div className="text-sm font-medium">{detailRow.contact_email}</div>
-                  </div>
-                  <div className="p-2 rounded-md border bg-muted/20">
-                    <div className="text-xs text-muted-foreground">Contact Phone</div>
-                    <div className="text-sm font-medium">{detailRow.contact_phone}</div>
-                  </div>
-                  <div className="p-2 rounded-md border bg-muted/20">
-                    <div className="text-xs text-muted-foreground">Total Amount</div>
-                    <div className="text-sm font-medium">{detailRow.total_amount.toLocaleString()}</div>
-                  </div>
-                  <div className="p-2 rounded-md border bg-muted/20">
-                    <div className="text-xs text-muted-foreground">Status</div>
-                    <div className="text-sm font-medium">{detailRow.status}</div>
-                  </div>
-                  <div className="p-2 rounded-md border bg-muted/20">
-                    <div className="text-xs text-muted-foreground">Payment Status</div>
-                    <div className="text-sm font-medium">{detailRow.payment_status}</div>
-                  </div>
-                  <div className="p-2 rounded-md border bg-muted/20 md:col-span-2">
-                    <div className="text-xs text-muted-foreground">IDs</div>
-                    <div className="text-sm font-medium">User: {detailRow.user_id} • Currency: {detailRow.currency_id} • Booking Payment: {detailRow.booking_payment_id}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+          </CardContent>
+        </Card>
+      </form>
+
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hành động này không thể hoàn tác. Đơn hàng sẽ bị xóa vĩnh viễn khỏi hệ thống.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteId && deleteMutation.mutate(deleteId)}
+              className="bg-rose-500 hover:bg-rose-600"
+            >
+              Xóa ngay
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div >
   );
 }

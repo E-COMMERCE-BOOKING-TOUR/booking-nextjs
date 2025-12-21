@@ -81,9 +81,25 @@ const fetchC = {
         }
         return res;
     },
-    delete: async (url: string, params?: { [key: string]: string }, init?: RequestInit) => {
-        const queryString = params ? "?" + new URLSearchParams(params).toString() : "";
-        const data = await fetch((initialFetch.BaseURL || "") + url + queryString, {
+    patch: async (url: string, params?: object, init?: Option) => {
+        const data = await fetch((init?.BaseURL ?? initialFetch.BaseURL) + url, {
+            ...init,
+            method: "PATCH",
+            body: JSON.stringify(params),
+            headers: {
+                ...initialFetch.headers,
+                ...init?.headers
+            },
+        });
+        const res = await data.json();
+        if (!data.ok) {
+            throw new Error(res.message || res.data?.msg || "Đã xảy ra lỗi")
+        }
+        return res;
+    },
+    delete: async (url: string, init?: Option) => {
+        const queryString = init?.params ? "?" + new URLSearchParams(init.params).toString() : "";
+        const data = await fetch((init?.BaseURL ?? initialFetch.BaseURL) + url + queryString, {
             ...init,
             method: "DELETE",
             headers: {

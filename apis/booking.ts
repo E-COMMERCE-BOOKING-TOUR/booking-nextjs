@@ -6,6 +6,7 @@ export type CreateBookingDTO = {
     startDate: string;
     pax: { paxTypeId: number; quantity: number }[];
     variantId?: number;
+    tourSessionId?: number;
 };
 
 export type UpdateContactDTO = {

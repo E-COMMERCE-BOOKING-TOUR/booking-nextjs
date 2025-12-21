@@ -17,6 +17,8 @@ export interface IBookingDetail {
     tour_image: string;
     tour_location: string;
     start_date: string;
+    session_start_time?: string;
+    session_end_time?: string;
     duration_days: number;
     duration_hours: number;
     hold_expires_at?: string;

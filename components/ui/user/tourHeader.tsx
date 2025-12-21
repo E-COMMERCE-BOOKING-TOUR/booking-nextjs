@@ -10,6 +10,7 @@ import { useSession } from "next-auth/react";
 import { createBooking } from "@/actions/booking";
 import { useTransition } from "react";
 import logout from "@/actions/logout";
+import { tourApi } from "@/apis/tour";
 
 interface TourVariant {
     id: number;
@@ -42,6 +43,9 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
     const [paxQuantities, setPaxQuantities] = useState<Record<number, number>>({});
     const [isPending, startTransition] = useTransition();
 
+    const [availableSessions, setAvailableSessions] = useState<any[]>([]);
+    const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
+
     // Dialog states
     const [isBookingOpen, setIsBookingOpen] = useState(false);
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -59,10 +63,35 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
     };
 
     // Handle date selection from calendar
-    const handleDateSelect = (start: Date, end: Date) => {
+    const handleDateSelect = async (start: Date, end: Date) => {
         const dateStr = start.toLocaleDateString('en-CA');
         setStartDate(dateStr);
         closeCalendar();
+
+        // Fetch sessions for this date specifically to get time slots
+        if (selectedVariantId) {
+            try {
+                // We use the same getSessions API but specific for one day
+                const res = await tourApi.getSessions(slug, selectedVariantId, dateStr, dateStr);
+                if (res && res.length > 0) {
+                    // Sort by time
+                    const sorted = res.sort((a: any, b: any) => (a.start_time || '').localeCompare(b.start_time || ''));
+                    setAvailableSessions(sorted);
+                    // If only one session, select it automatically
+                    if (sorted.length === 1) {
+                        setSelectedSessionId(sorted[0].id);
+                    } else {
+                        setSelectedSessionId(null);
+                    }
+                } else {
+                    setAvailableSessions([]);
+                    setSelectedSessionId(null);
+                }
+            } catch (error) {
+                console.error("Failed to fetch sessions", error);
+                setAvailableSessions([]);
+            }
+        }
     };
 
     // Set default variant if only one exists
@@ -108,6 +137,15 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
             return;
         }
 
+        if (availableSessions.length > 0 && !selectedSessionId) {
+            toaster.create({
+                title: "Please select a time slot.",
+                type: "warning",
+                duration: 3000,
+            });
+            return;
+        }
+
         const pax = Object.entries(paxQuantities)
             .filter(([_, quantity]) => quantity > 0)
             .map(([paxTypeId, quantity]) => ({
@@ -128,7 +166,8 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
             const result = await createBooking({
                 startDate,
                 pax,
-                variantId: selectedVariantId
+                variantId: selectedVariantId,
+                tourSessionId: selectedSessionId || undefined
             });
 
             if (!result.ok) {
@@ -233,35 +272,52 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                 <Dialog.Body>
                                     <VStack gap={4} align="stretch">
                                         {/* Date Selection */}
-                                        <Box>
-                                            <Text fontSize="sm" mb={2} fontWeight="bold">Select Date</Text>
-                                            {selectedVariant ? (
-                                                <>
-                                                    <Button
-                                                        variant="outline"
-                                                        width="full"
-                                                        justifyContent="flex-start"
-                                                        onClick={openCalendar}
-                                                    >
-                                                        {startDate
-                                                            ? new Date(startDate).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-                                                            : 'Click to select date...'
-                                                        }
-                                                    </Button>
-                                                </>
-                                            ) : (
-                                                <Text fontSize="sm" color="gray.500">Please select a variant first</Text>
-                                            )}
-                                        </Box>
+                                        <Text fontSize="sm" mb={2} fontWeight="bold">Select Date</Text>
+                                        {selectedVariant ? (
+                                            <VStack align="stretch" gap={2}>
+                                                <Button
+                                                    variant="outline"
+                                                    width="full"
+                                                    justifyContent="flex-start"
+                                                    onClick={openCalendar}
+                                                >
+                                                    {startDate
+                                                        ? new Date(startDate).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+                                                        : 'Click to select date...'
+                                                    }
+                                                </Button>
+
+                                                {availableSessions && availableSessions.length > 0 && (
+                                                    <Box mt={2}>
+                                                        <Text fontSize="xs" fontWeight="bold" mb={2} color="gray.600">Start Time:</Text>
+                                                        <Flex gap={2} wrap="wrap">
+                                                            {availableSessions.map((s, i) => (
+                                                                <Button
+                                                                    key={`${s.id}-${i}`}
+                                                                    size="sm"
+                                                                    variant={selectedSessionId === s.id ? "solid" : "outline"}
+                                                                    colorScheme="teal"
+                                                                    onClick={() => setSelectedSessionId(s.id)}
+                                                                >
+                                                                    {(s.start_time && s.start_time !== '00:00:00') ? `${s.start_time.substring(0, 5)}${s.end_time ? ` - ${s.end_time.substring(0, 5)}` : ''}` : 'All Day'}
+                                                                </Button>
+                                                            ))}
+                                                        </Flex>
+                                                    </Box>
+                                                )}
+                                            </VStack>
+                                        ) : (
+                                            <Text fontSize="sm" color="gray.500">Please select a variant first</Text>
+                                        )}
 
                                         {/* Variant Selection */}
                                         {variants && variants.length > 1 && (
                                             <Box>
                                                 <Text fontSize="sm" mb={1} fontWeight="bold">Variant</Text>
                                                 <Flex gap={2} wrap="wrap">
-                                                    {variants.map(v => (
+                                                    {variants.map((v, i) => (
                                                         <Button
-                                                            key={v.id}
+                                                            key={`${v.id}-${i}`}
                                                             variant={selectedVariantId === v.id ? "solid" : "outline"}
                                                             colorScheme="blue"
                                                             onClick={() => setSelectedVariantId(v.id)}
@@ -279,8 +335,8 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                             <Box>
                                                 <Text fontSize="sm" mb={1} fontWeight="bold">Passengers</Text>
                                                 <VStack gap={2} align="stretch">
-                                                    {selectedVariant.prices.filter(p => p.price > 0).map(p => (
-                                                        <HStack key={p.id} justify="space-between">
+                                                    {selectedVariant.prices.filter(p => p.price > 0).map((p, i) => (
+                                                        <HStack key={`${p.id}-${i}`} justify="space-between">
                                                             <Text>{p.pax_type_name} ({p.price.toLocaleString()} VND)</Text>
                                                             <Input
                                                                 type="number"
@@ -359,7 +415,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                     </Portal>
                 </Dialog.Root>
             </VStack>
-        </Flex>
+        </Flex >
     );
 }
 
