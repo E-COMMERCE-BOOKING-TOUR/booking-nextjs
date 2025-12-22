@@ -34,7 +34,7 @@ type PaymentMethodsResult =
     | { ok: false; error: string; redirectTo?: string };
 
 export const bookingApi = {
-    create: async (dto: CreateBookingDTO, token?: string) => {
+    create: async (dto: CreateBookingDTO, token?: string): Promise<IBookingDetail> => {
         const url = "/user/booking/create";
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
@@ -165,7 +165,7 @@ export const bookingApi = {
         if (!authHeaders.ok) throw new Error(authHeaders.message);
 
         const response = await fetch(url, {
-            headers: authHeaders.headers as any,
+            headers: authHeaders.headers as HeadersInit,
         });
 
         if (!response.ok) throw new Error("Failed to download receipt");
@@ -177,7 +177,7 @@ export const bookingApi = {
         if (!authHeaders.ok) throw new Error(authHeaders.message);
 
         const response = await fetch(url, {
-            headers: authHeaders.headers as any,
+            headers: authHeaders.headers as HeadersInit,
         });
 
         if (!response.ok) throw new Error("Failed to download invoice");

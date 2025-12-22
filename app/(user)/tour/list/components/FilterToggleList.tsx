@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, HStack, Stack, Text, Icon } from "@chakra-ui/react";
+import { Button, Stack, Text, Icon } from "@chakra-ui/react";
 import { FiCheck } from "react-icons/fi";
 
 type FilterToggleListProps = {

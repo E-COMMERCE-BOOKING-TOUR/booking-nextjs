@@ -1,5 +1,12 @@
+import { getAuthHeaders } from "@/libs/auth/authHeaders";
 import fetchC from "@/libs/fetchC";
 import { IResponseAuthLogout, IUserAuth } from "@/types/response/auth.type";
+
+export interface IAddCardResponse {
+    success: boolean;
+    message: string;
+    data?: unknown;
+}
 
 const userApi = {
     signOut: async (token: string) => {
@@ -24,14 +31,21 @@ const userApi = {
         });
         return res;
     },
-    addCard: async (token: string, authToken: string) => {
+    addCard: async (token: string, authToken: string): Promise<IAddCardResponse> => {
         const url = "/user/payment/card";
-        const res: any = await fetchC.post(url, { token }, {
-            headers: {
-                "Authorization": "Bearer " + authToken
-            }
-        });
-        return res;
+        const authHeaders = await getAuthHeaders(authToken);
+        if (!authHeaders.ok) {
+            return { success: false, message: authHeaders.message };
+        }
+        try {
+            const res = await fetchC.post(url, { token }, { headers: authHeaders.headers });
+            return { success: true, message: res.message || "Card added successfully" };
+        } catch (error) {
+            return {
+                success: false,
+                message: (error as Error)?.message || "Failed to add card"
+            };
+        }
     },
 }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Ban, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Ban, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/libs/utils';
 
@@ -35,12 +35,12 @@ export default function SchedulingCalendar({ ranges, excluded, onToggleDate, dur
         setCurrentDate(new Date(year, month + 1, 1));
     };
 
-    const isDateInRange = (dateStr: string) => {
+    const isDateInRange = React.useCallback((dateStr: string) => {
         return ranges.some(range => {
             if (!range.start || !range.end) return false;
             return dateStr >= range.start && dateStr <= range.end;
         });
-    };
+    }, [ranges]);
 
     const calendarDays = useMemo(() => {
         const days = [];
@@ -86,7 +86,7 @@ export default function SchedulingCalendar({ ranges, excluded, onToggleDate, dur
         }
 
         return days;
-    }, [year, month, ranges, excluded, durationDays]);
+    }, [year, month, ranges, excluded, durationDays, isDateInRange, daysInMonth, firstDayOfMonth]);
 
     return (
         <div className="w-full bg-card/20 border border-white/5 rounded-2xl p-4 backdrop-blur-sm">

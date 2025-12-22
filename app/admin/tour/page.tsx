@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminTourApi } from '@/apis/admin/tour';
 import { useSession } from 'next-auth/react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -18,9 +18,6 @@ import {
   MapPin,
   Clock,
   Tag,
-  ChevronRight,
-  Filter,
-  ArrowUpDown
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -95,7 +92,7 @@ export default function AdminTourListPage() {
       toast.success('Đã xóa tour thành công');
       setDeleteId(null);
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       toast.error('Lỗi khi xóa tour: ' + err.message);
     }
   });
@@ -211,7 +208,7 @@ export default function AdminTourListPage() {
                       Không tìm thấy tour nào phù hợp.
                     </td>
                   </tr>
-                ) : tours.map((tour: any) => (
+                ) : tours.map((tour) => (
                   <tr key={tour.id} className="group hover:bg-muted/30 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">

@@ -1,19 +1,20 @@
 import fetchC from "@/libs/fetchC";
 import { getAuthHeaders } from "@/libs/auth/authHeaders";
+import { CreateTourDTO, AdminTourSearchParams, IAdminTour, ICountry, IDivision, ICurrency, IAdminTourDetail } from "@/types/admin/tour.dto";
 
 export const adminTourApi = {
     // Metadata
-    getCountries: async (token?: string) => {
+    getCountries: async (token?: string): Promise<ICountry[]> => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.get("/admin/tour/metadata/countries", { headers: authHeaders.headers });
     },
-    getCurrencies: async (token?: string) => {
+    getCurrencies: async (token?: string): Promise<ICurrency[]> => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.get("/admin/tour/metadata/currencies", { headers: authHeaders.headers });
     },
-    getDivisions: async (countryId: number, token?: string) => {
+    getDivisions: async (countryId: number, token?: string): Promise<IDivision[]> => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.get(`/admin/tour/metadata/divisions/${countryId}`, { headers: authHeaders.headers });
@@ -25,25 +26,25 @@ export const adminTourApi = {
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.postFormData("/admin/tour/upload", formData, { headers: authHeaders.headers });
     },
-    create: async (data: any, token?: string) => {
+    create: async (data: CreateTourDTO, token?: string) => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.post("/admin/tour/create", data, { headers: authHeaders.headers });
     },
-    getAll: async (params?: { keyword?: string, status?: string, page?: number, limit?: number, sortBy?: string, sortOrder?: string }, token?: string) => {
+    getAll: async (params?: AdminTourSearchParams, token?: string): Promise<{ data: IAdminTour[], total: number, page: number, limit: number, totalPages: number }> => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.get("/admin/tour/getAll", {
             headers: authHeaders.headers,
-            params: params as any
+            params: params,
         });
     },
-    getById: async (id: number | string, token?: string) => {
+    getById: async (id: number | string, token?: string): Promise<IAdminTourDetail> => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.get(`/admin/tour/getById/${id}`, { headers: authHeaders.headers });
     },
-    update: async (id: number | string, data: any, token?: string) => {
+    update: async (id: number | string, data: Partial<CreateTourDTO>, token?: string) => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.put(`/admin/tour/update/${id}`, data, { headers: authHeaders.headers });

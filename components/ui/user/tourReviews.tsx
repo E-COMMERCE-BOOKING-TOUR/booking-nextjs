@@ -6,7 +6,6 @@ import {
     Text,
     HStack,
     VStack,
-    Stack,
     Button,
     Input,
     Grid,
@@ -47,9 +46,6 @@ export default function TourReviews({
     categories,
     reviews,
 }: TourReviewsProps) {
-    const [filterBy, setFilterBy] = useState("recommended");
-    const [travelerType, setTravelerType] = useState("all");
-    const [ratingFilter, setRatingFilter] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
     const [visibleReviews, setVisibleReviews] = useState(5);
 

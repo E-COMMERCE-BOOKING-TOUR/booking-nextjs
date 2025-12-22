@@ -1,27 +1,29 @@
 'use client'
-import { Box, Flex, Heading, Text, Button, Badge, HStack, VStack, Dialog, Portal, Input } from "@chakra-ui/react";
+import { Box, Flex, Heading, HStack, Text, Button, Badge, VStack, Dialog, Portal, Input } from "@chakra-ui/react";
 import TourCalendar from "./TourCalendar";
 import StarRating from "./starRating";
-import { useState, useEffect } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { CreateBookingDTO } from "@/apis/booking";
 import { toaster } from "@/components/chakra/toaster";
-import { useSession } from "next-auth/react";
 import { createBooking } from "@/actions/booking";
-import { useTransition } from "react";
 import logout from "@/actions/logout";
-import { tourApi } from "@/apis/tour";
+import { tourApi, ITourSession } from "@/apis/tour";
+import { useQuery } from "@tanstack/react-query";
 
 interface TourVariant {
     id: number;
     name: string;
     status: string;
-    prices: {
+    tour_variant_pax_type_prices: {
         id: number;
         pax_type_id: number;
         price: number;
-        pax_type_name: string;
+        pax_type: {
+            id: number;
+            name: string;
+        };
     }[];
+    tour_sessions: ITourSession[];
 }
 
 interface TourHeaderProps {
@@ -37,13 +39,11 @@ interface TourHeaderProps {
 
 export default function TourHeader({ title, location, rating, price, oldPrice, slug, variants, durationDays }: TourHeaderProps) {
     const router = useRouter();
-    const { data: session } = useSession();
-    const [startDate, setStartDate] = useState<string>('');
-    const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
+    const [startDate, setStartDate] = useState<Date | null>(null);
+    const [selectedVariantId, setSelectedVariantId] = useState<number | null>(() => variants?.[0]?.id || null);
     const [paxQuantities, setPaxQuantities] = useState<Record<number, number>>({});
     const [isPending, startTransition] = useTransition();
 
-    const [availableSessions, setAvailableSessions] = useState<any[]>([]);
     const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
 
     // Dialog states
@@ -63,61 +63,59 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
     };
 
     // Handle date selection from calendar
-    const handleDateSelect = async (start: Date, end: Date) => {
-        const dateStr = start.toLocaleDateString('en-CA');
-        setStartDate(dateStr);
+    const onSelectDate = (start: Date) => {
+        setStartDate(start);
         closeCalendar();
-
-        // Fetch sessions for this date specifically to get time slots
-        if (selectedVariantId) {
-            try {
-                // We use the same getSessions API but specific for one day
-                const res = await tourApi.getSessions(slug, selectedVariantId, dateStr, dateStr);
-                if (res && res.length > 0) {
-                    // Sort by time
-                    const sorted = res.sort((a: any, b: any) => (a.start_time || '').localeCompare(b.start_time || ''));
-                    setAvailableSessions(sorted);
-                    // If only one session, select it automatically
-                    if (sorted.length === 1) {
-                        setSelectedSessionId(sorted[0].id);
-                    } else {
-                        setSelectedSessionId(null);
-                    }
-                } else {
-                    setAvailableSessions([]);
-                    setSelectedSessionId(null);
-                }
-            } catch (error) {
-                console.error("Failed to fetch sessions", error);
-                setAvailableSessions([]);
-            }
-        }
+        setSelectedSessionId(null); // Reset selected session when date changes
     };
 
-    // Set default variant if only one exists
-    useEffect(() => {
-        if (variants && variants.length === 1) {
-            setSelectedVariantId(variants[0].id);
+    // Sync selectedVariantId if variants change and currently selected is not in the list
+    const [prevVariants, setPrevVariants] = useState(variants);
+    if (variants !== prevVariants) {
+        setPrevVariants(variants);
+        if (!variants?.find(v => v.id === selectedVariantId)) {
+            setSelectedVariantId(variants?.[0]?.id || null);
         }
-    }, [variants]);
+    }
 
     const selectedVariant = variants?.find(v => v.id === selectedVariantId);
 
-    // Initialize pax quantities when variant is selected
-    useEffect(() => {
+    // Sync paxQuantities when variant changes
+    const [prevSelectedVariantId, setPrevSelectedVariantId] = useState<number | null>(null);
+    if (selectedVariantId !== prevSelectedVariantId) {
+        setPrevSelectedVariantId(selectedVariantId);
         if (selectedVariant) {
             const initialQuantities: Record<number, number> = {};
-            selectedVariant.prices.forEach(p => {
+            const prices = selectedVariant.tour_variant_pax_type_prices || [];
+            prices.forEach(p => {
                 initialQuantities[p.pax_type_id] = 0;
             });
-            // Default 1 adult if available (assuming adult is usually the first or has specific ID, but here just first)
-            const firstValidPrice = selectedVariant.prices.find(p => p.price > 0);
+            const firstValidPrice = prices.find(p => p.price > 0);
             if (firstValidPrice) {
                 initialQuantities[firstValidPrice.pax_type_id] = 1;
             }
             setPaxQuantities(initialQuantities);
+            setSelectedSessionId(null);
         }
-    }, [selectedVariant]);
+    }
+
+    // Fetch sessions for the selected variant and date
+    const { data: sessions } = useQuery({
+        queryKey: ['tourSessions', slug, selectedVariantId, startDate?.toISOString().split('T')[0]],
+        queryFn: () => {
+            if (!selectedVariantId || !startDate) return [];
+            const dateStr = startDate.toISOString().split('T')[0];
+            return tourApi.getSessions(slug, selectedVariantId, dateStr, dateStr);
+        },
+        enabled: !!selectedVariantId && !!startDate
+    });
+
+    const availableSessions = useMemo(() => {
+        if (!startDate || !selectedVariantId || !sessions) return [];
+        return sessions.filter((s: ITourSession) => {
+            return s.status === 'open' && s.capacity_available > 0;
+        }).sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+    }, [startDate, selectedVariantId, sessions]);
 
     const handleBooking = () => {
         if (!startDate) {
@@ -147,7 +145,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
         }
 
         const pax = Object.entries(paxQuantities)
-            .filter(([_, quantity]) => quantity > 0)
+            .filter(([, quantity]) => quantity > 0)
             .map(([paxTypeId, quantity]) => ({
                 paxTypeId: parseInt(paxTypeId),
                 quantity
@@ -164,7 +162,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
 
         startTransition(async () => {
             const result = await createBooking({
-                startDate,
+                startDate: startDate.toISOString().split('T')[0],
                 pax,
                 variantId: selectedVariantId,
                 tourSessionId: selectedSessionId || undefined
@@ -335,9 +333,9 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                             <Box>
                                                 <Text fontSize="sm" mb={1} fontWeight="bold">Passengers</Text>
                                                 <VStack gap={2} align="stretch">
-                                                    {selectedVariant.prices.filter(p => p.price > 0).map((p, i) => (
+                                                    {(selectedVariant.tour_variant_pax_type_prices || []).filter(p => p.price > 0).map((p, i) => (
                                                         <HStack key={`${p.id}-${i}`} justify="space-between">
-                                                            <Text>{p.pax_type_name} ({p.price.toLocaleString()} VND)</Text>
+                                                            <Text>{p.pax_type.name} ({p.price.toLocaleString()} VND)</Text>
                                                             <Input
                                                                 type="number"
                                                                 min={0}
@@ -399,8 +397,8 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                             tourSlug={slug}
                                             variantId={selectedVariant.id}
                                             durationDays={durationDays}
-                                            onSelectDate={handleDateSelect}
-                                            initialSelectedDate={startDate}
+                                            onSelectDate={onSelectDate}
+                                            initialSelectedDate={startDate ? startDate.toISOString().split('T')[0] : undefined}
                                         />
                                     )}
                                 </Dialog.Body>

@@ -7,7 +7,7 @@ import TourSidebar from "@/components/ui/user/tourSidebar";
 import TourMapSection from "@/components/ui/user/tourMapSection";
 import TourDescription from "@/components/ui/user/tourDescription";
 import RelatedToursSwiper from "@/components/ui/user/relatedToursSwiper";
-import tourApi from "@/apis/tour";
+import tourApi, { ITourSession } from "@/apis/tour";
 import { notFound } from "next/navigation";
 
 type TourData = {
@@ -45,52 +45,31 @@ type TourData = {
         id: number;
         name: string;
         status: string;
-        prices: {
+        tour_variant_pax_type_prices: {
             id: number;
             pax_type_id: number;
             price: number;
-            pax_type_name: string;
+            pax_type: {
+                id: number;
+                name: string;
+            };
         }[];
+        tour_sessions: ITourSession[]; // Add this
     }[];
 };
 
-type RelatedTour = {
-    id: string;
-    image: string;
-    title: string;
-    location: string;
-    rating: number;
-    reviews: number;
-    ratingText: string;
-    capacity: string;
-    originalPrice: number;
-    currentPrice: number;
-    tags: string[];
-    slug: string;
-};
-
-type Review = {
-    id: string;
-    userName: string;
-    userAvatar: string;
-    rating: number;
-    date: string;
-    title: string;
-    content: string;
-    verified: boolean;
-};
-
-type ReviewCategory = {
-    label: string;
-    score: number;
-};
-
-const normalizeDetail = (response: unknown): any | null => {
+const normalizeDetail = (response: unknown): TourData | null => {
     if (!response || typeof response !== "object" || Array.isArray(response)) return null;
-    const payload = "data" in (response as any) ? (response as any).data : response;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const payload = "data" in response ? (response as any).data : response;
     if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return typeof (payload as any).title === "string" ? payload : null;
 };
+
+type RelatedTour = any;
+type Review = any;
+type ReviewCategory = any;
 
 const statusCodeOf = (error: unknown): number | undefined => {
     if (typeof error === "object" && error !== null) {
@@ -143,16 +122,20 @@ const getTourData = async (slug: string): Promise<TourData> => {
             },
             meetingPoint: tourDetail.meetingPoint ?? "",
             variants:
-                tourDetail.variants?.map((v: any) => ({
+                tourDetail.variants?.map((v: { id: number; name: string; status: string; tour_variant_pax_type_prices?: any[]; prices?: any[]; tour_sessions?: any[] }) => ({
                     id: v.id,
                     name: v.name,
                     status: v.status,
-                    prices: v.prices.map((p: any) => ({
+                    tour_variant_pax_type_prices: (v.tour_variant_pax_type_prices || v.prices || []).map((p: { id: number; pax_type_id: number; price: number; pax_type_name?: string; pax_type?: { id: number; name: string } }) => ({
                         id: p.id,
                         pax_type_id: p.pax_type_id,
                         price: p.price,
-                        pax_type_name: p.pax_type_name,
+                        pax_type: {
+                            id: p.pax_type_id,
+                            name: p.pax_type_name || p.pax_type?.name || '',
+                        },
                     })),
+                    tour_sessions: v.tour_sessions || [],
                 })) || [],
         };
     } catch (error) {

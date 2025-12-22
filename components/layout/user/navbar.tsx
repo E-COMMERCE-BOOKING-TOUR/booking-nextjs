@@ -35,13 +35,13 @@ const navItems: NavItem[] = [
 
 export default async function UserNavbar() {
   const session = await auth();
-  const user = session?.user;
+  const user = session?.user as (IUserAuth & { accessToken?: string }) | undefined;
   const isLoggedIn = !!user;
 
   let activeBooking: IBookingDetail | null = null;
-  if (isLoggedIn && (user as any)?.accessToken) {
+  if (isLoggedIn && user?.accessToken) {
     try {
-      const res = await bookingApi.getCurrent((user as any).accessToken);
+      const res = await bookingApi.getCurrent(user.accessToken);
       if (res.ok) {
         activeBooking = res.data;
       }

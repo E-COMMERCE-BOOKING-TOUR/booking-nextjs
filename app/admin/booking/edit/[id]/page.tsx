@@ -1,7 +1,6 @@
 "use client";
 
-import React from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminBookingApi } from '@/apis/admin/booking';
 import { useSession } from 'next-auth/react';
@@ -9,11 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  ChevronLeft,
   Calendar,
   Users,
   CreditCard,
-  MapPin,
   Package,
   CheckCircle2,
   XCircle,
@@ -46,12 +43,11 @@ const StatusBadge = ({ status }: { status: string }) => {
 export default function AdminBookingDetailPage() {
   const params = useParams();
   const id = params.id as string;
-  const router = useRouter();
   const { data: session, status: sessionStatus } = useSession();
   const token = session?.user?.accessToken;
   const queryClient = useQueryClient();
 
-  const { data: booking, isLoading, isPlaceholderData } = useQuery({
+  const { data: booking, isLoading } = useQuery({
     queryKey: ['admin-booking-detail', id, token],
     queryFn: () => adminBookingApi.getById(id, token),
     enabled: !!token && !!id,
@@ -64,7 +60,7 @@ export default function AdminBookingDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
       toast.success('Xác nhận đặt phòng thành công');
     },
-    onError: (error: any) => toast.error(error.message || 'Lỗi xác nhận')
+    onError: (error: Error) => toast.error(error.message || 'Lỗi xác nhận')
   });
 
   const cancelMutation = useMutation({
@@ -74,7 +70,7 @@ export default function AdminBookingDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
       toast.success('Đã hủy đơn hàng');
     },
-    onError: (error: any) => toast.error(error.message || 'Lỗi khi hủy')
+    onError: (error: Error) => toast.error(error.message || 'Lỗi khi hủy')
   });
 
   // Hiển thị loading khi:
@@ -100,7 +96,8 @@ export default function AdminBookingDetailPage() {
     );
   }
 
-  const b = booking as any;
+  /* const b = booking as any; */
+  const b = booking!;
 
   return (
     <div className="flex flex-col gap-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -199,7 +196,7 @@ export default function AdminBookingDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {(b.booking_items || []).map((item: any) => (
+                  {(b.booking_items || []).map((item) => (
                     <tr key={item.id}>
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
@@ -242,7 +239,7 @@ export default function AdminBookingDetailPage() {
           </Card>
 
           {/* Passenger List */}
-          {(b.booking_items || []).some((item: any) => item.booking_passengers?.length > 0) && (
+          {(b.booking_items || []).some((item) => item.booking_passengers?.length > 0) && (
             <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
               <CardHeader className="border-b border-white/5 pb-4">
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
@@ -261,8 +258,8 @@ export default function AdminBookingDetailPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {(b.booking_items || []).flatMap((item: any) =>
-                      (item.booking_passengers || []).map((p: any, idx: number) => (
+                    {(b.booking_items || []).flatMap((item) =>
+                      (item.booking_passengers || []).map((p, idx: number) => (
                         <tr key={`${item.id}-${idx}`}>
                           <td className="px-6 py-4 text-sm font-bold">{p.full_name}</td>
                           <td className="px-6 py-4 text-xs font-medium">

@@ -1,11 +1,10 @@
-import { Box, Container, Grid, GridItem, HStack, Text, VStack } from '@chakra-ui/react';
-import { SearchInput, TourItem, ArticleItem, TravelList, HeaderList } from '@/components/ui/user';
+import { Container, Grid, Text, VStack } from '@chakra-ui/react';
+import { SearchInput, TourItem, TravelList, HeaderList } from '@/components/ui/user';
 import Header from './components/header';
 // import RecentSearch from './components/recentSearch';
 import BannerHeader from './components/bannerHeader';
 import { Diagonal } from '@/components/layout/user';
 import tour from '@/apis/tour';
-import article from '@/apis/article';
 import division from '@/apis/division';
 
 export default async function TopPage() {

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { CalendarDays, Image as ImageIcon } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +13,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { CalendarIcon, Trash2 } from 'lucide-react';
+
+import { DateRange } from 'react-day-picker';
 
 interface VariantSchedulingEditorProps {
     value: { from: Date; to: Date }[];
@@ -41,7 +42,7 @@ export default function VariantSchedulingEditor({
     durationDays = 0
 }: VariantSchedulingEditorProps) {
     const [newTimeSlot, setNewTimeSlot] = useState<string>('08:00');
-    const [date, setDate] = React.useState<{ from: Date; to: Date } | undefined>();
+    const [date, setDate] = React.useState<DateRange | undefined>();
 
     const handleAddTimeSlot = () => {
         if (!newTimeSlot) return;
@@ -60,7 +61,7 @@ export default function VariantSchedulingEditor({
         const dates = new Set<string>();
         value.forEach(range => {
             if (range.from && range.to) {
-                let curr = new Date(range.from);
+                const curr = new Date(range.from);
                 const end = new Date(range.to);
                 while (curr <= end) {
                     const dStr = curr.toISOString().split('T')[0];
@@ -162,8 +163,8 @@ export default function VariantSchedulingEditor({
                                             initialFocus
                                             mode="range"
                                             defaultMonth={date?.from}
-                                            selected={date as any}
-                                            onSelect={(d: any) => setDate(d)}
+                                            selected={date}
+                                            onSelect={setDate}
                                             numberOfMonths={2}
                                         />
                                     </PopoverContent>

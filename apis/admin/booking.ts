@@ -1,13 +1,15 @@
 import fetchC from "@/libs/fetchC";
 import { getAuthHeaders } from "@/libs/auth/authHeaders";
 
+import { IAdminBookingDetail } from "@/types/admin/booking";
+
 export const adminBookingApi = {
-    getAll: async (token?: string) => {
+    getAll: async (token?: string): Promise<IAdminBookingDetail[]> => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.get("/admin/booking/getAll", { headers: authHeaders.headers });
     },
-    getById: async (id: number | string, token?: string) => {
+    getById: async (id: number | string, token?: string): Promise<IAdminBookingDetail> => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.post(`/admin/booking/getById/${id}`, {}, { headers: authHeaders.headers });

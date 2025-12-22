@@ -1,7 +1,7 @@
 "use client";
-import { Box, Text, VStack, HStack, Button, Icon, Textarea, Image, Input, List, Spinner, Center } from "@chakra-ui/react";
+import { Box, VStack, HStack, Button, Icon, Textarea, Image, Input, List, Spinner, Center } from "@chakra-ui/react";
 import { useState } from "react";
-import { FiEdit, FiX, FiUsers, FiTag, FiImage, FiSmile, FiCalendar, FiMapPin } from "react-icons/fi";
+import { FiEdit, FiX, FiImage, FiSmile, FiCalendar, FiMapPin } from "react-icons/fi";
 import ItemBlog from "./ItemBlog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import article from "@/apis/article";
@@ -10,9 +10,6 @@ import { toaster } from "@/components/chakra/toaster";
 const ForYou = () => {
     const [content, setContent] = useState("");
     const [images, setImages] = useState<string[]>([]);
-    const [showDescription, setShowDescription] = useState(false);
-    const [description, setDescription] = useState("");
-
     const { data: articles, isLoading } = useQuery({
         queryKey: ['popular-articles'],
         queryFn: () => article.popular(10)
@@ -105,9 +102,9 @@ const ForYou = () => {
                                 <Image src={images[0]} alt="preview" w="full" h="auto" objectFit="cover" />
                             </Box>
                         )}
-                        {showDescription && (
+                        {/* {showDescription && (
                             <Input placeholder="Add a description" value={description} onChange={(e) => setDescription(e.target.value)} />
-                        )}
+                        )} */}
                         <HStack justify="space-between" align="center">
                             <HStack gap={3}>
                                 <Button as="label" variant="ghost" colorScheme="whiteAlpha" px={2}>

@@ -12,8 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
-    ChevronRight,
-    ChevronLeft,
     CheckCircle2,
     Info,
     Image as ImageIcon,
@@ -92,7 +90,7 @@ const tourSchema = z.object({
         }))
     })).min(1, "Vui lòng thêm ít nhất 1 biến thể"),
     is_visible: z.boolean().default(true),
-    status: z.string().default('active'),
+    status: z.enum(['draft', 'active', 'inactive']).default('active'),
     duration_hours: z.coerce.number().min(0).nullable().optional(),
     duration_days: z.coerce.number().min(0).nullable().optional(),
     published_at: z.string().nullable().optional(),
@@ -100,9 +98,11 @@ const tourSchema = z.object({
 
 type TourFormValues = z.infer<typeof tourSchema>;
 
+import { IAdminTourDetail, IAdminTourVariant } from "@/types/admin/tour.dto";
+
 interface TourWizardProps {
     tourId?: number | string;
-    initialData?: any;
+    initialData?: IAdminTourDetail;
 }
 
 export default function TourWizard({ tourId, initialData }: TourWizardProps) {
@@ -157,9 +157,9 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
     useEffect(() => {
         if (initialData) {
             // Transform initialData to match form structure if needed
-            const mappedData: any = {
+            const mappedData: Partial<TourFormValues> = {
                 ...initialData,
-                address: initialData.address || '',
+                map_url: initialData.map_url || undefined,
                 country_id: initialData.country?.id || initialData.country_id || 0,
                 division_id: initialData.division?.id || initialData.division_id || 0,
                 currency_id: initialData.currency?.id || initialData.currency_id || 1,
@@ -167,22 +167,28 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                 duration_hours: initialData.duration_hours || null,
                 duration_days: initialData.duration_days || null,
                 tax: initialData.tax || 0,
-                tour_category_ids: initialData.tour_categories?.map((c: any) => c.id) || [],
+                tour_category_ids: initialData.tour_categories?.map((c) => c.id) || [],
                 published_at: initialData.published_at ? new Date(initialData.published_at).toISOString().split('T')[0] : null,
-                variants: initialData.variants?.map((v: any) => ({
+                variants: initialData.variants?.map((v: IAdminTourVariant) => ({
                     ...v,
-                    prices: v.tour_variant_pax_type_prices?.map((p: any) => ({
+                    prices: v.tour_variant_pax_type_prices?.map((p) => ({
                         id: p.id,
-                        pax_type_id: p.pax_type?.id,
-                        pax_type_name: p.pax_type?.name,
+                        pax_type_id: p.pax_type?.id || 0,
+                        pax_type_name: p.pax_type?.name || '',
                         price: p.price
                     })) || []
                 })) || []
             };
 
             // Pre-populate scheduling state from existing sessions
-            const initialScheduling: any = {};
-            initialData.variants?.forEach((v: any, vIdx: number) => {
+            const initialScheduling: Record<number, {
+                ranges: { start: string, end: string }[],
+                excluded: string[],
+                timeSlots?: string[],
+                durationHours?: number | null
+            }> = {};
+
+            initialData.variants?.forEach((v, vIdx: number) => {
                 if (v.tour_sessions?.length) {
                     const sortedSessions = [...v.tour_sessions].sort((a, b) =>
                         new Date(a.session_date).getTime() - new Date(b.session_date).getTime()
@@ -192,7 +198,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                     const maxDate = sortedSessions[sortedSessions.length - 1].session_date;
 
                     const allDates: string[] = [];
-                    let curr = new Date(minDate);
+                    const curr = new Date(minDate);
                     const end = new Date(maxDate);
                     while (curr <= end) {
                         allDates.push(curr.toISOString().split('T')[0]);
@@ -203,7 +209,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                     const excluded = allDates.filter(d => !sessionDates.includes(d));
 
                     // Extract unique time slots
-                    const timeSlots = Array.from(new Set(sortedSessions.map((s: any) => {
+                    const timeSlots = Array.from(new Set(sortedSessions.map((s) => {
                         const t = s.start_time;
                         if (!t) return null;
                         // Handle potential Date objects or strings
@@ -213,7 +219,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
 
                     // Try to determine duration from the first session that has both
                     let durationHours = null;
-                    const sessionWithDuration = sortedSessions.find((s: any) => s.start_time && s.end_time);
+                    const sessionWithDuration = sortedSessions.find((s) => s.start_time && s.end_time);
                     if (sessionWithDuration) {
                         const [h1, m1] = (sessionWithDuration.start_time as string).split(':').map(Number);
                         const [h2, m2] = (sessionWithDuration.end_time as string).split(':').map(Number);
@@ -350,13 +356,13 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
             // 2. Prepare Nested Variants, Prices, and Sessions
             const nestedVariants = data.variants.map((v, i) => {
                 const vSched = scheduling[i];
-                const sessions: any[] = [];
+                const sessions: unknown[] = [];
                 if (vSched && vSched.ranges.length > 0) {
                     const timeSlots = vSched.timeSlots || ['08:00'];
 
                     vSched.ranges.forEach(range => {
                         if (range.start && range.end) {
-                            let curr = new Date(range.start);
+                            const curr = new Date(range.start);
                             const end = new Date(range.end);
 
                             while (curr <= end) {
@@ -421,7 +427,8 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                 ...data,
                 slug: data.slug || undefined,
                 images: uploadedImages.map(({ image_url, sort_no, is_cover }) => ({ image_url, sort_no, is_cover })),
-                variants: nestedVariants
+                variants: nestedVariants,
+                status: data.status as "draft" | "active" | "inactive"
             };
 
             // 3. Save Tour
@@ -438,7 +445,8 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
             }, 1500);
         } catch (error) {
             console.error('Failed to save tour', error);
-            toast.error('Lỗi khi lưu tour: ' + (error as any).message);
+            const err = error as Error;
+            toast.error('Lỗi khi lưu tour: ' + err.message);
             isSubmittingRef.current = false;
             setIsSubmitting(false);
         }
@@ -573,7 +581,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
-                                                        {countries.map((c: any) => (
+                                                        {countries.map((c) => (
                                                             <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
                                                         ))}
                                                     </SelectContent>
@@ -595,7 +603,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
-                                                        {divisions.map((d: any) => (
+                                                        {divisions.map((d) => (
                                                             <SelectItem key={d.id} value={d.id.toString()}>{d.name_local}</SelectItem>
                                                         ))}
                                                     </SelectContent>
@@ -617,7 +625,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
-                                                        {currencies.map((c: any) => (
+                                                        {currencies.map((c) => (
                                                             <SelectItem key={c.id} value={c.id.toString()}>{c.name} ({c.symbol})</SelectItem>
                                                         ))}
                                                     </SelectContent>
@@ -814,7 +822,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-4">
-                                            {form.watch(`variants.${vIdx}.prices`).map((p: any, pIdx: number) => (
+                                            {form.watch(`variants.${vIdx}.prices`).map((p, pIdx: number) => (
                                                 <div key={pIdx} className="p-3 rounded-xl bg-background/50 border border-white/5">
                                                     <Label className="text-[10px] text-muted-foreground uppercase">{p.pax_type_name}</Label>
                                                     <FormField control={form.control} name={`variants.${vIdx}.prices.${pIdx}.price`} render={({ field }) => (

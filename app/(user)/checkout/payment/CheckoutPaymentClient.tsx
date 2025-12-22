@@ -36,7 +36,7 @@ interface Props {
 // Helper function to check if payment method is eligible based on booking total
 function isPaymentMethodEligible(method: IPaymentMethod, totalAmount: number): boolean {
     const min = Number(method.rule_min) || 0;
-    const max = Number(method.rule_max) || Infinity;
+    // const max = Number(method.rule_max) || Infinity;
     const ruleMax = Number(method.rule_max) || 0;
 
     // Logic aligned with backend
@@ -93,7 +93,7 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
     });
 
     const selectedPaymentId = watch("booking_payment_id");
-    const selectedPayment = paymentMethods.find(m => m.id === selectedPaymentId);
+    // const selectedPayment = paymentMethods.find(m => m.id === selectedPaymentId);
 
     // Check if Credit Card is selected
     const isCreditCard = selectedPaymentId === PaymentCardID.CREDIT_CARD;
@@ -107,7 +107,7 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
             });
             router.push("/checkout/confirm");
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             toaster.create({
                 title: "Failed to save payment method",
                 description: error.message,
@@ -125,7 +125,7 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
                 type: "success"
             });
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             toaster.create({
                 title: "Failed to save card info",
                 description: error.message,
@@ -204,7 +204,7 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
                     <Stack gridColumn={{ base: "1 / -1", md: "1 / 9" }} boxShadow="sm" rounded="2xl" marginBottom="2rem" bg="white">
                         <form onSubmit={handleSubmit(onSubmit)} noValidate>
                             <Box p={5} borderRadius="15px">
-                                <Heading as="h2" fontSize="2xl" fontWeight="bold">Choose how you'd like to pay</Heading>
+                                <Heading as="h2" fontSize="2xl" fontWeight="bold">Choose how you&apos;d like to pay</Heading>
                                 <Text mt={2} color="fg.muted">
                                     Order total: <Text as="span" fontWeight="bold">{numberFormat(initialBooking.total_amount)} {initialBooking.currency}</Text>
                                 </Text>

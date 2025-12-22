@@ -1,7 +1,8 @@
 import fetchC from "@/libs/fetchC";
 import { ITour } from "@/types/response/tour.type";
-import { IBaseResponseData } from "@/types/base.type";
 import { ITourPopular, ITourSearchResponse } from "@/types/response/tour";
+import { IReview } from "@/types/response/review.type";
+import { ITourCategory } from "@/types/response/tour.type";
 
 export interface ITourSession {
     id: number;
@@ -71,29 +72,7 @@ const toQueryRecord = (params?: ITourSearchParams): Record<string, string> | und
     return Object.keys(query).length ? query : undefined;
 };
 
-type CreateTourDTO = {
-    title: string;
-    description: string;
-    summary: string;
-    map_url?: string | null;
-    slug: string;
-    address: string;
-    score_rating?: number | null;
-    tax: number;
-    is_visible: boolean;
-    published_at?: string | null;
-    status: "draft" | "active" | "inactive";
-    duration_hours?: number | null;
-    duration_days?: number | null;
-    min_pax: number;
-    max_pax?: number | null;
-    country_id: number;
-    division_id: number;
-    currency_id: number;
-    supplier_id: number;
-    tour_category_ids?: number[];
-    images?: { image_url: string; sort_no?: number; is_cover?: boolean }[];
-};
+
 
 export const tourApi = {
     popular: async (limit: number = 8): Promise<ITourPopular[]> => {
@@ -114,22 +93,22 @@ export const tourApi = {
         });
         return res;
     },
-    reviews: async (slug: string): Promise<any[]> => {
+    reviews: async (slug: string): Promise<IReview[]> => {
         const url = `/user/tour/${slug}/reviews`;
         const res = await fetchC.get(url);
         return Array.isArray(res) ? res : (res?.data || []);
     },
-    reviewCategories: async (slug: string): Promise<any[]> => {
+    reviewCategories: async (slug: string): Promise<ITourCategory[]> => {
         const url = `/user/tour/${slug}/review-categories`;
         const res = await fetchC.get(url);
         return Array.isArray(res) ? res : (res?.data || []);
     },
-    related: async (slug: string, limit: number = 8): Promise<any[]> => {
+    related: async (slug: string, limit: number = 8): Promise<ITourPopular[]> => {
         const url = `/user/tour/${slug}/related?limit=${limit}`;
         const res = await fetchC.get(url);
         return Array.isArray(res) ? res : (res?.data || []);
     },
-    getPrices: async (slug: string): Promise<any[]> => {
+    getPrices: async (slug: string): Promise<unknown[]> => {
         const url = `/user/tour/${slug}/get-prices`;
         const res = await fetchC.get(url, { cache: 'no-store' });
         return res;
@@ -148,4 +127,3 @@ export const tourApi = {
 };
 
 export default tourApi;
-export type { CreateTourDTO };

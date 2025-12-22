@@ -1,9 +1,7 @@
 "use client";
-import NextLink from "next/link";
-import { Box, HStack, VStack, Text, Image, Badge, Button, Icon, Avatar, Grid, IconButton, useDisclosure } from "@chakra-ui/react";
-import { FiMessageCircle, FiEye, FiThumbsUp, FiMapPin, FiCalendar, FiClock, FiCloud, FiShare2, FiBookmark, FiArrowRight } from "react-icons/fi";
+import { Box, HStack, VStack, Text, Image, Badge, Button, Icon, Avatar, Grid, useDisclosure } from "@chakra-ui/react";
+import { FiMessageCircle, FiEye, FiThumbsUp, FiMapPin, FiCalendar, FiCloud, FiShare2, FiBookmark, FiArrowRight } from "react-icons/fi";
 import type { IArticlePopular } from "@/types/response/article";
-import { ArrowRight, Bookmark } from "lucide-react";
 import { dateFormat } from "@/libs/function";
 import { PopUpComment } from "./comments";
 

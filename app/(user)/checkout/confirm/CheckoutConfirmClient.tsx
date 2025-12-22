@@ -36,7 +36,7 @@ export default function CheckoutConfirmClient({ initialBooking }: Props) {
             });
             router.push("/checkout/complete");
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             toaster.create({
                 title: "Failed to confirm booking",
                 description: error.message,

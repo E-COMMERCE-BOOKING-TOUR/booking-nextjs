@@ -4,15 +4,10 @@ import { Card, CardTitle, CardHeader, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState, useMemo } from "react"
 import {
-    CalendarDays,
-    UserCog,
-    CreditCard,
     TrendingUp,
     Users as UsersIcon,
     Package,
     DollarSign,
-    ArrowUpRight,
-    ArrowDownRight,
     Plus,
     Download,
     History,
@@ -22,6 +17,7 @@ import {
 import { AppSelect } from "@/components/AppSelect";
 import { BarCharDashboard } from "./components/BarChart.dashboard";
 import { adminDashboardApi } from "@/apis/admin/dashboard";
+import { IDashboardStats } from "@/types/admin/dashboard";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 
@@ -32,7 +28,7 @@ const AdminDashboard = () => {
     const token = session?.user?.accessToken;
 
     const [valueSelect, setValueSelect] = useState('6 Tháng qua');
-    const [stats, setStats] = useState<any>(null);
+    const [stats, setStats] = useState<IDashboardStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -202,7 +198,7 @@ const AdminDashboard = () => {
                         </div>
                     </CardHeader>
                     <CardContent className="p-6 space-y-6">
-                        {trendingTours.length > 0 ? trendingTours.map((tour: any, idx: number) => (
+                        {trendingTours.length > 0 ? trendingTours.map((tour, idx: number) => (
                             <div key={idx} className="flex items-center gap-4 group">
                                 <div className="size-10 rounded-xl bg-white/5 flex items-center justify-center font-black text-primary text-sm border border-white/10 group-hover:bg-primary group-hover:text-white transition-all">
                                     {idx + 1}
@@ -264,7 +260,7 @@ const AdminDashboard = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
-                                {recentBookings.map((booking: any) => (
+                                {recentBookings.map((booking) => (
                                     <tr key={booking.id} className="group hover:bg-white/[0.05] transition-all cursor-pointer">
                                         <td className="px-8 py-5 whitespace-nowrap text-xs font-mono font-bold text-muted-foreground group-hover:text-primary">#{booking.id}</td>
                                         <td className="px-6 py-5 whitespace-nowrap">

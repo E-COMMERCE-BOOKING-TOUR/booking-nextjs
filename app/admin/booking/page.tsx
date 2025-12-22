@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminBookingApi } from '@/apis/admin/booking';
 import { useSession } from 'next-auth/react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -14,13 +14,7 @@ import {
   Eye,
   Trash2,
   Calendar,
-  Users,
-  CreditCard,
-  ArrowUpDown,
   CheckCircle2,
-  XCircle,
-  Clock,
-  Filter
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -123,7 +117,7 @@ export default function AdminBookingListPage() {
       toast.success('Xóa đơn hàng thành công');
       setDeleteId(null);
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || 'Không thể xóa đơn hàng');
     }
   });
@@ -134,7 +128,7 @@ export default function AdminBookingListPage() {
       queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
       toast.success('Xác nhận đơn hàng thành công');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || 'Không thể xác nhận đơn hàng');
     }
   });
@@ -154,7 +148,7 @@ export default function AdminBookingListPage() {
     setAppliedFilters(defaultValues);
   };
 
-  const filteredBookings = (bookings as any[]).filter(b => {
+  const filteredBookings = (bookings || []).filter(b => {
     const { searchTerm, statusFilter, paymentFilter, dateFilter } = appliedFilters;
 
     const matchesSearch = !searchTerm ||
@@ -292,7 +286,7 @@ export default function AdminBookingListPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm font-medium text-foreground truncate max-w-[180px] block">
-                          {(booking as any).booking_items?.[0]?.tour_title || 'N/A'}
+                          {booking.booking_items?.[0]?.tour_title || 'N/A'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

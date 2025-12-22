@@ -3,8 +3,10 @@
 import { bookingApi, CreateBookingDTO } from "@/apis/booking";
 import { getServerAuth } from "@/libs/auth/getServerAuth";
 
+import { IBookingDetail } from "@/types/booking";
+
 type CreateBookingResult =
-    | { ok: true; data: any }
+    | { ok: true; data: IBookingDetail }
     | { ok: false; message: string; code?: "UNAUTHENTICATED" | "ERROR" | "CONFIG_ERROR" };
 
 export const createBooking = async (
@@ -20,10 +22,11 @@ export const createBooking = async (
     }
 
     try {
-        const res = await bookingApi.create(payload, auth.accessToken);
+        const res = (await bookingApi.create(payload, auth.accessToken)) as IBookingDetail;
         return { ok: true, data: res };
-    } catch (error: any) {
-        if (error?.message?.includes("BACKEND API base URL is not configured")) {
+    } catch (error: unknown) {
+        const err = error as Error;
+        if (err?.message?.includes("BACKEND API base URL is not configured")) {
             return {
                 ok: false,
                 message: "Thiếu cấu hình BACKEND API (API_BACKEND_CONTAINER hoặc NEXT_PUBLIC_API_BACKEND).",
@@ -32,7 +35,7 @@ export const createBooking = async (
         }
         return {
             ok: false,
-            message: error?.message || "Đặt tour thất bại. Vui lòng thử lại.",
+            message: err?.message || "Đặt tour thất bại. Vui lòng thử lại.",
             code: "ERROR",
         };
     }

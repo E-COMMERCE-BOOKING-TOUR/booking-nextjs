@@ -14,13 +14,14 @@ const initialFetch: IInitialFetch = {
 }
 
 interface Option extends RequestInit {
-    params?: { [key: string]: string }
+    params?: Record<string, string | number | boolean>
     BaseURL?: string
 }
 
 const fetchC = {
     get: async (url: string, init?: Option) => {
-        const queryString = init?.params ? "?" + new URLSearchParams(init.params).toString() : "";
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const queryString = init?.params ? "?" + new URLSearchParams(init.params as any).toString() : "";
         const data = await fetch((init?.BaseURL ?? initialFetch.BaseURL) + url + queryString, {
             ...init,
             headers: {
@@ -98,7 +99,8 @@ const fetchC = {
         return res;
     },
     delete: async (url: string, init?: Option) => {
-        const queryString = init?.params ? "?" + new URLSearchParams(init.params).toString() : "";
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const queryString = init?.params ? "?" + new URLSearchParams(init.params as any).toString() : "";
         const data = await fetch((init?.BaseURL ?? initialFetch.BaseURL) + url + queryString, {
             ...init,
             method: "DELETE",

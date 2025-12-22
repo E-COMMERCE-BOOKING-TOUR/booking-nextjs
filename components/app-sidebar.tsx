@@ -1,6 +1,6 @@
 "use client";
 
-import { GalleryVerticalEnd, Handshake, Home, ScrollText, SquareCheck, ThumbsUp, Users, LogOut, Compass } from "lucide-react";
+import { GalleryVerticalEnd, Home, ScrollText, SquareCheck, ThumbsUp, Users, LogOut, Compass } from "lucide-react";
 
 import {
   Sidebar,

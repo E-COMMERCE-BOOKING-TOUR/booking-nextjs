@@ -2,7 +2,6 @@
 
 import {
   Button,
-  Heading,
   Input,
   Stack,
   Text,
@@ -12,8 +11,7 @@ import {
 } from "@chakra-ui/react";
 import { FilterSection } from "./FilterSection";
 import { FilterToggleList } from "./FilterToggleList";
-import { ratingOptions } from "../constants";
-import { clampValue } from "../utils";
+import { ratingOptions } from "./constants";
 
 type FilterSidebarProps = {
   searchQuery: string;
