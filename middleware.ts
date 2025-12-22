@@ -43,11 +43,10 @@ export async function middleware(request: NextRequest) {
     // 3. Admin routes require admin role
     if (isAdminRoute) {
         if (!isLoggedIn || !hasAccessToken) {
-            // Not logged in - redirect to login
-            return NextResponse.redirect(new URL("/user-login", request.url));
+            const callbackUrl = nextUrl.pathname + nextUrl.search;
+            return NextResponse.redirect(new URL(`/user-login?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url));
         }
         if (!isAdmin) {
-            // Logged in but not admin - redirect to home
             return NextResponse.redirect(new URL("/", request.url));
         }
         return NextResponse.next();
@@ -56,8 +55,8 @@ export async function middleware(request: NextRequest) {
     // 4. User protected routes require authentication
     if (isUserRoute) {
         if (!isLoggedIn || !hasAccessToken) {
-            // Not logged in - redirect to login
-            return NextResponse.redirect(new URL("/user-login", request.url));
+            const callbackUrl = nextUrl.pathname + nextUrl.search;
+            return NextResponse.redirect(new URL(`/user-login?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url));
         }
         return NextResponse.next();
     }

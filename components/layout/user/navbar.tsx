@@ -1,4 +1,5 @@
-import { Button, Flex, Image, Menu, VStack, HStack, Box } from '@chakra-ui/react';
+import { Button, Flex, Image, Menu, VStack, HStack, Box, IconButton } from '@chakra-ui/react';
+import { NotificationBell } from './notificationBell';
 import NextLink from 'next/link';
 import bookingApi from '@/apis/booking';
 import { IBookingDetail } from '@/types/booking';
@@ -65,6 +66,7 @@ export default async function UserNavbar() {
           <Flex gap={2}>
             {isLoggedIn ? (
               <>
+                <NotificationBell />
                 <ResumeBookingButton booking={activeBooking} mr={2} />
                 <UserMenu user={user} />
               </>
@@ -101,7 +103,7 @@ const UserMenu = ({ user }: { user: IUserAuth }) => {
       <Menu.Positioner>
         <Menu.Content>
           <Menu.Item value="profile">
-            <NextLink href="/user-profile">Profile</NextLink>
+            <NextLink href="/mypage">Profile</NextLink>
           </Menu.Item>
           <LogoutButton />
         </Menu.Content>

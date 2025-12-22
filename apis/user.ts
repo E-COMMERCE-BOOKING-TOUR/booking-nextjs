@@ -47,6 +47,23 @@ const userApi = {
             };
         }
     },
-}
-
+    updateProfile: async (token: string, data: Record<string, unknown>) => {
+        const url = "/user/update-me";
+        const res = await fetchC.post(url, { data }, {
+            headers: {
+                "Authorization": "Bearer " + token
+            }
+        });
+        return res;
+    },
+    changePassword: async (token: string, data: Record<string, unknown>) => {
+        const url = "/user/change-password";
+        const res = await fetchC.post(url, { data }, {
+            headers: {
+                "Authorization": "Bearer " + token
+            }
+        });
+        return res;
+    },
+};
 export { userApi }
