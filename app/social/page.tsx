@@ -1,5 +1,4 @@
 import { Box, Tabs, Text } from "@chakra-ui/react";
-import ItemBlog from "./component/ItemBlog";
 import ForYou from "./component/ForYou";
 
 export default function Home() {

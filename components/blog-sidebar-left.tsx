@@ -14,6 +14,7 @@ import {
     User,
     MoreHorizontal,
 } from "lucide-react"
+import { useSession } from "next-auth/react";
 
 type Item = {
     key: string
@@ -42,28 +43,32 @@ export default function BlogSidebarLeft({
     items = defaultItems,
     className,
 }: Readonly<BlogSidebarLeftProps>) {
+    const { data: session } = useSession();
     return (
-        <Box className={className} w="full" h="100vh" paddingY={5} backgroundColor="whiteAlpha.400" ml={-5}>
-            <Button
-                w="full"
-                paddingEnd={3}
-                marginBottom={15}
-                variant="ghost"
-                borderRadius="sm"
-                justifyContent="flex-start"
-                alignItems="center"
-                color="blackAlpha.900"
-                _hover={{ bg: "blackAlpha.100" }}
-                fontWeight="semibold"
-            >
-                <HStack w="full" gap={3}>
-                    <Avatar.Root size="lg">
-                        <Avatar.Image src="https://picsum.photos/100/100" />
-                        <Avatar.Fallback name="John Doe" />
-                    </Avatar.Root>
-                    <Text fontSize={"md"}>John Doe</Text>
-                </HStack>
-            </Button>
+        <Box className={className} w="full" h="100vh" paddingY={5} backgroundColor="whiteAlpha.400" ml={-5} borderRightWidth="1px" borderColor="blackAlpha.200">
+            {session?.user?.name ?
+                <Button
+                    w="full"
+                    paddingEnd={3}
+                    marginBottom={15}
+                    variant="ghost"
+                    borderRadius="sm"
+                    justifyContent="flex-start"
+                    alignItems="center"
+                    color="blackAlpha.900"
+                    _hover={{ bg: "blackAlpha.100" }}
+                    fontWeight="semibold"
+                >
+
+                    <HStack w="full" gap={3}>
+                        <Avatar.Root size="lg">
+                            <Avatar.Image src="https://picsum.photos/100/100" />
+                            <Avatar.Fallback name="John Doe" />
+                        </Avatar.Root>
+                        <Text fontSize={"md"}>{session?.user?.name}</Text>
+                    </HStack>
+                </Button> : null
+            }
             <VStack align="stretch" gap={5}>
                 {items.map((it) => {
                     const IconComp = it.icon

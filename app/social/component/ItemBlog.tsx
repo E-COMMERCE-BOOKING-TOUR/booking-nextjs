@@ -1,9 +1,7 @@
 "use client";
-import NextLink from "next/link";
-import { Box, HStack, VStack, Text, Image, Badge, Button, Icon, Avatar, Grid, IconButton, useDisclosure } from "@chakra-ui/react";
-import { FiMessageCircle, FiEye, FiThumbsUp, FiMapPin, FiCalendar, FiClock, FiCloud, FiShare2, FiBookmark, FiArrowRight } from "react-icons/fi";
+import { Box, HStack, VStack, Text, Image, Button, Icon, Avatar, Grid, useDisclosure } from "@chakra-ui/react";
+import { FiMessageCircle, FiEye, FiThumbsUp, FiMapPin, FiCalendar, FiCloud, FiShare2, FiBookmark, FiArrowRight } from "react-icons/fi";
 import type { IArticlePopular } from "@/types/response/article";
-import { ArrowRight, Bookmark } from "lucide-react";
 import { dateFormat } from "@/libs/function";
 import { PopUpComment } from "./comments";
 
@@ -12,17 +10,22 @@ type ItemBlogProps = IArticlePopular & {
     authorName?: string;
     authorAvatar?: string;
     tagLabel?: string;
-    images?: string[];
-    tourId?: string;
 }
 
 function TagList({ tags }: { tags: string[] }) {
+    if (!tags || tags.length === 0) return null;
     return (
-        <HStack gap={2} flexWrap="wrap">
+        <HStack gap={2} flexWrap="wrap" mt={2}>
             {tags.map((tag, i) => (
-                <Badge key={i} colorScheme="blue" variant="subtle" borderRadius="full" px={3} py={1} fontSize="xs">
-                    {tag}
-                </Badge>
+                <Text
+                    key={i}
+                    color="blue.500"
+                    cursor="pointer"
+                    _hover={{ textDecoration: "underline" }}
+                    onClick={() => console.log(tag)}
+                >
+                    #{tag}
+                </Text>
             ))}
         </HStack>
     );
@@ -94,8 +97,9 @@ const ImagesGrid = ({ data, title }: { data: string[]; title: string }) => {
 };
 
 export default function ItemBlog(props: ItemBlogProps) {
-    const { images, title, tags, timestamp, views, likes, comments, href, user, id } = props;
+    const { images, title, tags, created_at, count_views, count_likes, count_comments, href, user, id } = props;
     const { open, onOpen, onClose } = useDisclosure();
+    const imageUrls = images?.map(img => img.image_url) || [];
 
     const content = (
         <Box
@@ -125,7 +129,7 @@ export default function ItemBlog(props: ItemBlogProps) {
                 <VStack align="start" gap={0} flex={1}>
                     <Text fontWeight="bold" color="black">{user?.name || "John Doe"}</Text>
                     <HStack gap={2} fontSize="xs" color="gray.600">
-                        {timestamp ? <Text>{dateFormat(timestamp)}</Text> : null}
+                        {created_at ? <Text>{dateFormat(created_at)}</Text> : null}
                     </HStack>
                 </VStack>
                 <HStack gap={2}>
@@ -140,18 +144,20 @@ export default function ItemBlog(props: ItemBlogProps) {
             </HStack>
 
             {/* Text */}
-            <Text fontSize="md" color="black" mb={3}>
+            <Text fontSize="md" color="black" mb={1}>
                 {title}
             </Text>
+            {tags && tags.length > 0 && <TagList tags={tags} />}
+            <Box mb={3} />
 
-            {images && images.length > 0 ? <ImagesGrid key={'das'} title={title} data={images} /> : null}
+            {images && images.length > 0 ? <ImagesGrid key={'das'} title={title} data={imageUrls} /> : null}
 
             {/* Footer options */}
             <VStack align="stretch" gap={4}>
                 <Grid templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }} gap={1} w="full">
                     {[
                         { key: 'city', label: 'City', icon: FiMapPin, subLabel: 'Ho Chi Minh City' },
-                        { key: 'date', label: 'Date', icon: FiCalendar, subLabel: dateFormat(timestamp) },
+                        { key: 'date', label: 'Date', icon: FiCalendar, subLabel: dateFormat(created_at) },
                         { key: 'weather', label: 'Weather', icon: FiCloud, subLabel: 'Sunny' },
                     ]?.map((it) => (
                         <Box
@@ -172,12 +178,12 @@ export default function ItemBlog(props: ItemBlogProps) {
                     ))}
                 </Grid>
                 <HStack gap={4}>
-                    <Button size="xl" variant="ghost" gap={2} color={'blackAlpha.800'} _hover={{color: 'blackAlpha.800'}}><Icon as={FiThumbsUp}/>{likes ?? 0}</Button>
-                    <Button size="xl" variant="ghost" gap={2} color={'blackAlpha.800'} _hover={{color: 'blackAlpha.800'}} onClick={onOpen}><Icon as={FiMessageCircle}/>{comments ?? 0}</Button>
-                    <Button size="xl" variant="ghost" gap={2} color={'blackAlpha.800'} _hover={{color: 'blackAlpha.800'}}><Icon as={FiShare2}/>0</Button>
+                    <Button size="xl" variant="ghost" gap={2} color={'blackAlpha.800'} _hover={{ color: 'blackAlpha.800' }}><Icon as={FiThumbsUp} />{count_likes ?? 0}</Button>
+                    <Button size="xl" variant="ghost" gap={2} color={'blackAlpha.800'} _hover={{ color: 'blackAlpha.800' }} onClick={onOpen}><Icon as={FiMessageCircle} />{count_comments ?? 0}</Button>
+                    <Button size="xl" variant="ghost" gap={2} color={'blackAlpha.800'} _hover={{ color: 'blackAlpha.800' }}><Icon as={FiShare2} />0</Button>
                 </HStack>
             </VStack>
-            <PopUpComment isOpen={open} onClose={onClose} tourId={Number(id)} images={images} />
+            <PopUpComment isOpen={open} onClose={onClose} tourId={Number(id)} images={imageUrls} />
         </Box>
     );
 
@@ -185,36 +191,37 @@ export default function ItemBlog(props: ItemBlogProps) {
 }
 
 ItemBlog.large = function Large(props: ItemBlogProps) {
-    const { images, title, description, tags, timestamp, views, likes, comments, href } = props;
+    const { images, title, content, tags, created_at, count_views, count_likes, count_comments, href } = props;
+    const imageUrls = images?.map(img => img.image_url) || [];
 
-    const content = (
+    const cardContent = (
         <Box bg="white" color="black" borderRadius="md" overflow="hidden" boxShadow="sm">
             {images && images.length > 0 ? (
                 images.length === 1 ? (
                     <Box h="240px" w="full">
-                        <Image src={images[0]} alt={title} w="full" h="full" objectFit="cover" />
+                        <Image src={imageUrls[0]} alt={title} w="full" h="full" objectFit="cover" />
                     </Box>
                 ) : (
                     <Box p={4}>
-                        <ImagesGrid title={title} data={images ?? []} />
+                        <ImagesGrid title={title} data={imageUrls ?? []} />
                     </Box>
                 )
             ) : null}
             <Box p={4}>
-                <TagList tags={tags} />
                 <Text fontSize="xl" fontWeight="bold" mt={2}>{title}</Text>
-                <Text fontSize="sm" color="gray.700" mt={1}>{description}</Text>
+                <Text fontSize="sm" color="gray.700" mt={1}>{content}</Text>
+                <TagList tags={tags} />
                 <HStack mt={3} justify="space-between">
                     <HStack gap={1}>
-                        <Stat icon={FiEye} value={views} />
-                        <Stat icon={FiThumbsUp} value={likes} />
-                        <Stat icon={FiMessageCircle} value={comments} />
+                        <Stat icon={FiEye} value={count_views} />
+                        <Stat icon={FiThumbsUp} value={count_likes} />
+                        <Stat icon={FiMessageCircle} value={count_comments} />
                     </HStack>
-                    {timestamp ? <Text fontSize="xs" color="gray.600">{timestamp}</Text> : null}
+                    {created_at ? <Text fontSize="xs" color="gray.600">{created_at}</Text> : null}
                 </HStack>
             </Box>
         </Box>
     );
 
-    return content;
+    return cardContent;
 }

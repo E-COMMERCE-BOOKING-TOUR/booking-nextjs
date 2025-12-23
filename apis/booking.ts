@@ -40,6 +40,13 @@ export const bookingApi = {
         const res = await fetchC.post(url, dto, { headers: authHeaders.headers });
         return res;
     },
+    getHistory: async (token?: string) => {
+        const url = "/user/booking/history";
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+        const res = await fetchC.get(url, { headers: authHeaders.headers });
+        return res as { id: number; title: string; image?: string }[];
+    },
     getCurrent: async (token?: string): Promise<BookingResult> => {
         const url = "/user/booking/current";
         const authHeaders = await getAuthHeaders(token);

@@ -11,7 +11,7 @@ export default function TopPageLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <Provider defaultTheme='dark'>
+        <Provider defaultTheme='light'>
             <Flex position="relative" flex={1} gap={5} paddingEnd={5} justifyContent="center" minH="100vh" alignItems="flex-start" color="white">
                 <Flex w="375px" position="sticky" top={0} display={{ base: 'none', md: 'flex' }} justifyContent="flex-end">
                     <BlogSidebarLeft className='w-full'/>
