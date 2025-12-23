@@ -3,7 +3,7 @@ import { CardNumberElement, CardExpiryElement, CardCvcElement, useElements, useS
 import { useState } from "react";
 import { StripeCardNumberElement } from "@stripe/stripe-js";
 import { InputUser } from "./form/input";
-import { FaLock, FaCreditCard, FaRegCalendarAlt, FaShieldAlt } from "react-icons/fa";
+import { FaCreditCard, FaRegCalendarAlt, FaShieldAlt } from "react-icons/fa";
 
 interface Props {
     onSuccess: (token: string) => void;
@@ -71,8 +71,12 @@ export const StripeCardForm = ({ onSuccess, currency = 'vnd' }: Props) => {
             } else if (token) {
                 onSuccess(token.id);
             }
-        } catch (err: any) {
-            setError(err.message || "An unexpected error occurred");
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError("An unexpected error occurred");
+            }
         } finally {
             setLoading(false);
         }

@@ -60,7 +60,7 @@ const refreshAccessToken = async (token: JWT): Promise<JWT> => {
 export default {
     providers: [
         Credentials({
-            authorize: async (credentials, request) => {
+            authorize: async (credentials) => {
                 const validatedFields = LoginSchema.safeParse(credentials)
                 if (validatedFields.success) {
                     const { username, password } = validatedFields.data;

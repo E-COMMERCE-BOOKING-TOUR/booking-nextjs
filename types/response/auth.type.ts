@@ -8,8 +8,8 @@ export interface IResponseAuth {
 }
 
 export interface IResponseAuthLogout {
-  error: boolean,
-  message: string,
+    error: boolean,
+    message: string,
 }
 
 export interface IUserAuth {
@@ -18,6 +18,7 @@ export interface IUserAuth {
     full_name: string,
     name?: string,
     email: string,
+    phone?: string,
     role: {
         name: string,
         desciption: string,

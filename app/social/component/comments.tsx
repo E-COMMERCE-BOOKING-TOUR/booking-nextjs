@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState, useEffect } from "react";
 import { Box, Button, Grid, GridItem, HStack, Icon, Image, Input, Text, VStack, Dialog, CloseButton, Portal } from "@chakra-ui/react";
-import { FiHeart, FiMessageCircle, FiMoreHorizontal, FiSend, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiMessageCircle, FiSend, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 export const flatTourComments = [
     // ===== TOUR 201 - Đà Lạt 3N2Đ =====

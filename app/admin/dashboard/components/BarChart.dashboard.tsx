@@ -1,15 +1,6 @@
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 
-
-const chartData = [
-  { month: "January", desktop: 186 },
-  { month: "February", desktop: 305 },
-  { month: "March", desktop: 237 },
-  { month: "April", desktop: 73 },
-  { month: "May", desktop: 209 },
-  { month: "June", desktop: 214 },
-]
 const chartConfig = {
   desktop: {
     label: "Desktop",
@@ -17,12 +8,12 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export const BarCharDashboard = () => {
+export const BarCharDashboard = ({ data }: { data: { name: string; value: number }[] }) => {
   return (
     <ChartContainer config={chartConfig}>
       <AreaChart
         accessibilityLayer
-        data={chartData}
+        data={data}
         margin={{
           left: 0,
           right: 0,
@@ -46,7 +37,7 @@ export const BarCharDashboard = () => {
         </defs>
         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
         <XAxis
-          dataKey="month"
+          dataKey="name"
           tickLine={false}
           axisLine={false}
           tickMargin={12}
@@ -58,7 +49,7 @@ export const BarCharDashboard = () => {
           content={<ChartTooltipContent indicator="dot" />}
         />
         <Area
-          dataKey="desktop"
+          dataKey="value"
           type="natural"
           fill="url(#fillDesktop)"
           stroke="var(--color-desktop)"

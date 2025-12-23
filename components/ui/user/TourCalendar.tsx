@@ -1,10 +1,11 @@
 'use client';
 
-import { Box, Button, Flex, Grid, Heading, HStack, Text, VStack, Spinner } from "@chakra-ui/react";
+import { Box, Button, Flex, Grid, Heading, HStack, Text, Spinner } from "@chakra-ui/react";
 import { useState, useMemo } from "react";
 import tour, { ITourSession } from "@/apis/tour";
 import { useQuery } from "@tanstack/react-query";
 import { BsChevronLeft, BsChevronRight } from "react-icons/bs";
+import { toaster } from "@/components/chakra/toaster";
 
 interface TourCalendarProps {
     tourSlug: string;
@@ -17,7 +18,7 @@ interface TourCalendarProps {
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-export default function TourCalendar({ tourSlug, variantId, durationDays, onSelectDate, minDate = new Date(), initialSelectedDate }: TourCalendarProps) {
+export default function TourCalendar({ tourSlug, variantId, durationDays, onSelectDate, initialSelectedDate }: TourCalendarProps) {
     const [currentMonth, setCurrentMonth] = useState(() => {
         // If there's an initial date, start on that month
         if (initialSelectedDate) {
@@ -52,8 +53,14 @@ export default function TourCalendar({ tourSlug, variantId, durationDays, onSele
     });
 
     const sessionMap = useMemo(() => {
-        const map = new Map<string, ITourSession>();
-        sessions?.forEach((s: ITourSession) => map.set(s.date, s));
+        const map = new Map<string, ITourSession[]>();
+        sessions?.forEach((s: ITourSession) => {
+            const dateStr = s.date;
+            if (!map.has(dateStr)) {
+                map.set(dateStr, []);
+            }
+            map.get(dateStr)?.push(s);
+        });
         return map;
     }, [sessions]);
 
@@ -77,11 +84,36 @@ export default function TourCalendar({ tourSlug, variantId, durationDays, onSele
 
     const handleDateClick = (date: Date) => {
         const dateStr = formatDate(date);
-        const session = sessionMap.get(dateStr);
+        const daySessions = sessionMap.get(dateStr);
 
-        // Check if disabled
-        if (!session || session.status !== 'open' || session.capacity_available <= 0) return;
+        // A date is available if ANY session on that date is open and has capacity
+        const hasAvailableSession = daySessions?.some(s => s.status === 'open' && s.capacity_available > 0);
+
+        if (!hasAvailableSession) return;
         if (date < new Date(new Date().setHours(0, 0, 0, 0))) return;
+
+        // Check if any day in the range is "off" (disabled)
+        if (durationDays > 1) {
+            for (let i = 1; i < durationDays; i++) {
+                const checkDate = new Date(date);
+                checkDate.setDate(checkDate.getDate() + i);
+                const checkDateStr = formatDate(checkDate);
+                const checkDaySessions = sessionMap.get(checkDateStr);
+
+                // A day is considered "off" if there are no open sessions with capacity
+                const isOff = !checkDaySessions?.some(s => s.status === 'open' && s.capacity_available > 0);
+
+                if (isOff) {
+                    toaster.create({
+                        title: "Selected range includes off days",
+                        description: `The tour cannot run on ${checkDate.toLocaleDateString('vi-VN')}. Please choose another start date.`,
+                        type: "error",
+                        duration: 5000,
+                    });
+                    return;
+                }
+            }
+        }
 
         setSelectedStartDate(date);
 
@@ -112,9 +144,12 @@ export default function TourCalendar({ tourSlug, variantId, durationDays, onSele
                         if (!d) return <Box key={`empty-${i}`} />;
 
                         const dateStr = formatDate(d);
-                        const session = sessionMap.get(dateStr);
+                        const daySessions = sessionMap.get(dateStr);
                         const isPast = d < new Date(new Date().setHours(0, 0, 0, 0));
-                        const isDisabled = isPast || !session || session.status !== 'open' || session.capacity_available <= 0;
+
+                        // Available if not past and has at least one open session with capacity
+                        const hasAvailableSession = daySessions?.some(s => s.status === 'open' && s.capacity_available > 0);
+                        const isDisabled = isPast || !hasAvailableSession;
                         const isStartDate = selectedStartDate && d.getTime() === selectedStartDate.getTime();
 
                         // Check range (if selected and tour has multiple days)
@@ -131,7 +166,7 @@ export default function TourCalendar({ tourSlug, variantId, durationDays, onSele
                         const isPartOfSelection = isStartDate || inRange || isEndDate;
 
                         // Price formatting
-                        const price = session?.price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(session.price) : '';
+                        // const price = session?.price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(session.price) : '';
 
                         return (
                             <Box
@@ -160,9 +195,9 @@ export default function TourCalendar({ tourSlug, variantId, durationDays, onSele
                                     <Text fontSize="2xs" color="whiteAlpha.800" position="absolute" top={-1}>End</Text>
                                 )}
                                 <Text fontSize="md" fontWeight={isPartOfSelection ? "bold" : "medium"}>{d.getDate()}</Text>
-                                {!isDisabled && session?.price && !inRange && (
+                                {!isDisabled && daySessions && daySessions.length > 0 && !inRange && (
                                     <Text fontSize="xs" mt={0} fontWeight="semibold" color={isStartDate || isEndDate ? "whiteAlpha.900" : "green.500"}>
-                                        {(session.price / 1000).toFixed(0)}K~
+                                        {(Math.min(...daySessions.map(s => s.price)) / 1000).toFixed(0)}K~
                                     </Text>
                                 )}
                             </Box>

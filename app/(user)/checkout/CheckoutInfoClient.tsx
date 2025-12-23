@@ -1,10 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useCallback, useMemo, useEffect } from "react";
-import { Box, Button, Container, Heading, Stack, Text, Flex, Steps, SimpleGrid, Checkbox, VStack, HStack, Image, DataList, Dialog, Portal } from "@chakra-ui/react";
+import { useMemo } from "react";
+import { Box, Button, Container, Heading, Stack, Text, Flex, Steps, SimpleGrid, Checkbox } from "@chakra-ui/react";
 import { InputUser } from "@/components/ui/user/form/input";
-import CountdownTimer from "@/components/ui/user/CountdownTimer";
 import { useSession } from "next-auth/react";
 import { useMutation } from "@tanstack/react-query";
 import bookingApi, { UpdateContactDTO } from "@/apis/booking";
@@ -12,7 +11,6 @@ import { toaster } from "@/components/chakra/toaster";
 import { IBookingDetail } from "@/types/booking";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
-import { numberFormat } from "@/libs/function";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { BookingSummaryCard } from "@/components/ui/user/BookingSummaryCard";
 import { useBookingExpiry } from "@/hooks/useBookingExpiry";
@@ -111,7 +109,7 @@ export default function CheckoutInfoClient({ initialBooking }: Props) {
             // Keep expiry in localStorage as user proceeds to payment
             router.push("/checkout/payment");
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             toaster.create({
                 title: "Failed to save contact information",
                 description: error.message,
@@ -140,7 +138,7 @@ export default function CheckoutInfoClient({ initialBooking }: Props) {
                 });
             }
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             toaster.create({
                 title: "Failed to cancel booking",
                 description: error.message,
@@ -170,7 +168,7 @@ export default function CheckoutInfoClient({ initialBooking }: Props) {
     console.log("isExpired", isExpired);
 
     return (
-        <Container maxW="2xl" position="relative">
+        <Container maxW="xl" position="relative">
             <BookingExpiryManager isExpired={isExpired} onExpire={handleExpire} expiresAt={initialBooking.hold_expires_at} />
             <Steps.Root defaultStep={0} colorPalette="blue" my="2rem" paddingX="3rem" width="100%">
                 <Steps.List>
@@ -188,7 +186,7 @@ export default function CheckoutInfoClient({ initialBooking }: Props) {
                     <form onSubmit={handleSubmit(onSubmit)} noValidate>
                         <Box p={5} borderRadius="15px">
                             <Heading as="h2" fontSize="2xl" fontWeight="bold">Contact information</Heading>
-                            <Text mt={2} color="fg.muted">We'll send booking confirmation and updates to this contact</Text>
+                            <Text mt={2} color="fg.muted">We&apos;ll send booking confirmation and updates to this contact</Text>
                             <Stack mt={4} gap={4}>
                                 <InputUser
                                     label="Full name"

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef } from "react";
 
 export const useClickOutside = (handler: () => void, enable: boolean) => {
-  const domNodeRef = useRef<any>(null);
-  const domButtonNodeRef = useRef<any>(null);
+  const domNodeRef = useRef<HTMLElement>(null);
+  const domButtonNodeRef = useRef<HTMLElement>(null);
 
   const handleOutsideClick = useCallback(
     (event: MouseEvent) => {

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getRedirectIfNeeded } from "@/libs/checkout";
 import CheckoutInfoClient from "./CheckoutInfoClient";
@@ -17,9 +18,9 @@ export default async function CheckoutPage() {
                 <div className="bg-red-50 border border-red-200 rounded-lg p-6">
                     <h2 className="text-lg font-semibold text-red-800">No active booking found</h2>
                     <p className="text-red-600 mt-1">Please start a new booking from a tour page.</p>
-                    <a href="/" className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <Link href="/" className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                         Return to Home
-                    </a>
+                    </Link>
                 </div>
             </div>
         );

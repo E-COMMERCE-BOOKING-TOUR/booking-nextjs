@@ -28,12 +28,22 @@ export const BookingSummaryCard = ({ booking }: { booking: IBookingDetail }) => 
                     </DataList.Item>
                     <DataList.Item>
                         <DataList.ItemLabel>
-                            Date start
+                            Start Time
                         </DataList.ItemLabel>
                         <DataList.ItemValue display="flex" flexDirection="column" gap={1}>
-                            {new Date(booking.start_date).toLocaleDateString()}
+                            <Text>{new Date(booking.start_date).toLocaleDateString()} {booking.session_start_time ? `(${booking.session_start_time.substring(0, 5)})` : ''}</Text>
                         </DataList.ItemValue>
                     </DataList.Item>
+                    {booking.session_end_time && (
+                        <DataList.Item>
+                            <DataList.ItemLabel>
+                                End Time
+                            </DataList.ItemLabel>
+                            <DataList.ItemValue display="flex" flexDirection="column" gap={1}>
+                                <Text>{booking.session_end_time.substring(0, 5)}</Text>
+                            </DataList.ItemValue>
+                        </DataList.Item>
+                    )}
                     <DataList.Item>
                         <DataList.ItemLabel>
                             Date end

@@ -15,7 +15,6 @@ type BlogSidebarRightProps = {
   title?: string
   items?: TrendingItem[]
   className?: string
-  onShowMoreHref?: string
 }
 
 const defaultItems: TrendingItem[] = [
@@ -29,7 +28,6 @@ export default function BlogSidebarRight({
   title = "What’s happening",
   items = defaultItems,
   className,
-  onShowMoreHref = "#",
 }: Readonly<BlogSidebarRightProps>) {
   return (
     <Box

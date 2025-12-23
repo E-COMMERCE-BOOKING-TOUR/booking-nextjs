@@ -1,67 +1,138 @@
 "use client";
 
-import { Card, CardTitle, CardHeader, CardContent, CardAction } from "@/components/ui/card"
+import { Card, CardTitle, CardHeader, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { useEffect, useState } from "react"
-import { CalendarDays, UserCog, CreditCard, XCircle, Star, MoreHorizontal, Download, Plus, TrendingUp, TrendingDown, Users as UsersIcon, Package, DollarSign } from "lucide-react";
+import { useEffect, useState, useMemo } from "react"
+import {
+    TrendingUp,
+    Users as UsersIcon,
+    Package,
+    DollarSign,
+    Plus,
+    Download,
+    History,
+    Flame,
+    Navigation
+} from "lucide-react";
 import { AppSelect } from "@/components/AppSelect";
 import { BarCharDashboard } from "./components/BarChart.dashboard";
-import { adminApi } from "@/apis/admin";
-import { IBooking } from "@/types/response/booking.type";
-import { ITour } from "@/types/response/tour.type";
-import { INotification } from "@/types/response/user.type";
+import { adminDashboardApi } from "@/apis/admin/dashboard";
+import { IDashboardStats } from "@/types/admin/dashboard";
+import { useSession } from "next-auth/react";
+import Link from "next/link";
 
-const dataSelect = ['Ngày', 'Tháng', 'Năm']
+const dataSelect = ['6 Tháng qua', '1 năm qua']
 
 const AdminDashboard = () => {
-    const [valueSelect, setValueSelect] = useState('Ngày');
-    const [notifications, setNotifications] = useState<INotification[]>([]);
-    const [bookings, setBookings] = useState<IBooking[]>([]);
-    const [tours, setTours] = useState<ITour[]>([]);
+    const { data: session } = useSession();
+    const token = session?.user?.accessToken;
+
+    const [valueSelect, setValueSelect] = useState('6 Tháng qua');
+    const [stats, setStats] = useState<IDashboardStats | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        (async () => {
+        if (!token) return;
+
+        const fetchStats = async () => {
+            setIsLoading(true);
             try {
-                const [resNotifications, resBooking, resTour] = await Promise.all([
-                    adminApi.getNotifications(),
-                    adminApi.getBooking(),
-                    adminApi.getTour()
-                ]);
-                setNotifications(resNotifications);
-                setBookings(resBooking);
-                setTours(resTour);
+                const data = await adminDashboardApi.getStats(token);
+                setStats(data);
             } catch (e) {
-                console.error('Error fetching dashboard data:', e);
+                console.error('Error fetching dashboard stats:', e);
+            } finally {
+                setIsLoading(false);
             }
-        })();
-    }, []);
+        };
 
-    const totalAmount = bookings.reduce((total, booking) => total + (booking.total_amount ?? 0), 0);
-    const totalTourActive = tours.filter((tour) => tour.status === 'active').length;
+        fetchStats();
+    }, [token]);
 
-    const kpis = [
-        { label: "Total Revenue", value: "$" + totalAmount.toLocaleString(), delta: "+2.74%", icon: DollarSign, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-        { label: "Bookings", value: bookings.length.toString(), delta: "+32.5%", icon: CreditCard, color: "text-indigo-500", bg: "bg-indigo-500/10" },
-        { label: "Total Tours", value: tours.length.toString(), delta: "-18.9%", icon: Package, color: "text-amber-500", bg: "bg-amber-500/10" },
-        { label: "Active Tours", value: totalTourActive.toString(), delta: "+14.7%", icon: UsersIcon, color: "text-blue-500", bg: "bg-blue-500/10" },
-    ]
+    const kpis = useMemo(() => {
+        if (!stats) return [];
+        const { kpis: k } = stats;
+        return [
+            {
+                label: "Doanh thu hôm nay",
+                value: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(k.todayRevenue),
+                delta: "Từ 00:00",
+                icon: DollarSign,
+                color: "text-emerald-400",
+                bg: "bg-emerald-400/10",
+                trend: "up"
+            },
+            {
+                label: "Doanh thu tháng này",
+                value: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(k.monthlyRevenue),
+                delta: "Trong " + new Date().toLocaleString('vi-VN', { month: 'long' }),
+                icon: TrendingUp,
+                color: "text-blue-400",
+                bg: "bg-blue-400/10",
+                trend: "up"
+            },
+            {
+                label: "Tour đang chạy",
+                value: k.activeToursCount.toString(),
+                delta: k.activeToursCount.toString() + " tổng cộng",
+                icon: Package,
+                color: "text-amber-400",
+                bg: "bg-amber-400/10",
+                trend: "neutral"
+            },
+            {
+                label: "Người dùng",
+                value: k.totalUsers.toString(),
+                delta: "Tổng thành viên",
+                icon: UsersIcon,
+                color: "text-purple-400",
+                bg: "bg-purple-400/10",
+                trend: "up"
+            },
+        ];
+    }, [stats]);
+
+    const chartData = useMemo(() => {
+        if (!stats) return [];
+        return stats.chartData || [];
+    }, [stats]);
+
+    const trendingTours = useMemo(() => {
+        if (!stats) return [];
+        return stats.trendingTours || [];
+    }, [stats]);
+
+    const recentBookings = useMemo(() => {
+        if (!stats) return [];
+        return stats.recentBookings || [];
+    }, [stats]);
+
+    if (isLoading || !stats) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            </div>
+        );
+    }
 
     return (
-        <div className="flex flex-col gap-8 pb-10">
+        <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
-                    <p className="text-muted-foreground mt-1 text-lg">Welcome back to your administration command center.</p>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Bảng Điều Khiển</h1>
+                    <p className="text-muted-foreground mt-1 text-lg">Chào mừng trở lại! Đây là tóm tắt hoạt động kinh doanh của bạn.</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Button variant="outline" className="gap-2 border-border/60">
+                    <Button variant="outline" className="gap-2 border-white/10 bg-white/5 hover:bg-white/10 transition-all">
                         <Download className="size-4" />
-                        Export Data
+                        Xuất báo cáo
                     </Button>
-                    <Button className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20">
-                        <Plus className="size-4" />
-                        New Tour
+                    <Button asChild className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/20">
+                        <Link href="/admin/tour/create">
+                            <Plus className="size-4" />
+                            Thêm Tour mới
+                        </Link>
                     </Button>
                 </div>
             </div>
@@ -69,20 +140,20 @@ const AdminDashboard = () => {
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {kpis.map((kpi) => (
-                    <Card key={kpi.label} className="border-border/60 bg-card/60 backdrop-blur-sm hover:border-primary/50 transition-all duration-300">
-                        <CardContent className="p-6">
+                    <Card key={kpi.label} className="border-white/5 bg-card/20 backdrop-blur-xl hover:border-primary/30 hover:bg-card/30 transition-all group overflow-hidden relative">
+                        <div className={`absolute top-0 right-0 size-24 -mt-8 -mr-8 rounded-full blur-3xl opacity-10 transition-opacity group-hover:opacity-20 ${kpi.bg}`} />
+                        <CardContent className="p-6 relative">
                             <div className="flex items-center justify-between mb-4">
-                                <div className={`p-3 rounded-xl ${kpi.bg}`}>
+                                <div className={`p-3 rounded-2xl ${kpi.bg}`}>
                                     <kpi.icon className={`size-6 ${kpi.color}`} />
                                 </div>
-                                <div className={`flex items-center gap-1 text-sm font-medium ${kpi.delta.startsWith('+') ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                    {kpi.delta.startsWith('+') ? <TrendingUp className="size-4" /> : <TrendingDown className="size-4" />}
+                                <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 bg-white/5 px-2 py-1 rounded-md">
                                     {kpi.delta}
                                 </div>
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-muted-foreground">{kpi.label}</p>
-                                <h3 className="text-3xl font-bold mt-1 text-foreground">{kpi.value}</h3>
+                                <p className="text-xs font-bold text-muted-foreground/80 uppercase tracking-widest">{kpi.label}</p>
+                                <h3 className="text-2xl font-black mt-1 text-foreground tabular-nums">{kpi.value}</h3>
                             </div>
                         </CardContent>
                     </Card>
@@ -92,128 +163,144 @@ const AdminDashboard = () => {
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Chart Section */}
-                <Card className="lg:col-span-2 border-border/60 bg-card/40 backdrop-blur-md">
-                    <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 pb-6 px-8">
+                <Card className="lg:col-span-2 border-white/5 bg-card/20 backdrop-blur-xl">
+                    <CardHeader className="flex flex-row items-center justify-between border-b border-white/5 pb-6 px-8">
                         <div>
-                            <CardTitle className="text-xl font-semibold text-foreground">Revenue Analytics</CardTitle>
-                            <p className="text-sm text-muted-foreground mt-1">Daily booking performance overview</p>
+                            <CardTitle className="text-xl font-black text-foreground">Phân tích doanh thu</CardTitle>
+                            <p className="text-sm text-muted-foreground mt-1">Biểu đồ tăng trưởng doanh thu gần đây</p>
                         </div>
                         <AppSelect
-                            className="w-[120px] bg-accent/50 border-border/60"
-                            placeholder="Period"
+                            className="w-[160px] bg-white/5 border-white/10"
+                            placeholder="Thời gian"
                             data={dataSelect}
-                            valueSelect={valueSelect ?? 'Ngày'}
+                            valueSelect={valueSelect}
                             onChange={(value) => setValueSelect(value)}
                         />
                     </CardHeader>
                     <CardContent className="p-8">
                         <div className="h-[400px]">
-                            <BarCharDashboard />
+                            <BarCharDashboard data={chartData} />
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* Activity Feed */}
-                <Card className="border-border/60 bg-card/40 backdrop-blur-md">
-                    <CardHeader className="border-b border-border/60 pb-6 px-8 flex flex-row items-center justify-between">
-                        <div>
-                            <CardTitle className="text-xl font-semibold text-foreground">Recent Activity</CardTitle>
-                            <p className="text-sm text-muted-foreground mt-1">Real-time system events</p>
+                {/* Trending Tours */}
+                <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
+                    <CardHeader className="border-b border-white/5 pb-6 px-8">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-orange-500/10">
+                                <Flame className="size-5 text-orange-500 animate-pulse" />
+                            </div>
+                            <div>
+                                <CardTitle className="text-xl font-bold text-foreground">Tour Xu Hướng</CardTitle>
+                                <p className="text-sm text-muted-foreground mt-1">Top 5 tour bán chạy nhất</p>
+                            </div>
                         </div>
-                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-                            <MoreHorizontal className="size-5" />
-                        </Button>
                     </CardHeader>
-                    <CardContent className="p-0">
-                        <div className="flex flex-col max-h-[500px] overflow-y-auto custom-scrollbar p-6 gap-6">
-                            {notifications.length > 0 ? notifications.map((n, index) => {
-                                const Icon = n.is_error ? XCircle : n.is_user ? UserCog : Star;
-                                const colorClass = n.is_error ? "text-rose-500 bg-rose-500/10" : "text-blue-500 bg-blue-500/10";
-                                return (
-                                    <div key={index} className="flex items-start gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors group">
-                                        <div className={`size-10 shrink-0 rounded-xl ${colorClass} flex items-center justify-center transition-transform group-hover:scale-110`}>
-                                            <Icon className="size-5" />
+                    <CardContent className="p-6 space-y-6">
+                        {trendingTours.length > 0 ? trendingTours.map((tour, idx: number) => (
+                            <div key={idx} className="flex items-center gap-4 group">
+                                <div className="size-10 rounded-xl bg-white/5 flex items-center justify-center font-black text-primary text-sm border border-white/10 group-hover:bg-primary group-hover:text-white transition-all">
+                                    {idx + 1}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-bold truncate text-foreground/90 group-hover:text-primary transition-colors">{tour.title}</div>
+                                    <div className="flex items-center gap-3 mt-1">
+                                        <div className="text-[10px] text-muted-foreground flex items-center gap-1 font-bold">
+                                            <Navigation className="size-3" />
+                                            {tour.count} lượt đặt
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="text-sm font-semibold text-foreground truncate">{n.title}</div>
-                                            <div className="text-xs text-muted-foreground mt-1 leading-relaxed">{n.type}</div>
-                                            <div className="text-[10px] text-muted-foreground/60 mt-2 font-medium">Just now</div>
+                                        <div className="text-[10px] text-emerald-400 font-bold">
+                                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tour.revenue)}
                                         </div>
                                     </div>
-                                )
-                            }) : (
-                                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                                    <Star className="size-12 opacity-10 mb-4" />
-                                    <p className="text-sm">No recent activity found</p>
                                 </div>
-                            )}
+                            </div>
+                        )) : (
+                            <div className="py-10 text-center text-muted-foreground">
+                                Chưa có dữ liệu xu hướng.
+                            </div>
+                        )}
+                        <div className="pt-6 border-t border-white/5">
+                            <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] text-primary font-black uppercase tracking-[0.2em] mb-1">Dữ liệu tổng quát</p>
+                                    <p className="text-3xl font-black text-primary">
+                                        {stats.kpis.totalBookings} Đơn
+                                    </p>
+                                </div>
+                                <TrendingUp className="size-10 text-primary opacity-20" />
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Table Section */}
-            <Card className="border-border/60 bg-card/40 backdrop-blur-md overflow-hidden">
-                <CardHeader className="border-b border-border/60 pb-6 px-8 flex flex-row items-center justify-between">
+            {/* Recent Transactions Table */}
+            <Card className="border-white/5 bg-card/20 backdrop-blur-xl overflow-hidden shadow-2xl">
+                <CardHeader className="border-b border-white/5 pb-6 px-8 flex flex-row items-center justify-between">
                     <div>
-                        <CardTitle className="text-xl font-semibold text-foreground">Recent Transactions</CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">Detailed list of tour booking deals</p>
+                        <CardTitle className="text-xl font-black text-foreground">Giao dịch gần đây</CardTitle>
+                        <p className="text-sm text-muted-foreground mt-1">Lịch sử giao dịch mới nhất trên hệ thống</p>
                     </div>
-                    <Button variant="outline" size="sm" className="text-primary border-primary/20 bg-primary/5 hover:bg-primary/10">
-                        View All Deals
+                    <Button asChild variant="ghost" className="text-primary hover:bg-primary/10 font-bold">
+                        <Link href="/admin/booking">Xem tất cả</Link>
                     </Button>
                 </CardHeader>
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-white/5 border-b border-border/40">
-                                    <th className="px-8 py-5 text-xs font-bold uppercase tracking-wider text-muted-foreground/80">ID</th>
-                                    <th className="px-6 py-5 text-xs font-bold uppercase tracking-wider text-muted-foreground/80">Customer</th>
-                                    <th className="px-6 py-5 text-xs font-bold uppercase tracking-wider text-muted-foreground/80">Status</th>
-                                    <th className="px-6 py-5 text-xs font-bold uppercase tracking-wider text-muted-foreground/80">Amount</th>
-                                    <th className="px-6 py-5 text-xs font-bold uppercase tracking-wider text-muted-foreground/80 text-right">Action</th>
+                                <tr className="bg-white/5 border-b border-white/5">
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">ID</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Khách hàng</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Trạng thái</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Doanh thu</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-right">Ngày đặt</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-border/40">
-                                {bookings.map((booking, index) => (
-                                    <tr key={index} className="group hover:bg-white/[0.02] transition-colors cursor-pointer">
-                                        <td className="px-8 py-5 whitespace-nowrap text-sm font-medium text-muted-foreground">#{booking.id}</td>
+                            <tbody className="divide-y divide-white/5">
+                                {recentBookings.map((booking) => (
+                                    <tr key={booking.id} className="group hover:bg-white/[0.05] transition-all cursor-pointer">
+                                        <td className="px-8 py-5 whitespace-nowrap text-xs font-mono font-bold text-muted-foreground group-hover:text-primary">#{booking.id}</td>
                                         <td className="px-6 py-5 whitespace-nowrap">
                                             <div className="flex items-center gap-3">
-                                                <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
+                                                <div className="size-10 rounded-xl bg-white/5 flex items-center justify-center text-primary text-sm font-black border border-white/10 group-hover:border-primary/50 group-hover:scale-105 transition-all">
                                                     {booking.contact_name?.charAt(0) || 'U'}
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm font-semibold text-foreground">{booking.contact_name}</span>
-                                                    <span className="text-xs text-muted-foreground">{booking.contact_email}</span>
+                                                    <span className="text-sm font-bold text-foreground truncate max-w-[150px]">{booking.contact_name}</span>
+                                                    <span className="text-[10px] text-muted-foreground font-medium">{booking.contact_email}</span>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-5 whitespace-nowrap">
-                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${booking.status === 'confirmed' ? 'bg-emerald-500/10 text-emerald-500' :
-                                                    booking.status === 'pending' ? 'bg-amber-500/10 text-amber-500' :
-                                                        'bg-rose-500/10 text-rose-500'
+                                            <div className={`inline-flex items-center px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border ${booking.status === 'confirmed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                                booking.status === 'pending' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                                                    'bg-rose-500/10 text-rose-400 border-rose-500/20'
                                                 }`}>
-                                                <span className={`size-1.5 rounded-full mr-1.5 ${booking.status === 'confirmed' ? 'bg-emerald-500' :
-                                                        booking.status === 'pending' ? 'bg-amber-500' :
-                                                            'bg-rose-500'
+                                                <div className={`size-1.5 rounded-full mr-2 shadow-[0_0_8px] ${booking.status === 'confirmed' ? 'bg-emerald-400 shadow-emerald-400' :
+                                                    booking.status === 'pending' ? 'bg-amber-400 shadow-amber-400' : 'bg-rose-400 shadow-rose-400'
                                                     }`} />
-                                                {booking.status?.toUpperCase() || 'UNKNOWN'}
-                                            </span>
+                                                {booking.status}
+                                            </div>
                                         </td>
-                                        <td className="px-6 py-5 whitespace-nowrap">
-                                            <span className="text-sm font-bold text-foreground">
-                                                ${Number(booking.total_amount).toLocaleString()}
-                                            </span>
+                                        <td className="px-6 py-5 whitespace-nowrap font-mono text-sm font-black text-foreground">
+                                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(booking.total_amount))}
                                         </td>
-                                        <td className="px-6 py-5 whitespace-nowrap text-right">
-                                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <MoreHorizontal className="size-5" />
-                                            </Button>
+                                        <td className="px-8 py-5 whitespace-nowrap text-right text-xs text-muted-foreground font-bold">
+                                            {booking.created_at ? new Date(booking.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A'}
                                         </td>
                                     </tr>
                                 ))}
+                                {recentBookings.length === 0 && (
+                                    <tr>
+                                        <td colSpan={5} className="px-8 py-20 text-center text-muted-foreground bg-white/5">
+                                            <History className="size-12 mx-auto mb-4 opacity-10" />
+                                            Chưa có dữ liệu giao dịch nào được ghi nhận.
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>

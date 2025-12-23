@@ -4,7 +4,6 @@ import { Box } from "@chakra-ui/react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination } from "swiper/modules";
 import TourItem from "./tourItem";
-import Link from "next/link";
 
 import "swiper/css";
 import "swiper/css/navigation";

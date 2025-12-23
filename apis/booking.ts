@@ -6,6 +6,7 @@ export type CreateBookingDTO = {
     startDate: string;
     pax: { paxTypeId: number; quantity: number }[];
     variantId?: number;
+    tourSessionId?: number;
 };
 
 export type UpdateContactDTO = {
@@ -33,7 +34,7 @@ type PaymentMethodsResult =
     | { ok: false; error: string; redirectTo?: string };
 
 export const bookingApi = {
-    create: async (dto: CreateBookingDTO, token?: string) => {
+    create: async (dto: CreateBookingDTO, token?: string): Promise<IBookingDetail> => {
         const url = "/user/booking/create";
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
@@ -171,7 +172,7 @@ export const bookingApi = {
         if (!authHeaders.ok) throw new Error(authHeaders.message);
 
         const response = await fetch(url, {
-            headers: authHeaders.headers as any,
+            headers: authHeaders.headers as HeadersInit,
         });
 
         if (!response.ok) throw new Error("Failed to download receipt");
@@ -183,12 +184,27 @@ export const bookingApi = {
         if (!authHeaders.ok) throw new Error(authHeaders.message);
 
         const response = await fetch(url, {
-            headers: authHeaders.headers as any,
+            headers: authHeaders.headers as HeadersInit,
         });
 
         if (!response.ok) throw new Error("Failed to download invoice");
         return await response.blob();
     },
+    getHistory: async (token: string, page: number = 1, limit: number = 10): Promise<{ ok: boolean; data?: { data: IBookingDetail[], total: number, page: number, limit: number, totalPages: number }; error?: string }> => {
+        const url = `/user/booking/history?page=${page}&limit=${limit}`;
+        try {
+            const res = await fetchC.get(url, {
+                headers: {
+                    "Authorization": "Bearer " + token
+                }
+            });
+            return { ok: true, data: res };
+        } catch (error) {
+            return {
+                ok: false,
+                error: (error as Error)?.message || "Failed to fetch booking history"
+            };
+        }
+    },
 };
-
 export default bookingApi;

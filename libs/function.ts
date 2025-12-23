@@ -8,7 +8,7 @@ export const numberFormat = (price: number, currency: boolean = true) => {
 
 export function objectToFormData(
   formData: FormData,
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   parentKey: string | null = null
 ) {
   for (const key in data) {
@@ -24,17 +24,17 @@ export function objectToFormData(
             return;
           }
           if (typeof item === "object" && item !== null) {
-            objectToFormData(formData, item, newItemKey);
+            objectToFormData(formData, item as Record<string, unknown>, newItemKey);
             return;
           }
-          formData.append(newItemKey, item);
+          formData.append(newItemKey, item as string | Blob);
         });
       } else if (value instanceof File) {
         formData.append(newKey, value);
       } else if (typeof value === "object" && value !== null) {
-        objectToFormData(formData, value, newKey);
+        objectToFormData(formData, value as Record<string, unknown>, newKey);
       } else {
-        formData.append(newKey, value);
+        formData.append(newKey, value as string | Blob);
       }
     }
   }

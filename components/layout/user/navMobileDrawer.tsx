@@ -1,5 +1,5 @@
 'use client';
-import { Button, CloseButton, Drawer, Icon, Portal, useDisclosure, Box } from "@chakra-ui/react";
+import { Button, CloseButton, Drawer, Icon, Portal, useDisclosure } from "@chakra-ui/react";
 import { FiMenu } from "react-icons/fi";
 import { Logo, MenuLinks } from "./navbar";
 import { IBookingDetail } from "@/types/booking";

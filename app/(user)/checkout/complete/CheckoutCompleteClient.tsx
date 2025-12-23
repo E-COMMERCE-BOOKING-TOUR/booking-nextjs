@@ -50,7 +50,7 @@ export default function CheckoutCompleteClient({ initialBooking }: Props) {
     };
 
     return (
-        <Container maxW="2xl" position="relative" py={10}>
+        <Container maxW="xl" position="relative" py={10}>
             {/* Steps: Success State by defaultStep 3 (last one), optionally colorPalette="green" */}
             <Steps.Root defaultStep={3} count={steps.length} colorPalette="green" my="2rem" paddingX="3rem" width="100%">
                 <Steps.List>
@@ -75,12 +75,12 @@ export default function CheckoutCompleteClient({ initialBooking }: Props) {
                             <Flex justify="center" align="center" gap={4} mb={4}>
                                 <Icon as={FaCheckCircle} boxSize={16} color="green.500" />
                             </Flex>
-                            <Heading as="h1" size="2xl" mb={2}>You're all set!</Heading>
+                            <Heading as="h1" size="2xl" mb={2}>You&apos;re all set!</Heading>
                             <Text color="fg.muted" fontSize="lg" mb={4}>
                                 Confirmation #{initialBooking.id}
                             </Text>
                             <Text color="fg.muted" mb={6}>
-                                We've sent the receipt and voucher to <Text as="span" fontWeight="semibold" color="fg.emphasized">{initialBooking.contact_email}</Text>.
+                                We&apos;ve sent the receipt and voucher to <Text as="span" fontWeight="semibold" color="fg.emphasized">{initialBooking.contact_email}</Text>.
                                 Present the QR code on arrival with a valid ID.
                             </Text>
 
@@ -107,7 +107,7 @@ export default function CheckoutCompleteClient({ initialBooking }: Props) {
 
                         {/* What's next */}
                         <Box p={8} pt={0} borderRadius="15px">
-                            <Heading as="h3" fontSize="xl" mb={4}>What's next?</Heading>
+                            <Heading as="h3" fontSize="xl" mb={4}>What&apos;s next?</Heading>
                             <Stack gap={3}>
                                 <Button variant="outline" onClick={() => router.push("/")}>
                                     Plan Another Trip

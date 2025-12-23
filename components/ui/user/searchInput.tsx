@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Box,
   Button,
@@ -41,15 +41,21 @@ export default function SearchInput({ defaultDestination = "" }: SearchInputProp
 
   // Initialize dates on client side only to avoid hydration mismatch
   useEffect(() => {
-    const today = new Date();
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Avoid synchronous setState in effect for React Compiler performance
+    const initDates = () => {
+      const today = new Date();
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
 
-    setSearchData(prev => ({
-      ...prev,
-      checkIn: today,
-      checkOut: tomorrow,
-    }));
+      setSearchData(prev => ({
+        ...prev,
+        checkIn: today,
+        checkOut: tomorrow,
+      }));
+    };
+
+    // We use requestAnimationFrame to move the update out of the synchronous effect body
+    requestAnimationFrame(initDates);
   }, []);
 
   const formatDate = (date: Date | null) => {

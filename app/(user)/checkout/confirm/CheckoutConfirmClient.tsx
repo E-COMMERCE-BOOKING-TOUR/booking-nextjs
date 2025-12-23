@@ -36,7 +36,7 @@ export default function CheckoutConfirmClient({ initialBooking }: Props) {
             });
             router.push("/checkout/complete");
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             toaster.create({
                 title: "Failed to confirm booking",
                 description: error.message,
@@ -58,7 +58,7 @@ export default function CheckoutConfirmClient({ initialBooking }: Props) {
     };
 
     return (
-        <Container maxW="2xl" position="relative" py={10}>
+        <Container maxW="xl" position="relative" py={10}>
             <BookingExpiryManager isExpired={isExpired} onExpire={handleExpire} expiresAt={initialBooking.hold_expires_at} />
             <Steps.Root defaultStep={2} count={steps.length} colorPalette="blue" my="2rem" paddingX="3rem" width="100%">
                 <Steps.List>

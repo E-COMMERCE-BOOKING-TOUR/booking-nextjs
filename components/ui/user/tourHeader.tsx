@@ -1,26 +1,30 @@
 'use client'
-import { Box, Flex, Heading, Text, Button, Badge, HStack, VStack, Dialog, Portal, Input } from "@chakra-ui/react";
+import { Box, Flex, Heading, HStack, Text, Button, Badge, VStack, Dialog, Portal, Input } from "@chakra-ui/react";
 import TourCalendar from "./TourCalendar";
 import StarRating from "./starRating";
-import { useState, useEffect } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { CreateBookingDTO } from "@/apis/booking";
 import { toaster } from "@/components/chakra/toaster";
-import { useSession } from "next-auth/react";
 import { createBooking } from "@/actions/booking";
-import { useTransition } from "react";
 import logout from "@/actions/logout";
+import { tourApi, ITourSession } from "@/apis/tour";
+import { useQuery } from "@tanstack/react-query";
+import Breadcrumb from "./breadcrumb";
 
 interface TourVariant {
     id: number;
     name: string;
     status: string;
-    prices: {
+    tour_variant_pax_type_prices: {
         id: number;
         pax_type_id: number;
         price: number;
-        pax_type_name: string;
+        pax_type: {
+            id: number;
+            name: string;
+        };
     }[];
+    tour_sessions: ITourSession[];
 }
 
 interface TourHeaderProps {
@@ -32,15 +36,17 @@ interface TourHeaderProps {
     slug: string;
     variants: TourVariant[];
     durationDays: number;
+    breadcrumbItems: { label: string; href: string }[];
 }
 
-export default function TourHeader({ title, location, rating, price, oldPrice, slug, variants, durationDays }: TourHeaderProps) {
+export default function TourHeader({ title, location, rating, price, oldPrice, slug, variants, durationDays, breadcrumbItems }: TourHeaderProps) {
     const router = useRouter();
-    const { data: session } = useSession();
-    const [startDate, setStartDate] = useState<string>('');
-    const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
+    const [startDate, setStartDate] = useState<Date | null>(null);
+    const [selectedVariantId, setSelectedVariantId] = useState<number | null>(() => variants?.[0]?.id || null);
     const [paxQuantities, setPaxQuantities] = useState<Record<number, number>>({});
     const [isPending, startTransition] = useTransition();
+
+    const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
 
     // Dialog states
     const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -59,36 +65,59 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
     };
 
     // Handle date selection from calendar
-    const handleDateSelect = (start: Date, end: Date) => {
-        const dateStr = start.toLocaleDateString('en-CA');
-        setStartDate(dateStr);
+    const onSelectDate = (start: Date) => {
+        setStartDate(start);
         closeCalendar();
+        setSelectedSessionId(null); // Reset selected session when date changes
     };
 
-    // Set default variant if only one exists
-    useEffect(() => {
-        if (variants && variants.length === 1) {
-            setSelectedVariantId(variants[0].id);
+    // Sync selectedVariantId if variants change and currently selected is not in the list
+    const [prevVariants, setPrevVariants] = useState(variants);
+    if (variants !== prevVariants) {
+        setPrevVariants(variants);
+        if (!variants?.find(v => v.id === selectedVariantId)) {
+            setSelectedVariantId(variants?.[0]?.id || null);
         }
-    }, [variants]);
+    }
 
     const selectedVariant = variants?.find(v => v.id === selectedVariantId);
 
-    // Initialize pax quantities when variant is selected
-    useEffect(() => {
+    // Sync paxQuantities when variant changes
+    const [prevSelectedVariantId, setPrevSelectedVariantId] = useState<number | null>(null);
+    if (selectedVariantId !== prevSelectedVariantId) {
+        setPrevSelectedVariantId(selectedVariantId);
         if (selectedVariant) {
             const initialQuantities: Record<number, number> = {};
-            selectedVariant.prices.forEach(p => {
+            const prices = selectedVariant.tour_variant_pax_type_prices || [];
+            prices.forEach(p => {
                 initialQuantities[p.pax_type_id] = 0;
             });
-            // Default 1 adult if available (assuming adult is usually the first or has specific ID, but here just first)
-            const firstValidPrice = selectedVariant.prices.find(p => p.price > 0);
+            const firstValidPrice = prices.find(p => p.price > 0);
             if (firstValidPrice) {
                 initialQuantities[firstValidPrice.pax_type_id] = 1;
             }
             setPaxQuantities(initialQuantities);
+            setSelectedSessionId(null);
         }
-    }, [selectedVariant]);
+    }
+
+    // Fetch sessions for the selected variant and date
+    const { data: sessions } = useQuery({
+        queryKey: ['tourSessions', slug, selectedVariantId, startDate?.toISOString().split('T')[0]],
+        queryFn: () => {
+            if (!selectedVariantId || !startDate) return [];
+            const dateStr = startDate.toISOString().split('T')[0];
+            return tourApi.getSessions(slug, selectedVariantId, dateStr, dateStr);
+        },
+        enabled: !!selectedVariantId && !!startDate
+    });
+
+    const availableSessions = useMemo(() => {
+        if (!startDate || !selectedVariantId || !sessions) return [];
+        return sessions.filter((s: ITourSession) => {
+            return s.status === 'open' && s.capacity_available > 0;
+        }).sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+    }, [startDate, selectedVariantId, sessions]);
 
     const handleBooking = () => {
         if (!startDate) {
@@ -108,8 +137,17 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
             return;
         }
 
+        if (availableSessions.length > 0 && !selectedSessionId) {
+            toaster.create({
+                title: "Please select a time slot.",
+                type: "warning",
+                duration: 3000,
+            });
+            return;
+        }
+
         const pax = Object.entries(paxQuantities)
-            .filter(([_, quantity]) => quantity > 0)
+            .filter(([, quantity]) => quantity > 0)
             .map(([paxTypeId, quantity]) => ({
                 paxTypeId: parseInt(paxTypeId),
                 quantity
@@ -126,9 +164,10 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
 
         startTransition(async () => {
             const result = await createBooking({
-                startDate,
+                startDate: startDate.toISOString().split('T')[0],
                 pax,
-                variantId: selectedVariantId
+                variantId: selectedVariantId,
+                tourSessionId: selectedSessionId || undefined
             });
 
             if (!result.ok) {
@@ -165,40 +204,57 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
     return (
         <Flex
             justifyContent="space-between"
-            alignItems="center"
-            mt={6}
-            mb={4}
-            gap={4}
+            alignItems="flex-end"
+            mt={8}
+            mb={6}
+            gap={6}
             direction={{ base: "column", md: "row" }}
         >
             <Box flex={1}>
-                <Heading as="h1" size="xl" mb={2}>
-                    {title}
-                </Heading>
-                <Text color="gray.600" mb={2}>
-                    {location}
-                </Text>
-                <HStack gap={2}>
-                    <Badge colorScheme="blue" borderRadius="full" px={2} py={1}>
-                        {rating}
+                <Breadcrumb
+                    items={breadcrumbItems}
+                />
+                <VStack align="start" gap={1}>
+                    <Heading as="h1" size="2xl" fontWeight="black" letterSpacing="tight">
+                        {title}
+                    </Heading>
+                    <HStack gap={1} color="gray.500" fontSize="sm" fontWeight="medium">
+                        <Text>{location}</Text>
+                        <Text>•</Text>
+                        <Text>{durationDays} Days</Text>
+                    </HStack>
+                </VStack>
+
+                <HStack gap={3} mt={4}>
+                    <HStack gap={1.5}>
+                        <StarRating rating={rating} />
+                        <Text fontSize="md" fontWeight="bold" color="gray.700">{rating.toFixed(1)}</Text>
+                    </HStack>
+                    <Badge colorPalette="blue" variant="solid" rounded="full" px={3} py={0.5} fontSize="10px" fontWeight="black" textTransform="uppercase">
+                        Recommended
                     </Badge>
-                    <StarRating rating={rating} />
                 </HStack>
             </Box>
 
-            <VStack gap={4} align="flex-end" w={{ base: "100%", md: "auto" }}>
-                <HStack gap={8} textAlign="right" justify="flex-end">
-                    <VStack align="flex-end">
-                        <Heading as="h2" size="2xl" color="main" fontWeight="bold">
-                            VND {price.toLocaleString()}
-                        </Heading>
+            <VStack gap={4} align={{ base: "stretch", md: "flex-end" }} minW={{ md: "250px" }}>
+                <VStack align="flex-end" gap={0}>
+                    <Text color="gray.500" fontSize="10px" fontWeight="black" textTransform="uppercase" letterSpacing="widest" mb={-1}>
+                        From
+                    </Text>
+                    <Heading as="h2" size="4xl" color="main" fontWeight="black" letterSpacing="tight">
+                        VND {price.toLocaleString()}
+                    </Heading>
+                    <HStack gap={2} mt={1}>
                         {oldPrice && (
-                            <Text as="del" color="gray.400" fontSize="sm">
+                            <Text as="del" color="gray.400" fontSize="sm" fontWeight="medium">
                                 VND {oldPrice.toLocaleString()}
                             </Text>
                         )}
-                    </VStack>
-                </HStack>
+                        <Text color="gray.500" fontSize="xs" fontWeight="bold">
+                            / per person
+                        </Text>
+                    </HStack>
+                </VStack>
 
                 {/* Book Tour Dialog */}
                 <Dialog.Root
@@ -214,13 +270,23 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                         <Button
                             bg="main"
                             color="white"
-                            rounded="15px"
+                            rounded="2xl"
                             px={12}
                             py={8}
+                            fontSize="lg"
+                            fontWeight="black"
                             width="100%"
+                            _hover={{
+                                bg: "blue.800",
+                                transform: "translateY(-2px)",
+                                boxShadow: "0 10px 20px rgba(0, 59, 149, 0.2)"
+                            }}
+                            _active={{ transform: "translateY(0)" }}
+                            transition="all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+                            boxShadow="0 4px 14px 0 rgba(0, 59, 149, 0.39)"
                             onClick={() => setIsBookingOpen(true)}
                         >
-                            Select Rooms
+                            Reserve Your Spot
                         </Button>
                     </Dialog.Trigger>
                     <Portal>
@@ -233,35 +299,52 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                 <Dialog.Body>
                                     <VStack gap={4} align="stretch">
                                         {/* Date Selection */}
-                                        <Box>
-                                            <Text fontSize="sm" mb={2} fontWeight="bold">Select Date</Text>
-                                            {selectedVariant ? (
-                                                <>
-                                                    <Button
-                                                        variant="outline"
-                                                        width="full"
-                                                        justifyContent="flex-start"
-                                                        onClick={openCalendar}
-                                                    >
-                                                        {startDate
-                                                            ? new Date(startDate).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-                                                            : 'Click to select date...'
-                                                        }
-                                                    </Button>
-                                                </>
-                                            ) : (
-                                                <Text fontSize="sm" color="gray.500">Please select a variant first</Text>
-                                            )}
-                                        </Box>
+                                        <Text fontSize="sm" mb={2} fontWeight="bold">Select Date</Text>
+                                        {selectedVariant ? (
+                                            <VStack align="stretch" gap={2}>
+                                                <Button
+                                                    variant="outline"
+                                                    width="full"
+                                                    justifyContent="flex-start"
+                                                    onClick={openCalendar}
+                                                >
+                                                    {startDate
+                                                        ? new Date(startDate).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+                                                        : 'Click to select date...'
+                                                    }
+                                                </Button>
+
+                                                {availableSessions && availableSessions.length > 0 && (
+                                                    <Box mt={2}>
+                                                        <Text fontSize="xs" fontWeight="bold" mb={2} color="gray.600">Start Time:</Text>
+                                                        <Flex gap={2} wrap="wrap">
+                                                            {availableSessions.map((s, i) => (
+                                                                <Button
+                                                                    key={`${s.id}-${i}`}
+                                                                    size="sm"
+                                                                    variant={selectedSessionId === s.id ? "solid" : "outline"}
+                                                                    colorScheme="teal"
+                                                                    onClick={() => setSelectedSessionId(s.id)}
+                                                                >
+                                                                    {(s.start_time && s.start_time !== '00:00:00') ? `${s.start_time.substring(0, 5)}${s.end_time ? ` - ${s.end_time.substring(0, 5)}` : ''}` : 'All Day'}
+                                                                </Button>
+                                                            ))}
+                                                        </Flex>
+                                                    </Box>
+                                                )}
+                                            </VStack>
+                                        ) : (
+                                            <Text fontSize="sm" color="gray.500">Please select a variant first</Text>
+                                        )}
 
                                         {/* Variant Selection */}
                                         {variants && variants.length > 1 && (
                                             <Box>
                                                 <Text fontSize="sm" mb={1} fontWeight="bold">Variant</Text>
                                                 <Flex gap={2} wrap="wrap">
-                                                    {variants.map(v => (
+                                                    {variants.map((v, i) => (
                                                         <Button
-                                                            key={v.id}
+                                                            key={`${v.id}-${i}`}
                                                             variant={selectedVariantId === v.id ? "solid" : "outline"}
                                                             colorScheme="blue"
                                                             onClick={() => setSelectedVariantId(v.id)}
@@ -279,9 +362,9 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                             <Box>
                                                 <Text fontSize="sm" mb={1} fontWeight="bold">Passengers</Text>
                                                 <VStack gap={2} align="stretch">
-                                                    {selectedVariant.prices.filter(p => p.price > 0).map(p => (
-                                                        <HStack key={p.id} justify="space-between">
-                                                            <Text>{p.pax_type_name} ({p.price.toLocaleString()} VND)</Text>
+                                                    {(selectedVariant.tour_variant_pax_type_prices || []).filter(p => p.price > 0).map((p, i) => (
+                                                        <HStack key={`${p.id}-${i}`} justify="space-between">
+                                                            <Text>{p.pax_type.name} ({p.price.toLocaleString()} VND)</Text>
                                                             <Input
                                                                 type="number"
                                                                 min={0}
@@ -343,8 +426,8 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                             tourSlug={slug}
                                             variantId={selectedVariant.id}
                                             durationDays={durationDays}
-                                            onSelectDate={handleDateSelect}
-                                            initialSelectedDate={startDate}
+                                            onSelectDate={onSelectDate}
+                                            initialSelectedDate={startDate ? startDate.toISOString().split('T')[0] : undefined}
                                         />
                                     )}
                                 </Dialog.Body>
@@ -359,7 +442,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                     </Portal>
                 </Dialog.Root>
             </VStack>
-        </Flex>
+        </Flex >
     );
 }
 

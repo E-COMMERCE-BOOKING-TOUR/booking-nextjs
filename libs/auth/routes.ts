@@ -3,10 +3,8 @@ export const publicRoutes = ["/"];
 export const authRoutes = ["/user-login", "/user-register"];
 
 export const userRoutes = [
-  "/user",
-  "/user-profile",
-  "/user-order",
-  "/user-order-detail",
+  "/mypage",
+  "/checkout",
 ];
 
 export const adminRoutes = ["/admin"];

@@ -1,4 +1,4 @@
-import { Box, Flex, Text, Stack, HStack } from "@chakra-ui/react";
+import { Box, Flex, Text, Stack, VStack } from "@chakra-ui/react";
 import type { TourTestimonial } from "@/types/tour";
 
 interface TourSidebarProps {
@@ -17,67 +17,123 @@ export default function TourSidebar({
     testimonial,
 }: TourSidebarProps) {
     return (
-        <Stack gap={2}>
-            <Box bg="blue.400" color="white" p={4} borderRadius="lg">
-                <Flex justifyContent="space-between" alignItems="center">
-                    <Box>
-                        <Text fontSize="2xl" fontWeight="bold">
-                            {scoreLabel}
-                        </Text>
-                        <Text fontSize="sm">{reviewCount.toLocaleString()} reviews</Text>
+        <Stack gap={6} w="full">
+            {/* Unified Score Board Card */}
+            <Box
+                bg="white"
+                border="1px solid"
+                borderColor="gray.200"
+                p={6}
+                borderRadius="2xl"
+                boxShadow="rgba(0, 0, 0, 0.04) 0px 10px 24px"
+            >
+                <VStack align="stretch" gap={6}>
+                    <Flex justifyContent="space-between" alignItems="center">
+                        <Box>
+                            <Text fontSize="2xl" fontWeight="black" color="gray.800" letterSpacing="tight">
+                                {scoreLabel}
+                            </Text>
+                            <Text fontSize="xs" fontWeight="black" color="main" textTransform="uppercase" letterSpacing="widest">
+                                {reviewCount.toLocaleString()} verified reviews
+                            </Text>
+                        </Box>
+                        <Box
+                            bg="main"
+                            px={5}
+                            py={4}
+                            borderRadius="2xl"
+                            boxShadow="0 8px 16px rgba(0, 59, 149, 0.25)"
+                        >
+                            <Text fontSize="3xl" fontWeight="black" color="white" lineHeight="1">
+                                {score.toFixed(1)}
+                            </Text>
+                        </Box>
+                    </Flex>
+
+                    <Box pt={4} borderTop="1px solid" borderColor="gray.100">
+                        <Stack gap={4}>
+                            <Flex justifyContent="space-between" alignItems="center">
+                                <VStack align="start" gap={0}>
+                                    <Text fontWeight="black" color="gray.700" fontSize="sm">Staff</Text>
+                                    <Text fontSize="xs" color="gray.500" fontWeight="bold">Professional & Friendly</Text>
+                                </VStack>
+                                <Box bg="blue.50" color="main" px={3} py={1} borderRadius="lg" fontWeight="black" fontSize="sm">
+                                    {staffScore.toFixed(1)}
+                                </Box>
+                            </Flex>
+
+                            <Flex justifyContent="space-between" alignItems="center">
+                                <VStack align="start" gap={0}>
+                                    <Text fontWeight="black" color="gray.700" fontSize="sm">Value for money</Text>
+                                    <Text fontSize="xs" color="gray.500" fontWeight="bold">Competitive pricing</Text>
+                                </VStack>
+                                <Box bg="blue.50" color="main" px={3} py={1} borderRadius="lg" fontWeight="black" fontSize="sm">
+                                    8.9
+                                </Box>
+                            </Flex>
+                        </Stack>
                     </Box>
-                    <Box bg="blue.600" px={4} py={2} borderRadius="md">
-                        <Text fontSize="2xl" fontWeight="bold">
-                            {score}
-                        </Text>
-                    </Box>
-                </Flex>
+                </VStack>
             </Box>
 
-            {testimonial && (
-                <Box p={4} bg="gray.50" borderRadius="lg">
-                    <Text fontWeight="semibold" mb={2}>
-                        Guests who stayed here loved
-                    </Text>
-                    <Text fontSize="sm" color="gray.600" mb={3}>
+            {testimonial && testimonial.text && (
+                <Box
+                    p={6}
+                    bg="gray.50"
+                    borderRadius="2xl"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    position="relative"
+                >
+                    <Box
+                        position="absolute"
+                        top="-10px"
+                        left="24px"
+                        bg="main"
+                        color="white"
+                        fontSize="10px"
+                        fontWeight="black"
+                        px={3}
+                        py={1}
+                        rounded="full"
+                        textTransform="uppercase"
+                        boxShadow="md"
+                    >
+                        Guest Favorite
+                    </Box>
+                    <Text fontSize="sm" color="gray.700" mt={2} mb={5} fontStyle="italic" lineHeight="relaxed" fontWeight="medium">
                         &ldquo;{testimonial.text}&rdquo;
                     </Text>
-                    <HStack>
+                    <Flex gap={4} alignItems="center">
                         <Box
-                            bg="green.400"
-                            color="white"
+                            bg="white"
+                            color="main"
                             borderRadius="full"
-                            w={8}
-                            h={8}
+                            w={12}
+                            h={12}
                             display="flex"
                             alignItems="center"
                             justifyContent="center"
-                            fontWeight="bold"
+                            fontWeight="black"
+                            fontSize="md"
+                            boxShadow="sm"
+                            border="2px solid"
+                            borderColor="main"
+                            flexShrink={0}
                         >
                             {testimonial.name.charAt(0)}
                         </Box>
                         <Box>
-                            <Text fontSize="sm" fontWeight="semibold">
+                            <Text fontSize="sm" fontWeight="black" color="gray.800" lineClamp={1}>
                                 {testimonial.name}
                             </Text>
-                            <Text fontSize="xs" color="gray.500">
-                                🇬🇧 {testimonial.country}
+                            <Text fontSize="xs" color="gray.500" fontWeight="black" textTransform="uppercase" letterSpacing="wider" lineClamp={1}>
+                                {testimonial.country}
                             </Text>
                         </Box>
-                    </HStack>
+                    </Flex>
                 </Box>
             )}
-
-            <Box p={4} bg="gray.50" borderRadius="lg">
-                <Flex justifyContent="space-between" alignItems="center">
-                    <Text fontWeight="semibold">Staff</Text>
-                    <Box bg="blue.600" color="white" px={3} py={1} borderRadius="md" fontWeight="bold">
-                        {staffScore}
-                    </Box>
-                </Flex>
-            </Box>
         </Stack>
     );
 }
-
-
