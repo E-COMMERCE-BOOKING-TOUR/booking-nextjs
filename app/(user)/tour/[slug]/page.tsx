@@ -21,6 +21,8 @@ type TourData = {
     scoreLabel: string;
     staffScore: number;
     images: string[];
+    durationDays: number;
+    slug: string;
     testimonial?: {
         name: string;
         country: string;
@@ -58,7 +60,7 @@ type TourData = {
     }[];
 };
 
-const normalizeDetail = (response: unknown): TourData | null => {
+const normalizeDetail = (response: unknown): any | null => {
     if (!response || typeof response !== "object" || Array.isArray(response)) return null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const payload = "data" in response ? (response as any).data : response;
@@ -104,6 +106,8 @@ const getTourData = async (slug: string): Promise<TourData> => {
             scoreLabel: tourDetail.scoreLabel ?? "",
             staffScore: tourDetail.staffScore ?? 0,
             images: tourDetail.images ?? [],
+            durationDays: tourDetail.durationDays ?? 1,
+            slug: tourDetail.slug || slug,
             testimonial: tourDetail.testimonial ?? {
                 name: "",
                 country: "",
@@ -159,73 +163,86 @@ export default async function TourDetailPage({ params }: { params: Promise<{ slu
     }
 
     return (
-        <Container maxW="7xl" mx="auto" px={4} py={6}>
-            <SearchInput defaultDestination={tour.location} />
+        <>
+            <VStack borderBottomRadius="calc(100vw / 16)" backgroundColor="white" paddingBottom="calc(100vw / 24)" position="relative" zIndex={2}>
+                <Container maxW="xl" mx="auto" px={4}>
+                    <SearchInput defaultDestination={tour.location} />
 
-            <Box bg="white" rounded="25px" p={4}>
-                <Breadcrumb
-                    items={[
-                        { label: "Projects", href: "/projects" },
-                        { label: "Projects", href: "/projects" },
-                        { label: "Task 1", href: "#" },
-                    ]}
-                />
+                    <Box mt={4}>
+                        <TourHeader
+                            breadcrumbItems={[
+                                { label: "Home", href: "/" },
+                                { label: "Tours", href: "/tours" },
+                                { label: tour.location, href: "#" },
+                            ]}
+                            title={tour.title}
+                            location={tour.location}
+                            rating={tour.rating}
+                            price={tour.price}
+                            oldPrice={tour.oldPrice}
+                            slug={slug}
+                            variants={tour.variants}
+                            durationDays={tour.details.duration ? parseInt(tour.details.duration) : 1}
+                        />
 
-                <TourHeader
-                    title={tour.title}
-                    location={tour.location}
-                    rating={tour.rating}
-                    price={tour.price}
-                    oldPrice={tour.oldPrice}
-                    slug={slug}
-                    variants={tour.variants}
-                    durationDays={tour.details.duration ? parseInt(tour.details.duration) : 1} // Fallback parsing or use tour.durationDays if mapped
-                />
+                        <Grid templateColumns={{ base: "1fr", md: "repeat(8, 1fr)" }} gap={5} mt={8}>
+                            <GridItem colSpan={6}>
+                                <TourGalleryWithThumbnails images={tour.images} />
+                            </GridItem>
 
-                <Grid templateColumns={{ base: "repeat(4, 1fr)", lg: "repeat(4, 1fr)" }} gap={2} mt={6}>
-                    <GridItem colSpan={3}>
-                        <TourGalleryWithThumbnails images={tour.images} />
+                            <GridItem as={VStack} colSpan={2} gap={4}>
+                                <TourSidebar
+                                    score={tour.score}
+                                    scoreLabel={tour.scoreLabel}
+                                    reviewCount={tour.reviewCount}
+                                    staffScore={tour.staffScore}
+                                    testimonial={tour.testimonial}
+                                />
+                                <TourMapSection mapUrl={tour.mapUrl} previewImage={tour.mapPreview} />
+                            </GridItem>
+                        </Grid>
+                    </Box>
+                </Container>
+            </VStack>
+
+            <Container maxW="xl" mx="auto" px={4} py={12}>
+                <Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={12}>
+                    <GridItem colSpan={{ base: 1, lg: 2 }}>
+                        <TourDescription
+                            description={tour.description}
+                            activity={tour.activity ?? { title: "", items: [] }}
+                            included={tour.included}
+                            notIncluded={tour.notIncluded}
+                            details={tour.details}
+                            meetingPoint={tour.meetingPoint}
+                        />
                     </GridItem>
 
-                    <GridItem as={VStack} colSpan={1} gap={2} height="100%">
-                        <TourSidebar
-                            score={tour.score}
-                            scoreLabel={tour.scoreLabel}
-                            reviewCount={tour.reviewCount}
-                            staffScore={tour.staffScore}
-                            testimonial={tour.testimonial}
-                        />
-                        <TourMapSection mapUrl={tour.mapUrl} previewImage={tour.mapPreview} />
+                    <GridItem colSpan={1}>
+                        <VStack align="stretch" gap={8} pos="sticky" top="100px">
+                            {/* You can add a floating booking card or other info here */}
+                        </VStack>
                     </GridItem>
                 </Grid>
-            </Box>
 
-            <Box bg="white" rounded="25px" p={4} mt={6}>
-                <TourDescription
-                    description={tour.description}
-                    activity={tour.activity ?? { title: "", items: [] }}
-                    included={tour.included}
-                    notIncluded={tour.notIncluded}
-                    details={tour.details}
-                    meetingPoint={tour.meetingPoint}
-                />
+                <VStack align="stretch" gap={10} mt={20}>
+                    <Box>
+                        <Heading as="h2" size="2xl" fontWeight="black" mb={8} letterSpacing="tight">
+                            Related tours
+                        </Heading>
+                        <RelatedToursSwiper tours={relatedTours} />
+                    </Box>
 
-                <VStack align="stretch" gap={6} mt={12} mb={8}>
-                    <Heading as="h2" size="xl" fontWeight="bold">
-                        Related tours in London
-                    </Heading>
-                    <RelatedToursSwiper tours={relatedTours} />
+                    <Box id="reviews" pt={10} borderTop="1px solid" borderColor="gray.100">
+                        <TourReviews
+                            averageRating={tour.rating}
+                            totalReviews={tour.reviewCount}
+                            categories={reviewCategories}
+                            reviews={reviews}
+                        />
+                    </Box>
                 </VStack>
-            </Box>
-
-            <Box bg="white" rounded="25px" p={4} mt={6}>
-                <TourReviews
-                    averageRating={tour.rating}
-                    totalReviews={tour.reviewCount}
-                    categories={reviewCategories}
-                    reviews={reviews}
-                />
-            </Box>
-        </Container>
+            </Container>
+        </>
     );
 }

@@ -15,6 +15,13 @@ export enum NotificationType {
     policy = 'policy',
 }
 
+export enum TargetGroup {
+    all = 'all',
+    admin = 'admin',
+    supplier = 'supplier',
+    specific = 'specific',
+}
+
 export interface INotification {
     id: number;
     title: string;
@@ -22,6 +29,7 @@ export interface INotification {
     type: NotificationType;
     is_error: boolean;
     is_user: boolean;
+    target_group: TargetGroup;
     user_ids: number[];
     created_at: string;
     updated_at: string;

@@ -168,7 +168,7 @@ export default function CheckoutInfoClient({ initialBooking }: Props) {
     console.log("isExpired", isExpired);
 
     return (
-        <Container maxW="2xl" position="relative">
+        <Container maxW="xl" position="relative">
             <BookingExpiryManager isExpired={isExpired} onExpire={handleExpire} expiresAt={initialBooking.hold_expires_at} />
             <Steps.Root defaultStep={0} colorPalette="blue" my="2rem" paddingX="3rem" width="100%">
                 <Steps.List>

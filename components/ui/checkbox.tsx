@@ -16,7 +16,7 @@ export function Checkbox({ className, checked, onCheckedChange, ...props }: Chec
         "size-4 rounded-sm border bg-background shadow-xs focus-visible:ring-2 focus-visible:ring-ring/50",
         className
       )}
-      checked={checked}
+      checked={!!checked}
       onChange={(e) => onCheckedChange?.(e.target.checked)}
       {...props}
     />

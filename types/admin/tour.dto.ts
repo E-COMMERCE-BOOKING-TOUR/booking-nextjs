@@ -20,6 +20,36 @@ export type CreateTourDTO = {
     supplier_id: number;
     tour_category_ids?: number[];
     images?: { image_url: string; sort_no?: number; is_cover?: boolean }[];
+    meeting_point?: string;
+    included?: string[];
+    not_included?: string[];
+    highlights?: { title?: string; items?: string[] };
+    languages?: string[];
+    staff_score?: number;
+    testimonial?: { name?: string; country?: string; text?: string };
+    map_preview?: string;
+    variants?: {
+        id?: number;
+        name: string;
+        min_pax_per_booking: number;
+        capacity_per_slot: number;
+        tax_included: boolean;
+        cutoff_hours: number;
+        status: string;
+        prices: {
+            id?: number;
+            pax_type_id: number;
+            price: number;
+        }[];
+        sessions?: {
+            session_date: string;
+            start_time: string;
+            end_time?: string | null;
+            status: string;
+            capacity: number;
+            capacity_available: number;
+        }[];
+    }[];
 };
 
 export type AdminTourSearchParams = {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,13 +12,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
-    CheckCircle2,
-    Info,
-    Image as ImageIcon,
     Settings2,
     CalendarDays,
-    Save
+    Save,
+    ListChecks,
+    MessageSquareQuote,
+    Trash2,
+    Plus,
+    Info,
+    Image as ImageIcon,
+    CheckCircle2
 } from 'lucide-react';
+import Image from 'next/image';
 import { cn } from '@/libs/utils';
 import VariantSchedulingEditor from './VariantSchedulingEditor';
 import SortableTourImage from './SortableTourImage';
@@ -39,7 +44,7 @@ import {
     rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { useSession } from 'next-auth/react';
-import { useForm, useFieldArray, Resolver } from 'react-hook-form';
+import { useForm, useFieldArray, Resolver, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -47,10 +52,11 @@ import { useQuery } from '@tanstack/react-query';
 
 const STEPS = [
     { id: 1, title: 'Thông tin chung', icon: Info },
-    { id: 2, title: 'Hình ảnh', icon: ImageIcon },
-    { id: 3, title: 'Biến thể & Giá', icon: Settings2 },
-    { id: 4, title: 'Lịch trình & Session', icon: CalendarDays },
-    { id: 5, title: 'Xác nhận', icon: CheckCircle2 },
+    { id: 2, title: 'Chi tiết & Tiện ích', icon: ListChecks },
+    { id: 3, title: 'Hình ảnh', icon: ImageIcon },
+    { id: 4, title: 'Biến thể & Giá', icon: Settings2 },
+    { id: 5, title: 'Lịch trình & Session', icon: CalendarDays },
+    { id: 6, title: 'Xác nhận', icon: CheckCircle2 },
 ];
 
 const tourSchema = z.object({
@@ -94,6 +100,21 @@ const tourSchema = z.object({
     duration_hours: z.coerce.number().min(0).nullable().optional(),
     duration_days: z.coerce.number().min(0).nullable().optional(),
     published_at: z.string().nullable().optional(),
+    meeting_point: z.string().optional(),
+    included: z.array(z.string()).default([]),
+    not_included: z.array(z.string()).default([]),
+    highlights: z.object({
+        title: z.string().default('Điểm nổi bật'),
+        items: z.array(z.string()).default([])
+    }).optional(),
+    languages: z.array(z.string()).default(['English', 'Vietnamese']),
+    staff_score: z.coerce.number().min(0).max(10).default(0),
+    testimonial: z.object({
+        name: z.string().optional(),
+        country: z.string().optional(),
+        text: z.string().optional()
+    }).optional(),
+    map_preview: z.string().optional(),
 });
 
 type TourFormValues = z.infer<typeof tourSchema>;
@@ -151,8 +172,108 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
             duration_hours: null,
             duration_days: null,
             published_at: null,
+            meeting_point: '',
+            included: [],
+            not_included: [],
+            highlights: { title: 'Những trải nghiệm thú vị', items: [] },
+            languages: ['Tiếng Việt', 'Tiếng Anh'],
+            staff_score: 9.0,
+            testimonial: { name: '', country: '', text: '' },
+            map_preview: '',
         }
     });
+
+    const { fields: variantFields, append: appendVariant, remove: removeVariant } = useFieldArray({
+        control: form.control,
+        name: "variants"
+    });
+
+    // Compute scheduling from initialData using useMemo to avoid setState in effect
+    const initialScheduling = useMemo(() => {
+        if (!initialData?.variants) return {};
+
+        const computed: Record<number, {
+            ranges: { start: string, end: string }[],
+            excluded: string[],
+            timeSlots?: string[],
+            durationHours?: number | null
+        }> = {};
+
+        initialData.variants.forEach((v, vIdx: number) => {
+            if (v.tour_sessions?.length) {
+                const sortedSessions = [...v.tour_sessions].sort((a, b) =>
+                    new Date(a.session_date).getTime() - new Date(b.session_date).getTime()
+                );
+
+                const minDate = sortedSessions[0].session_date;
+                const maxDate = sortedSessions[sortedSessions.length - 1].session_date;
+
+                const allDates: string[] = [];
+                const curr = new Date(minDate);
+                const end = new Date(maxDate);
+                while (curr <= end) {
+                    allDates.push(curr.toISOString().split('T')[0]);
+                    curr.setDate(curr.getDate() + 1);
+                }
+
+                const sessionDates = sortedSessions.map(s => s.session_date);
+                const excluded = allDates.filter(d => !sessionDates.includes(d));
+
+                // Extract unique time slots
+                const timeSlots = Array.from(new Set(sortedSessions.map((s) => {
+                    const t = s.start_time;
+                    if (!t) return null;
+                    const tStr = typeof t === 'string' ? t : new Date(t).toLocaleTimeString('en-GB', { hour12: false });
+                    return tStr.substring(0, 5);
+                }))).filter(Boolean) as string[];
+
+                // Determine duration from the first session that has both times
+                let durationHours = null;
+                const sessionWithDuration = sortedSessions.find((s) => s.start_time && s.end_time);
+                if (sessionWithDuration) {
+                    const safeGetTime = (t: string | Date | number | unknown) => {
+                        if (typeof t === 'string') return t;
+                        if (t instanceof Date) return t.toLocaleTimeString('en-GB', { hour12: false });
+                        return new Date(t).toLocaleTimeString('en-GB', { hour12: false });
+                    };
+                    const [h1] = safeGetTime(sessionWithDuration.start_time).split(':').map(Number);
+                    const [h2] = safeGetTime(sessionWithDuration.end_time).split(':').map(Number);
+                    durationHours = h2 - h1 + (h2 < h1 ? 24 : 0);
+                }
+
+                computed[vIdx] = {
+                    ranges: [{ start: minDate, end: maxDate }],
+                    excluded,
+                    timeSlots: timeSlots.length > 0 ? timeSlots : undefined,
+                    durationHours
+                };
+            }
+        });
+
+        return computed;
+    }, [initialData]);
+
+    const [scheduling, setScheduling] = useState<Record<number, {
+        ranges: { start: string, end: string }[],
+        excluded: string[],
+        timeSlots?: string[],
+        durationHours?: number | null
+    }>>(initialScheduling);
+
+    // Watch form values for reactive UI
+    const watchedImages = useWatch({ control: form.control, name: 'images' });
+    const watchedCountryId = useWatch({ control: form.control, name: 'country_id' });
+    const watchedDurationDays = useWatch({ control: form.control, name: 'duration_days' });
+    const watchedDurationHours = useWatch({ control: form.control, name: 'duration_hours' });
+    const watchedTax = useWatch({ control: form.control, name: 'tax' });
+    const watchedStatus = useWatch({ control: form.control, name: 'status' });
+    const watchedTitle = useWatch({ control: form.control, name: 'title' });
+    const watchedAddress = useWatch({ control: form.control, name: 'address' });
+    const watchedVariants = useWatch({ control: form.control, name: 'variants' });
+    const watchedHighlights = useWatch({ control: form.control, name: 'highlights' });
+    const watchedInclusions = useWatch({ control: form.control, name: 'included' });
+    const watchedExclusions = useWatch({ control: form.control, name: 'not_included' });
+    const watchedLanguages = useWatch({ control: form.control, name: 'languages' });
 
     useEffect(() => {
         if (initialData) {
@@ -177,69 +298,22 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                         pax_type_name: p.pax_type?.name || '',
                         price: p.price
                     })) || []
-                })) || []
+                })) || [],
+                meeting_point: initialData.meeting_point || '',
+                included: initialData.included || [],
+                not_included: initialData.not_included || [],
+                highlights: initialData.highlights || { title: 'Những trải nghiệm thú vị', items: [] },
+                languages: initialData.languages || ['Tiếng Việt', 'Tiếng Anh'],
+                staff_score: initialData.staff_score || 9.0,
+                testimonial: initialData.testimonial || { name: '', country: '', text: '' },
+                map_preview: initialData.map_preview || '',
             };
 
-            // Pre-populate scheduling state from existing sessions
-            const initialScheduling: Record<number, {
-                ranges: { start: string, end: string }[],
-                excluded: string[],
-                timeSlots?: string[],
-                durationHours?: number | null
-            }> = {};
 
-            initialData.variants?.forEach((v, vIdx: number) => {
-                if (v.tour_sessions?.length) {
-                    const sortedSessions = [...v.tour_sessions].sort((a, b) =>
-                        new Date(a.session_date).getTime() - new Date(b.session_date).getTime()
-                    );
-
-                    const minDate = sortedSessions[0].session_date;
-                    const maxDate = sortedSessions[sortedSessions.length - 1].session_date;
-
-                    const allDates: string[] = [];
-                    const curr = new Date(minDate);
-                    const end = new Date(maxDate);
-                    while (curr <= end) {
-                        allDates.push(curr.toISOString().split('T')[0]);
-                        curr.setDate(curr.getDate() + 1);
-                    }
-
-                    const sessionDates = sortedSessions.map(s => s.session_date);
-                    const excluded = allDates.filter(d => !sessionDates.includes(d));
-
-                    // Extract unique time slots
-                    const timeSlots = Array.from(new Set(sortedSessions.map((s) => {
-                        const t = s.start_time;
-                        if (!t) return null;
-                        // Handle potential Date objects or strings
-                        const tStr = typeof t === 'string' ? t : new Date(t).toLocaleTimeString('en-GB', { hour12: false });
-                        return tStr.substring(0, 5);
-                    }))).filter(Boolean) as string[];
-
-                    // Try to determine duration from the first session that has both
-                    let durationHours = null;
-                    const sessionWithDuration = sortedSessions.find((s) => s.start_time && s.end_time);
-                    if (sessionWithDuration) {
-                        const [h1, m1] = (sessionWithDuration.start_time as string).split(':').map(Number);
-                        const [h2, m2] = (sessionWithDuration.end_time as string).split(':').map(Number);
-                        durationHours = h2 - h1 + (h2 < h1 ? 24 : 0); // Simple hour diff
-                    }
-
-                    initialScheduling[vIdx] = {
-                        ranges: [{ start: minDate, end: maxDate }],
-                        excluded,
-                        timeSlots: timeSlots.length > 0 ? timeSlots : undefined,
-                        durationHours
-                    };
-                }
-            });
-            setScheduling(initialScheduling);
             form.reset(mappedData);
         }
     }, [initialData, form]);
 
-    const watchedCountryId = form.watch('country_id');
 
     const { data: divisions = [] } = useQuery({
         queryKey: ['divisions', watchedCountryId],
@@ -248,25 +322,16 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
         staleTime: 5 * 60 * 1000,
     });
 
-    const { fields: variantFields, append: appendVariant, remove: removeVariant } = useFieldArray({
-        control: form.control,
-        name: "variants"
-    });
-
-    const [scheduling, setScheduling] = useState<Record<number, {
-        ranges: { start: string, end: string }[],
-        excluded: string[],
-        timeSlots?: string[],
-        durationHours?: number | null
-    }>>({});
 
     const nextStep = async () => {
         let isValid = false;
         if (currentStep === 1) {
             isValid = await form.trigger(['title', 'summary', 'description', 'address', 'country_id', 'division_id', 'tax', 'duration_days', 'duration_hours']);
         } else if (currentStep === 2) {
-            isValid = await form.trigger(['images']);
+            isValid = await form.trigger(['meeting_point', 'included', 'not_included', 'highlights', 'languages', 'staff_score', 'testimonial']);
         } else if (currentStep === 3) {
+            isValid = await form.trigger(['images']);
+        } else if (currentStep === 4) {
             isValid = await form.trigger(['variants']);
         } else {
             isValid = true;
@@ -464,7 +529,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
             </div>
 
             {/* Stepper */}
-            <div className="grid grid-cols-5 gap-4">
+            <div className="grid grid-cols-6 gap-4">
                 {STEPS.map((step) => {
                     const Icon = step.icon;
                     const isActive = currentStep === step.id;
@@ -686,13 +751,13 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                 </FormControl>
                                                 <FormDescription>
                                                     Ví dụ: 2 ngày 5 giờ (nhập 5 vào đây).
-                                                    {(form.watch('duration_days') !== null || field.value) && (
+                                                    {(watchedDurationDays !== null || field.value) && (
                                                         <span className="block text-emerald-400 mt-1">
                                                             → Tổng thời gian:
-                                                            {Number(form.watch('duration_days') || 0) > 0 ? ` ${form.watch('duration_days')} ngày` : ''}
-                                                            {Number(form.watch('duration_days') || 0) > 0 && Number(field.value || 0) > 0 ? ' và' : ''}
+                                                            {Number(watchedDurationDays || 0) > 0 ? ` ${watchedDurationDays} ngày` : ''}
+                                                            {Number(watchedDurationDays || 0) > 0 && Number(field.value || 0) > 0 ? ' và' : ''}
                                                             {Number(field.value || 0) > 0 ? ` ${field.value} giờ` : ''}
-                                                            {Number(form.watch('duration_days') || 0) === 0 && Number(field.value || 0) === 0 ? ' 0 giờ' : ''}
+                                                            {Number(watchedDurationDays || 0) === 0 && Number(field.value || 0) === 0 ? ' 0 giờ' : ''}
                                                         </span>
                                                     )}
                                                 </FormDescription>
@@ -718,6 +783,265 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
 
                     {currentStep === 2 && (
                         <div className="grid gap-6 animate-in slide-in-from-right-4 duration-300">
+                            {/* Section: Highlights */}
+                            <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
+                                <CardHeader>
+                                    <div className="flex items-center gap-2">
+                                        <ListChecks className="h-5 w-5 text-primary" />
+                                        <CardTitle>Điểm nổi bật (Highlights)</CardTitle>
+                                    </div>
+                                    <CardDescription>Các thông tin thu hút khách hàng nhất về tour này.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="highlights.title"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Tiêu đề phần Highlights</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="VD: Những trải nghiệm thú vị" {...field} className="bg-background/50 border-white/10" />
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <div className="space-y-2">
+                                        <Label>Danh sách các điểm nổi bật</Label>
+                                        <div className="space-y-2">
+                                            {(watchedHighlights?.items || []).map((item, idx) => (
+                                                <div key={idx} className="flex gap-2">
+                                                    <Input
+                                                        value={item}
+                                                        onChange={(e) => {
+                                                            const newItems = [...(form.getValues('highlights.items') || [])];
+                                                            newItems[idx] = e.target.value;
+                                                            form.setValue('highlights.items', newItems);
+                                                        }}
+                                                        className="bg-background/50 border-white/10"
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-red-400"
+                                                        onClick={() => {
+                                                            const newItems = form.getValues('highlights.items').filter((_, i) => i !== idx);
+                                                            form.setValue('highlights.items', newItems);
+                                                        }}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                className="w-full border-dashed"
+                                                onClick={() => {
+                                                    const current = form.getValues('highlights.items') || [];
+                                                    form.setValue('highlights.items', [...current, '']);
+                                                }}
+                                            >
+                                                <Plus className="h-4 w-4 mr-2" /> Thêm điểm nổi bật
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Section: Inclusions & Exclusions */}
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
+                                    <CardHeader>
+                                        <CardTitle className="text-sm font-bold text-emerald-400">Bao gồm</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-2">
+                                        {(watchedInclusions || []).map((item, idx) => (
+                                            <div key={idx} className="flex gap-2">
+                                                <Input
+                                                    value={item}
+                                                    onChange={(e) => {
+                                                        const newArr = [...form.getValues('included')];
+                                                        newArr[idx] = e.target.value;
+                                                        form.setValue('included', newArr);
+                                                    }}
+                                                    className="bg-background/50 border-white/10 h-8 text-sm"
+                                                />
+                                                <Button type="button" variant="ghost" size="sm" onClick={() => form.setValue('included', form.getValues('included').filter((_, i) => i !== idx))}>
+                                                    <Trash2 className="h-3 w-3" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                        <Button type="button" variant="ghost" size="sm" onClick={() => form.setValue('included', [...form.getValues('included'), ''])} className="w-full text-xs">
+                                            + Thêm mục
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                                <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
+                                    <CardHeader>
+                                        <CardTitle className="text-sm font-bold text-red-400">Không bao gồm</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-2">
+                                        {(watchedExclusions || []).map((item, idx) => (
+                                            <div key={idx} className="flex gap-2">
+                                                <Input
+                                                    value={item}
+                                                    onChange={(e) => {
+                                                        const newArr = [...form.getValues('not_included')];
+                                                        newArr[idx] = e.target.value;
+                                                        form.setValue('not_included', newArr);
+                                                    }}
+                                                    className="bg-background/50 border-white/10 h-8 text-sm"
+                                                />
+                                                <Button type="button" variant="ghost" size="sm" onClick={() => form.setValue('not_included', form.getValues('not_included').filter((_, i) => i !== idx))}>
+                                                    <Trash2 className="h-3 w-3" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                        <Button type="button" variant="ghost" size="sm" onClick={() => form.setValue('not_included', [...form.getValues('not_included'), ''])} className="w-full text-xs">
+                                            + Thêm mục
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Section: Logistics & Social */}
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
+                                    <CardHeader>
+                                        <CardTitle>Logistics & Bản đồ</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="meeting_point"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Điểm hẹn (Meeting Point)</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="VD: Sảnh khách sạn hoặc số 123..." {...field} className="bg-background/50 border-white/10" />
+                                                    </FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="map_preview"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>URL ảnh xem trước bản đồ</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="Dán link ảnh tĩnh của map..." {...field} className="bg-background/50 border-white/10" />
+                                                    </FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="staff_score"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Điểm phục vụ (Staff Score: 0-10)</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="number" step="0.1" {...field} className="bg-background/50 border-white/10" />
+                                                    </FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <div className="space-y-2 pt-2 border-t border-white/5">
+                                            <Label className="text-xs uppercase text-muted-foreground">Ngôn ngữ hỗ trợ</Label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {(watchedLanguages || []).map((lang, idx) => (
+                                                    <Badge key={idx} variant="secondary" className="bg-primary/10 text-primary border-primary/20 flex gap-1 items-center pr-1">
+                                                        {lang}
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            className="size-4 p-0 h-auto hover:bg-transparent hover:text-red-400"
+                                                            onClick={() => {
+                                                                const newLangs = form.getValues('languages').filter((_, i) => i !== idx);
+                                                                form.setValue('languages', newLangs);
+                                                            }}
+                                                        >
+                                                            <Trash2 className="h-3 w-3" />
+                                                        </Button>
+                                                    </Badge>
+                                                ))}
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-6 text-[10px] border-dashed"
+                                                    onClick={() => {
+                                                        const val = prompt('Nhập ngôn ngữ mới:');
+                                                        if (val) {
+                                                            const current = form.getValues('languages') || [];
+                                                            form.setValue('languages', [...current, val]);
+                                                        }
+                                                    }}
+                                                >
+                                                    <Plus className="h-3 w-3 mr-1" /> Thêm
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
+                                    <CardHeader>
+                                        <div className="flex items-center gap-2">
+                                            <MessageSquareQuote className="h-5 w-5 text-primary" />
+                                            <CardTitle>Nhận xét tiêu biểu (Testimonial)</CardTitle>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="testimonial.name"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Tên khách</FormLabel>
+                                                        <FormControl>
+                                                            <Input placeholder="VD: Mr. John" {...field} className="bg-background/50 border-white/10" />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="testimonial.country"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Quốc gia</FormLabel>
+                                                        <FormControl>
+                                                            <Input placeholder="VD: United Kingdom" {...field} className="bg-background/50 border-white/10" />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                        <FormField
+                                            control={form.control}
+                                            name="testimonial.text"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Nội dung khen ngợi</FormLabel>
+                                                    <FormControl>
+                                                        <Textarea placeholder="Lời nhận xét hay..." {...field} className="bg-background/50 border-white/10 min-h-[80px]" />
+                                                    </FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </div>
+                    )}
+
+                    {currentStep === 3 && (
+                        <div className="grid gap-6 animate-in slide-in-from-right-4 duration-300">
                             <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
                                 <CardHeader>
                                     <CardTitle>Bộ sưu tập hình ảnh</CardTitle>
@@ -734,7 +1058,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                                         <SortableContext items={form.getValues('images').map(img => img.image_url)} strategy={rectSortingStrategy}>
                                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-                                                {form.watch('images').map((img, idx) => (
+                                                {(watchedImages || []).map((img, idx) => (
                                                     <SortableTourImage
                                                         key={img.image_url}
                                                         id={img.image_url}
@@ -755,7 +1079,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                         </div>
                     )}
 
-                    {currentStep === 3 && (
+                    {currentStep === 4 && (
                         <div className="grid gap-6 animate-in slide-in-from-right-4 duration-300">
                             <div className="flex items-center justify-between">
                                 <h3 className="text-xl font-semibold">Biến thể & Giá</h3>
@@ -822,7 +1146,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-4">
-                                            {form.watch(`variants.${vIdx}.prices`).map((p, pIdx: number) => (
+                                            {(watchedVariants?.[vIdx]?.prices || []).map((p, pIdx: number) => (
                                                 <div key={pIdx} className="p-3 rounded-xl bg-background/50 border border-white/5">
                                                     <Label className="text-[10px] text-muted-foreground uppercase">{p.pax_type_name}</Label>
                                                     <FormField control={form.control} name={`variants.${vIdx}.prices.${pIdx}.price`} render={({ field }) => (
@@ -837,9 +1161,9 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                         </div>
                     )}
 
-                    {currentStep === 4 && (
+                    {currentStep === 5 && (
                         <div className="grid gap-6 animate-in slide-in-from-right-4 duration-300">
-                            {form.getValues('variants').map((v, vIdx) => (
+                            {(watchedVariants || []).map((v, vIdx) => (
                                 <VariantSchedulingEditor
                                     key={vIdx}
                                     value={(scheduling[vIdx]?.ranges || []).map(r => ({
@@ -878,13 +1202,13 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         const current = scheduling[vIdx] || { ranges: [], excluded: [], timeSlots: [] };
                                         setScheduling({ ...scheduling, [vIdx]: { ...current, durationHours: dur } });
                                     }}
-                                    durationDays={form.watch('duration_days') || 0}
+                                    durationDays={watchedDurationDays || 0}
                                 />
                             ))}
                         </div>
                     )}
 
-                    {currentStep === 5 && (
+                    {currentStep === 6 && (
                         <div className="space-y-6 animate-in zoom-in-95 duration-500">
                             <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
                                 <CardHeader className="pb-4 border-b border-white/5">
@@ -904,29 +1228,29 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                             <div className="space-y-3">
                                                 <div>
                                                     <p className="text-[10px] text-muted-foreground uppercase">Tên tour</p>
-                                                    <p className="font-semibold">{form.watch('title')}</p>
+                                                    <p className="font-semibold">{watchedTitle}</p>
                                                 </div>
                                                 <div>
                                                     <p className="text-[10px] text-muted-foreground uppercase">Địa chỉ</p>
-                                                    <p className="text-sm">{form.watch('address')}</p>
+                                                    <p className="text-sm">{watchedAddress}</p>
                                                 </div>
                                                 <div className="flex gap-4">
                                                     <div>
                                                         <p className="text-[10px] text-muted-foreground uppercase">Thời lượng</p>
                                                         <p className="text-sm">
-                                                            {form.watch('duration_days') ? `${form.watch('duration_days')} ngày` : ''}
-                                                            {form.watch('duration_days') && form.watch('duration_hours') ? ' ' : ''}
-                                                            {form.watch('duration_hours') ? `${form.watch('duration_hours')} giờ` : ''}
-                                                            {!form.watch('duration_days') && !form.watch('duration_hours') && 'N/A'}
+                                                            {watchedDurationDays ? `${watchedDurationDays} ngày` : ''}
+                                                            {watchedDurationDays && watchedDurationHours ? ' ' : ''}
+                                                            {watchedDurationHours ? `${watchedDurationHours} giờ` : ''}
+                                                            {!watchedDurationDays && !watchedDurationHours && 'N/A'}
                                                         </p>
                                                     </div>
                                                     <div>
                                                         <p className="text-[10px] text-muted-foreground uppercase">Thuế</p>
-                                                        <p className="text-sm">{form.watch('tax')}%</p>
+                                                        <p className="text-sm">{watchedTax}%</p>
                                                     </div>
                                                     <div>
                                                         <p className="text-[10px] text-muted-foreground uppercase">Trạng thái</p>
-                                                        <Badge variant="outline" className="capitalize">{form.watch('status')}</Badge>
+                                                        <Badge variant="outline" className="capitalize">{watchedStatus}</Badge>
                                                     </div>
                                                 </div>
                                             </div>
@@ -935,9 +1259,9 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         <div className="space-y-4">
                                             <h4 className="text-sm font-bold uppercase tracking-wider text-primary/80">Hình ảnh</h4>
                                             <div className="flex items-center gap-4">
-                                                {form.watch('images')?.[0] ? (
-                                                    <div className="size-20 rounded-lg overflow-hidden border border-white/10">
-                                                        <img src={form.watch('images')[0].image_url} alt="" className="w-full h-full object-cover" />
+                                                {watchedImages?.[0] ? (
+                                                    <div className="size-20 rounded-lg overflow-hidden border border-white/10 relative">
+                                                        <Image src={watchedImages[0].image_url} alt="Tour Cover" fill className="object-cover" />
                                                     </div>
                                                 ) : (
                                                     <div className="size-20 rounded-lg bg-muted flex items-center justify-center border border-dashed border-white/10">
@@ -945,7 +1269,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                     </div>
                                                 )}
                                                 <div>
-                                                    <p className="text-sm font-medium">{form.watch('images')?.length || 0} hình ảnh đã chọn</p>
+                                                    <p className="text-sm font-medium">{watchedImages?.length || 0} hình ảnh đã chọn</p>
                                                     <p className="text-xs text-muted-foreground">Ảnh bìa đã được thiết lập</p>
                                                 </div>
                                             </div>
@@ -958,7 +1282,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                     <div className="space-y-4">
                                         <h4 className="text-sm font-bold uppercase tracking-wider text-primary/80">Biến thể & Bảng giá</h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            {form.watch('variants')?.map((v, idx) => (
+                                            {(watchedVariants || []).map((v, idx) => (
                                                 <div key={idx} className="p-4 rounded-xl bg-white/2 border border-white/5 space-y-3">
                                                     <p className="font-bold text-sm text-primary">{v.name}</p>
                                                     <div className="space-y-2">
@@ -984,7 +1308,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                     <div className="space-y-4">
                                         <h4 className="text-sm font-bold uppercase tracking-wider text-primary/80">Lịch trình cài đặt</h4>
                                         <div className="space-y-3">
-                                            {form.watch('variants')?.map((v, idx) => {
+                                            {(watchedVariants || []).map((v, idx) => {
                                                 const sched = scheduling[idx];
                                                 return (
                                                     <div key={idx} className="flex flex-col gap-1">
@@ -1044,7 +1368,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
 
             <div className="flex justify-between pt-8 border-t border-white/5">
                 <Button variant="ghost" onClick={prevStep} disabled={currentStep === 1 || isSubmitting}>Quay lại</Button>
-                {currentStep < 5 && <Button onClick={nextStep} className="px-8 bg-primary">Tiếp theo</Button>}
+                {currentStep < 6 && <Button onClick={nextStep} className="px-8 bg-primary">Tiếp theo</Button>}
             </div>
         </div>
     );

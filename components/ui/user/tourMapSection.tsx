@@ -15,7 +15,7 @@ export default function TourMapSection({ mapUrl, previewImage }: TourMapSectionP
     const [showMap, setShowMap] = useState(false);
 
     return (
-        <Box borderRadius="lg" overflow="hidden" height="auto" position="relative">
+        <Box w="full" borderRadius="2xl" overflow="hidden" height="250px" position="relative" boxShadow="sm" border="1px solid" borderColor="gray.100">
             {showMap ? (
                 <iframe
                     src={mapUrl}
@@ -37,15 +37,22 @@ export default function TourMapSection({ mapUrl, previewImage }: TourMapSectionP
             )}
             <Button
                 position="absolute"
-                top="50%"
+                bottom="20px"
                 left="50%"
-                transform="translate(-50%, -50%)"
-                colorScheme="blue"
-                size="lg"
+                transform="translateX(-50%)"
+                bg="white"
+                color="main"
+                size="sm"
+                px={6}
+                rounded="full"
+                fontWeight="black"
+                boxShadow="xl"
+                _hover={{ bg: "gray.50", transform: "translateX(-50%) translateY(-2px)" }}
+                transition="all 0.2s"
                 onClick={() => setShowMap(!showMap)}
             >
                 {showMap ? "Hide map" : "Show on map"}
-                <Icon as={FaMapMarkerAlt} />
+                <Icon as={FaMapMarkerAlt} ml={2} />
             </Button>
         </Box>
     );

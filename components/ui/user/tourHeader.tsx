@@ -9,6 +9,7 @@ import { createBooking } from "@/actions/booking";
 import logout from "@/actions/logout";
 import { tourApi, ITourSession } from "@/apis/tour";
 import { useQuery } from "@tanstack/react-query";
+import Breadcrumb from "./breadcrumb";
 
 interface TourVariant {
     id: number;
@@ -35,9 +36,10 @@ interface TourHeaderProps {
     slug: string;
     variants: TourVariant[];
     durationDays: number;
+    breadcrumbItems: { label: string; href: string }[];
 }
 
-export default function TourHeader({ title, location, rating, price, oldPrice, slug, variants, durationDays }: TourHeaderProps) {
+export default function TourHeader({ title, location, rating, price, oldPrice, slug, variants, durationDays, breadcrumbItems }: TourHeaderProps) {
     const router = useRouter();
     const [startDate, setStartDate] = useState<Date | null>(null);
     const [selectedVariantId, setSelectedVariantId] = useState<number | null>(() => variants?.[0]?.id || null);
@@ -202,40 +204,57 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
     return (
         <Flex
             justifyContent="space-between"
-            alignItems="center"
-            mt={6}
-            mb={4}
-            gap={4}
+            alignItems="flex-end"
+            mt={8}
+            mb={6}
+            gap={6}
             direction={{ base: "column", md: "row" }}
         >
             <Box flex={1}>
-                <Heading as="h1" size="xl" mb={2}>
-                    {title}
-                </Heading>
-                <Text color="gray.600" mb={2}>
-                    {location}
-                </Text>
-                <HStack gap={2}>
-                    <Badge colorScheme="blue" borderRadius="full" px={2} py={1}>
-                        {rating}
+                <Breadcrumb
+                    items={breadcrumbItems}
+                />
+                <VStack align="start" gap={1}>
+                    <Heading as="h1" size="2xl" fontWeight="black" letterSpacing="tight">
+                        {title}
+                    </Heading>
+                    <HStack gap={1} color="gray.500" fontSize="sm" fontWeight="medium">
+                        <Text>{location}</Text>
+                        <Text>•</Text>
+                        <Text>{durationDays} Days</Text>
+                    </HStack>
+                </VStack>
+
+                <HStack gap={3} mt={4}>
+                    <HStack gap={1.5}>
+                        <StarRating rating={rating} />
+                        <Text fontSize="md" fontWeight="bold" color="gray.700">{rating.toFixed(1)}</Text>
+                    </HStack>
+                    <Badge colorPalette="blue" variant="solid" rounded="full" px={3} py={0.5} fontSize="10px" fontWeight="black" textTransform="uppercase">
+                        Recommended
                     </Badge>
-                    <StarRating rating={rating} />
                 </HStack>
             </Box>
 
-            <VStack gap={4} align="flex-end" w={{ base: "100%", md: "auto" }}>
-                <HStack gap={8} textAlign="right" justify="flex-end">
-                    <VStack align="flex-end">
-                        <Heading as="h2" size="2xl" color="main" fontWeight="bold">
-                            VND {price.toLocaleString()}
-                        </Heading>
+            <VStack gap={4} align={{ base: "stretch", md: "flex-end" }} minW={{ md: "250px" }}>
+                <VStack align="flex-end" gap={0}>
+                    <Text color="gray.500" fontSize="10px" fontWeight="black" textTransform="uppercase" letterSpacing="widest" mb={-1}>
+                        From
+                    </Text>
+                    <Heading as="h2" size="4xl" color="main" fontWeight="black" letterSpacing="tight">
+                        VND {price.toLocaleString()}
+                    </Heading>
+                    <HStack gap={2} mt={1}>
                         {oldPrice && (
-                            <Text as="del" color="gray.400" fontSize="sm">
+                            <Text as="del" color="gray.400" fontSize="sm" fontWeight="medium">
                                 VND {oldPrice.toLocaleString()}
                             </Text>
                         )}
-                    </VStack>
-                </HStack>
+                        <Text color="gray.500" fontSize="xs" fontWeight="bold">
+                            / per person
+                        </Text>
+                    </HStack>
+                </VStack>
 
                 {/* Book Tour Dialog */}
                 <Dialog.Root
@@ -251,13 +270,23 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                         <Button
                             bg="main"
                             color="white"
-                            rounded="15px"
+                            rounded="2xl"
                             px={12}
                             py={8}
+                            fontSize="lg"
+                            fontWeight="black"
                             width="100%"
+                            _hover={{
+                                bg: "blue.800",
+                                transform: "translateY(-2px)",
+                                boxShadow: "0 10px 20px rgba(0, 59, 149, 0.2)"
+                            }}
+                            _active={{ transform: "translateY(0)" }}
+                            transition="all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+                            boxShadow="0 4px 14px 0 rgba(0, 59, 149, 0.39)"
                             onClick={() => setIsBookingOpen(true)}
                         >
-                            Select Rooms
+                            Reserve Your Spot
                         </Button>
                     </Dialog.Trigger>
                     <Portal>

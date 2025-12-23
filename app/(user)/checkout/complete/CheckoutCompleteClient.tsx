@@ -50,7 +50,7 @@ export default function CheckoutCompleteClient({ initialBooking }: Props) {
     };
 
     return (
-        <Container maxW="2xl" position="relative" py={10}>
+        <Container maxW="xl" position="relative" py={10}>
             {/* Steps: Success State by defaultStep 3 (last one), optionally colorPalette="green" */}
             <Steps.Root defaultStep={3} count={steps.length} colorPalette="green" my="2rem" paddingX="3rem" width="100%">
                 <Steps.List>

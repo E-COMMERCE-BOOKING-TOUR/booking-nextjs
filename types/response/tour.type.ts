@@ -178,6 +178,14 @@ export interface ITour {
   supplier: ISupplier;
   images: ITourImage[];
   variants: ITourVariant[];
+  meeting_point?: string;
+  included?: string[];
+  not_included?: string[];
+  highlights?: { title: string; items: string[] };
+  languages?: string[];
+  staff_score?: number;
+  testimonial?: { name: string; country: string; text: string };
+  map_preview?: string;
   created_at?: Date;
   updated_at?: Date;
   deleted_at?: Date;

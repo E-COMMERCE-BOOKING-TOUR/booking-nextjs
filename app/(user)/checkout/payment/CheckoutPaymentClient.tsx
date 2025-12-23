@@ -184,7 +184,7 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
 
     return (
         <Elements stripe={stripePromise}>
-            <Container maxW="2xl" position="relative" py={10}>
+            <Container maxW="xl" position="relative" py={10}>
                 <BookingExpiryManager isExpired={isExpired} onExpire={handleExpire} expiresAt={initialBooking.hold_expires_at} />
                 {/* Steps */}
                 <Steps.Root defaultStep={1} count={steps.length} colorPalette="blue" my="2rem" paddingX="3rem" width="100%">
