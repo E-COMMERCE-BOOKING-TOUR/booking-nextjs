@@ -1,77 +1,71 @@
-import { Box, Flex, Icon, Text, VStack } from "@chakra-ui/react"
-import { FiAlertTriangle, FiGift, FiSettings } from "react-icons/fi";
+import { Box, Flex, Icon, Spinner, Text, VStack, Button, Center } from "@chakra-ui/react"
+import { FiAlertTriangle, FiGift, FiSettings, FiCalendar, FiInfo, FiCheckCircle } from "react-icons/fi";
 import { HiDotsHorizontal } from "react-icons/hi";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import notificationApi from "@/apis/notification";
+import { useSession } from "next-auth/react";
+import { INotification, NotificationType } from "@/types/notification";
+import { Fragment } from "react";
 
-const notifications = [
-    {
-        id: 1,
-        type: "anniversary",
-        icon: FiGift,
-        text: "It's your X anniversary! Celebrate with a special post created just for you",
-        date: "Nov 30",
-        isRead: false,
-    },
-    {
-        id: 2,
-        type: "login",
-        icon: FiSettings,
-        text: "There was a login to your account @ph_long_03 from a new device on 19 thg 11, 2025. Review it now.",
-        date: "Nov 19",
-        isRead: true,
-    },
-    {
-        id: 3,
-        type: "alert",
-        icon: FiAlertTriangle,
-        iconColor: "red.500",
-        text: "There was an attempt to log in to your account @ph_long_03 on 19 thg 11, 2025 that seems suspicious. Review it now.",
-        date: "Nov 19",
-        isRead: true,
-    },
-    {
-        id: 4,
-        type: "alert",
-        icon: FiAlertTriangle,
-        iconColor: "red.500",
-        text: "There was an attempt to log in to your account @ph_long_03 on 18 thg 11, 2025 that seems suspicious. Review it now.",
-        date: "Nov 18",
-        isRead: true,
-    },
-];
+const mapNotificationTypeToIcon = (type: NotificationType, isError: boolean) => {
+    if (isError) return { icon: FiAlertTriangle, color: "red.500" };
+    switch (type) {
+        case NotificationType.welcome:
+        case NotificationType.reward:
+        case NotificationType.promotion:
+            return { icon: FiGift, color: "purple.500" };
+        case NotificationType.alert:
+            return { icon: FiAlertTriangle, color: "red.500" };
+        case NotificationType.booking:
+        case NotificationType.payment:
+        case NotificationType.reminder:
+            return { icon: FiCalendar, color: "blue.500" };
+        case NotificationType.feature:
+            return { icon: FiSettings, color: "green.500" };
+        default:
+            return { icon: FiInfo, color: "gray.500" };
+    }
+};
 
-export const ItemNotification = ({ notif }: { notif: typeof notifications[0] }) => {
+const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+export const ItemNotification = ({ notif }: { notif: INotification }) => {
+    const { icon, color } = mapNotificationTypeToIcon(notif.type, notif.is_error);
+
     return (
         <Flex
-            key={notif.id}
             p={4}
-            backgroundColor="whiteAlpha.200"
+            backgroundColor="whiteAlpha.100"
             borderBottom="1px solid"
             borderColor="whiteAlpha.200"
             gap={3}
-            _hover={{ bg: "whiteAlpha.500" }}
+            _hover={{ bg: "whiteAlpha.200" }}
             cursor="pointer"
+            transition="background 0.2s"
         >
             {/* Icon Column */}
             <Box pt={1}>
-                {typeof notif.icon === "string" ? (
-                    <Text fontSize="2xl">{notif.icon}</Text>
-                ) : (
-                    <Icon as={notif.icon} boxSize={8} color={notif.iconColor || "gray"} />
-                )}
+                <Icon as={icon} boxSize={6} color={color} />
             </Box>
 
             {/* Text Column */}
-            <VStack align="start" wordSpacing={1} flex={1}>
-                <Text fontSize="15px" lineHeight="1.4" color={"gray"}>
-                    {notif.text}
+            <VStack align="start" gap={1} flex={1}>
+                <Text fontSize="15px" lineHeight="1.4" color="whiteAlpha.900" fontWeight="medium">
+                    {notif.title}
+                </Text>
+                <Text fontSize="14px" lineHeight="1.4" color="whiteAlpha.600">
+                    {notif.description}
                 </Text>
             </VStack>
 
             {/* Action/Date Column */}
-            <VStack align="end" justify="space-between" wordSpacing={0}>
-                <Icon as={HiDotsHorizontal} color="gray.500" boxSize={5} />
-                <Text fontSize="sm" color="gray.500">
-                    {notif.date}
+            <VStack align="end" justify="space-between" gap={2}>
+                <Icon as={HiDotsHorizontal} color="whiteAlpha.500" boxSize={5} />
+                <Text fontSize="xs" color="whiteAlpha.500" whiteSpace="nowrap">
+                    {formatDate(notif.created_at)}
                 </Text>
             </VStack>
         </Flex>
@@ -79,11 +73,80 @@ export const ItemNotification = ({ notif }: { notif: typeof notifications[0] }) 
 }
 
 const ListNotification = () => {
+    const { data: session } = useSession();
+
+    const {
+        data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        status,
+    } = useInfiniteQuery({
+        queryKey: ['notifications', session?.user?.accessToken],
+        queryFn: async ({ pageParam = 1 }) => {
+            if (!session?.user?.accessToken) return null;
+            const res = await notificationApi.getMe(session.user.accessToken, pageParam as number, 10);
+            console.log(res);
+            if (res.ok && res.data) {
+                return res.data; // This matches IPaginatedNotifications
+            }
+            throw new Error(res.error || "Failed to fetch notifications");
+        },
+        initialPageParam: 1,
+        getNextPageParam: (lastPage, allPages) => {
+            if (!lastPage) return undefined;
+            return lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined;
+        },
+        enabled: !!session?.user?.accessToken,
+    });
+
+    if (status === 'pending') {
+        return (
+            <Center py={10}>
+                <Spinner color="white" />
+            </Center>
+        );
+    }
+
+    if (status === 'error') {
+        return (
+            <Center py={10}>
+                <Text color="red.400">Failed to load notifications.</Text>
+            </Center>
+        );
+    }
+
     return (
-        <VStack wordSpacing={0} align="stretch">
-            {notifications.map((notif, index) => (
-                <ItemNotification key={index} notif={notif} />
+        <VStack align="stretch" gap={0}>
+            {data?.pages.map((page, i) => (
+                <Fragment key={i}>
+                    {page?.data?.map((notif) => (
+                        <ItemNotification key={notif.id} notif={notif} />
+                    ))}
+                </Fragment>
             ))}
+
+            {(hasNextPage || isFetchingNextPage) && (
+                <Box p={4}>
+                    <Button
+                        onClick={() => fetchNextPage()}
+                        disabled={!hasNextPage || isFetchingNextPage}
+                        loading={isFetchingNextPage}
+                        variant="ghost"
+                        colorScheme="whiteAlpha"
+                        w="full"
+                        size="sm"
+                    >
+                        {isFetchingNextPage ? 'Loading more...' : 'Load more'}
+                    </Button>
+                </Box>
+            )}
+
+            {!hasNextPage && data?.pages[0]?.data.length === 0 && (
+                <Box p={8} textAlign="center">
+                    <Text color="whiteAlpha.500">No notifications yet</Text>
+                </Box>
+            )}
         </VStack>
     )
 }

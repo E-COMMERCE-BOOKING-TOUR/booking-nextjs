@@ -15,5 +15,6 @@ export interface IArticlePopular {
     user: { name: string; avatar: string };
     tour_id?: number | string;
     is_visible?: boolean;
+    comments?: any[];
 }
 

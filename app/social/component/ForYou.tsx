@@ -18,16 +18,22 @@ const ForYou = () => {
     const [selectedTour, setSelectedTour] = useState<string[]>([]);
 
     const { data: bookedTours } = useQuery({
-        queryKey: ['booked-tours', session?.user?.uuid],
+        queryKey: ['booking-tours', session?.user?.uuid],
         queryFn: async () => {
             if (!session?.user?.accessToken) return [];
-            return await bookingApi.getHistory(session.user.accessToken);
+            const res = await bookingApi.getHistory(session.user.accessToken);
+            const data = res as any;
+            console.log(data);
+            if (data && Array.isArray(data.data)) {
+                return data.data;
+            }
+            return [];
         },
         enabled: !!session?.user?.accessToken
     });
 
     const tourList = createListCollection({
-        items: bookedTours?.map(t => ({ label: t.title, value: t.id.toString() })) || [],
+        items: bookedTours?.map((t: any, index: number) => ({ label: t.tour_title, value: index.toString() })) || [],
     });
 
     const { data: pages, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery<IArticlePopular[]>({
@@ -146,7 +152,7 @@ const ForYou = () => {
                                             <Select.ValueText placeholder="Select a tour" />
                                         </Select.Trigger>
                                         <Select.Content>
-                                            {tourList.items.map((tour) => (
+                                            {tourList.items.map((tour: any) => (
                                                 <Select.Item item={tour} key={tour.value}>
                                                     {tour.label}
                                                 </Select.Item>
@@ -196,6 +202,7 @@ const ForYou = () => {
                                     count_likes={item.count_likes}
                                     count_comments={item.count_comments}
                                     user={item.user}
+                                    comments={item.comments}
                                 />
                             </List.Item>
                         ))

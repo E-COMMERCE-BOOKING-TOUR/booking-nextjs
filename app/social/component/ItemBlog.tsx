@@ -1,5 +1,6 @@
 "use client";
 import { Box, HStack, VStack, Text, Image, Button, Icon, Avatar, Grid, useDisclosure } from "@chakra-ui/react";
+import Link from "next/link";
 import { FiMessageCircle, FiEye, FiThumbsUp, FiMapPin, FiCalendar, FiCloud, FiShare2, FiBookmark, FiArrowRight } from "react-icons/fi";
 import type { IArticlePopular } from "@/types/response/article";
 import { dateFormat } from "@/libs/function";
@@ -10,6 +11,8 @@ type ItemBlogProps = IArticlePopular & {
     authorName?: string;
     authorAvatar?: string;
     tagLabel?: string;
+    articleId?: string;
+    comments?: any[];
 }
 
 function TagList({ tags }: { tags: string[] }) {
@@ -17,15 +20,15 @@ function TagList({ tags }: { tags: string[] }) {
     return (
         <HStack gap={2} flexWrap="wrap" mt={2}>
             {tags.map((tag, i) => (
-                <Text
-                    key={i}
-                    color="blue.500"
-                    cursor="pointer"
-                    _hover={{ textDecoration: "underline" }}
-                    onClick={() => console.log(tag)}
-                >
-                    #{tag}
-                </Text>
+                <Link key={i} href={`/social/explore?tag=${tag}`}>
+                    <Text
+                        color="blue.500"
+                        cursor="pointer"
+                        _hover={{ textDecoration: "underline" }}
+                    >
+                        #{tag}
+                    </Text>
+                </Link>
             ))}
         </HStack>
     );
@@ -97,7 +100,7 @@ const ImagesGrid = ({ data, title }: { data: string[]; title: string }) => {
 };
 
 export default function ItemBlog(props: ItemBlogProps) {
-    const { images, title, tags, created_at, count_views, count_likes, count_comments, href, user, id } = props;
+    const { images, title, tags, created_at, count_views, count_likes, count_comments, comments, href, user, id } = props;
     const { open, onOpen, onClose } = useDisclosure();
     const imageUrls = images?.map(img => img.image_url) || [];
 
@@ -183,7 +186,7 @@ export default function ItemBlog(props: ItemBlogProps) {
                     <Button size="xl" variant="ghost" gap={2} color={'blackAlpha.800'} _hover={{ color: 'blackAlpha.800' }}><Icon as={FiShare2} />0</Button>
                 </HStack>
             </VStack>
-            <PopUpComment isOpen={open} onClose={onClose} tourId={Number(id)} images={imageUrls} />
+            <PopUpComment isOpen={open} onClose={onClose} articleId={id.toString()} images={imageUrls} comments={comments || []} />
         </Box>
     );
 
@@ -191,7 +194,7 @@ export default function ItemBlog(props: ItemBlogProps) {
 }
 
 ItemBlog.large = function Large(props: ItemBlogProps) {
-    const { images, title, content, tags, created_at, count_views, count_likes, count_comments, href } = props;
+    const { images, title, content, tags, created_at, count_views, count_likes, count_comments, comments, href } = props;
     const imageUrls = images?.map(img => img.image_url) || [];
 
     const cardContent = (

@@ -19,12 +19,11 @@ type Item = {
 }
 
 const defaultItems: Item[] = [
-    { key: "home", label: "Home", href: "#", icon: Home },
-    { key: "explore", label: "Explore", href: "#", icon: Search },
-    { key: "notifications", label: "Notifications", href: "#", icon: Bell },
-    { key: "bookmarks", label: "Bookmarks", href: "#", icon: Bookmark },
-    { key: "profile", label: "Profile", href: "#", icon: User },
-    { key: "more", label: "More", href: "#", icon: MoreHorizontal },
+    { key: "home", label: "Home", href: "/social", icon: Home },
+    { key: "explore", label: "Explore", href: "/social/explore", icon: Search },
+    { key: "notifications", label: "Notifications", href: "/social/notification", icon: Bell },
+    { key: "bookmarks", label: "Bookmarks", href: "/social/bookmark", icon: Bookmark },
+    { key: "profile", label: "Profile", href: "/social/profile", icon: User },
 ]
 
 type BlogSidebarLeftProps = {
