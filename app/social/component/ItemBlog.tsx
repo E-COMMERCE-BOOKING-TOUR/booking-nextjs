@@ -183,17 +183,17 @@ export default function ItemBlog(props: ItemBlogProps) {
                 <HStack gap={4}>
                     <Button size="xl" variant="ghost" gap={2} color={'blackAlpha.800'} _hover={{ color: 'blackAlpha.800' }}><Icon as={FiThumbsUp} />{count_likes ?? 0}</Button>
                     <Button size="xl" variant="ghost" gap={2} color={'blackAlpha.800'} _hover={{ color: 'blackAlpha.800' }} onClick={onOpen}><Icon as={FiMessageCircle} />{count_comments ?? 0}</Button>
-                    <Button size="xl" variant="ghost" gap={2} color={'blackAlpha.800'} _hover={{ color: 'blackAlpha.800' }}><Icon as={FiShare2} />0</Button>
+                    <Button size="xl" variant="ghost" gap={2} color={'blackAlpha.800'} _hover={{ color: 'blackAlpha.800' }}><Icon as={FiEye} />{count_views ?? 0}</Button>
                 </HStack>
             </VStack>
-            <PopUpComment isOpen={open} onClose={onClose} articleId={id.toString()} images={imageUrls} comments={comments || []} />
+            <PopUpComment isOpen={open} onClose={onClose} images={imageUrls} comments={comments || []} />
         </Box>
     );
 
     return content;
 }
 
-ItemBlog.large = function Large(props: ItemBlogProps) {
+export function ItemBlogLarge(props: ItemBlogProps) {
     const { images, title, content, tags, created_at, count_views, count_likes, count_comments, comments, href } = props;
     const imageUrls = images?.map(img => img.image_url) || [];
 

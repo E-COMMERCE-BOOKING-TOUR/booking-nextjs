@@ -45,9 +45,9 @@ const article = {
         const res = await fetchC.get(url);
         return Array.isArray(res) ? res : (res?.data || []);
     },
-    addComment: async (articleId: string, content: string, token: string) => {
+    addComment: async (articleId: string, content: string, token: string, parentId?: string | number) => {
         const url = `/user/article/comment`;
-        return await fetchC.post(url, { articleId, content }, {
+        return await fetchC.post(url, { articleId, content, parentId }, {
             headers: {
                 "Authorization": "Bearer " + token
             }

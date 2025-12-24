@@ -1,42 +1,48 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Box, Button, Grid, GridItem, HStack, Icon, Image, Input, Text, VStack, Dialog, CloseButton, Portal, Spinner } from "@chakra-ui/react";
-import { FiMessageCircle, FiSend, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiMessageCircle, FiSend, FiChevronLeft, FiChevronRight, FiX } from "react-icons/fi";
 import { useSession } from "next-auth/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import articleApi from "@/apis/article";
+import { userApi } from "@/apis/user";
 // import { toaster } from "@/components/ui/toaster";
 
 // Intefaces mapping to backend DTOs
 export interface CommentParams {
     id: string | number;
     content: string;
-    article_id?: string | number;
     parent_id: string | number | null;
     user_id: number;
     created_at: string;
     updated_at: string;
     user?: {
+        id: number;
         name: string;
         avatar: string;
-    }
+    };
 }
-
 // Extended for tree structure
 type CommentNode = CommentParams & { children: CommentNode[] };
 
-function buildTree(data: CommentParams[]) {
+function buildTree(data: any[]) {
     if (!data) return [];
 
     // Create a map for quick lookup
     const map = new Map<string | number, CommentNode>();
 
-    // Initialize map with all nodes
-    data.forEach(c => map.set(c.id, { ...c, children: [] }));
+    // Normalize data and initialize map
+    const normalizedData = data.map(c => ({
+        ...c,
+        id: c.id ?? c._id, // Handle both id and _id
+        children: []
+    })).filter(c => c.id != null);
+
+    normalizedData.forEach(c => map.set(c.id, c));
 
     const roots: CommentNode[] = [];
 
-    data.forEach(c => {
+    normalizedData.forEach(c => {
         const node = map.get(c.id);
         if (!node) return;
 
@@ -47,8 +53,6 @@ function buildTree(data: CommentParams[]) {
                 parent.children.push(node);
             } else {
                 // Orphaned node logic (optional: treat as root or ignore)
-                // For simplicity, if parent not found in current set (maybe pagination?), treat as root or hidden
-                // Here we might just ignore or add to roots if desired.
                 roots.push(node); // Fallback
             }
         } else {
@@ -79,30 +83,61 @@ export function PopUpComment({
     const queryClient = useQueryClient();
     const [expanded, setExpanded] = useState<Record<string | number, boolean>>({});
     const [text, setText] = useState("");
+    const [replyingTo, setReplyingTo] = useState<CommentParams | null>(null);
+    const [users, setUsers] = useState<Record<number, any>>({});
 
-    console.log(comments);
-
-    // Sort comments by creation date before building tree? 
-    // Usually backend sorts, but useful to ensure order.
-    // For now assuming incoming 'comments' are just flat list.
     const nodes = useMemo(() => buildTree(comments), [comments]);
 
     const [imgIndex, setImgIndex] = useState(0);
 
     const toggle = (id: string | number) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
 
+    useEffect(() => {
+        const fetchUsers = async () => {
+            const userIds = Array.from(new Set(comments.map(c => c.user_id)));
+            const newUsers: Record<number, any> = { ...users };
+            let hasNew = false;
+
+            for (const id of userIds) {
+                if (!newUsers[id]) {
+                    try {
+                        const res = await userApi.getById(id);
+                        if (res) {
+                            newUsers[id] = res;
+                            hasNew = true;
+                        }
+                    } catch (error) {
+                        console.error(`Failed to fetch user ${id}`, error);
+                    }
+                }
+            }
+
+            if (hasNew) {
+                setUsers(newUsers);
+            }
+        };
+
+        if (comments.length > 0) {
+            fetchUsers();
+        }
+    }, [comments]);
+
+
     const postCommentMutation = useMutation({
         mutationFn: async (content: string) => {
             if (!session?.user?.accessToken || !articleId) return;
-            return await articleApi.addComment(articleId, content, session.user.accessToken);
+            return await articleApi.addComment(articleId, content, session.user.accessToken, replyingTo?.id || undefined);
         },
         onSuccess: () => {
             setText("");
+            setReplyingTo(null);
             // toaster.create({ description: "Comment posted", type: "success" });
             console.log("Comment posted");
             if (refetch) refetch();
             // Invalidate queries if needed, mainly the article detail or list
             queryClient.invalidateQueries({ queryKey: ["articles"] });
+            queryClient.invalidateQueries({ queryKey: ["popular-articles-infinite"] });
+            queryClient.invalidateQueries({ queryKey: ["popular-articles"] });
         },
         onError: () => {
             // toaster.create({ description: "Failed to post comment", type: "error" });
@@ -115,10 +150,16 @@ export function PopUpComment({
         postCommentMutation.mutate(text);
     };
 
+    const handleReply = (comment: CommentParams) => {
+        setReplyingTo(comment);
+        setText(`@${users[comment.user_id]?.name || comment.user_id} `);
+    };
+
     const CommentItem = ({ node, depth = 0 }: { node: CommentNode; depth?: number }) => {
         const hasChildren = node.children.length > 0;
         const canShowChildren = hasChildren && depth < 1;
         const isOpenChild = !!expanded[node.id];
+        const user = users[node.user_id];
 
         return (
             <Box pl={depth ? 8 : 0} py={3} borderBottomWidth={depth ? 0 : 1} borderColor="whiteAlpha.200">
@@ -130,17 +171,17 @@ export function PopUpComment({
                         minH={8}
                         overflow="hidden"
                     >
-                        {node.user?.avatar && <Image src={node.user.avatar} alt={node.user.name} w="full" h="full" objectFit="cover" />}
+                        {/* Avatar logic: no avatar from DB as per requirement, but if user object has it we use it, else placeholder/API result */}
+                        {(user?.avatar || node.user?.avatar) && <Image src={user?.avatar || node.user?.avatar} alt={user?.name || node.user?.name} w="full" h="full" objectFit="cover" />}
                     </Box>
                     <VStack align="start" gap={1} flex={1}>
-                        <Text color="white" fontSize="sm" fontWeight={"bold"}>{node.user?.name || `User ${node.user_id}`}</Text>
+                        <Text color="white" fontSize="sm" fontWeight={"bold"}>{user?.name || node.user?.name || `User ${node.user_id}`}</Text>
                         <Text color="gray.300" fontSize="sm">
-                            {/* If reply logic is complex (replying to specific user), can add here. For now simple nesting. */}
                             {node.content}
                         </Text>
                         <HStack gap={3} color="whiteAlpha.700" fontSize="xs">
                             <Text>{new Date(node.created_at).toLocaleDateString()}</Text>
-                            {/* <Text cursor="pointer">Reply</Text> */}
+                            <Text cursor="pointer" _hover={{ textDecoration: 'underline', color: 'blue.300' }} onClick={() => handleReply(node)}>Reply</Text>
                             {canShowChildren ? (
                                 <Button variant="ghost" color="white" size="xs" onClick={() => toggle(node.id)} h="auto" p={0} _hover={{ bg: 'transparent', textDecoration: 'underline' }}>
                                     {isOpenChild ? "Hide replies" : `View ${node.children.length} replies`}
@@ -219,10 +260,16 @@ export function PopUpComment({
                                         )}
                                     </VStack>
                                     <Box p={3} borderTopWidth={1} borderColor="whiteAlpha.200" bg="black">
+                                        {replyingTo && (
+                                            <HStack mb={2} bg="whiteAlpha.200" p={2} borderRadius="md" justify="space-between">
+                                                <Text fontSize="xs" color="gray.300">Replying to {users[replyingTo.user_id]?.name || replyingTo.user_id}</Text>
+                                                <Icon as={FiX} cursor="pointer" onClick={() => { setReplyingTo(null); setText(""); }} />
+                                            </HStack>
+                                        )}
                                         <HStack gap={3}>
                                             <Icon as={FiMessageCircle} />
                                             <Input
-                                                placeholder="Add a comment..."
+                                                placeholder={replyingTo ? "Write a reply..." : "Add a comment..."}
                                                 value={text}
                                                 onChange={e => setText(e.target.value)}
                                                 color="white"
