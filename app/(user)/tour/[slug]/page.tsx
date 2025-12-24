@@ -11,6 +11,7 @@ import tourApi, { ITourSession } from "@/apis/tour";
 import { notFound } from "next/navigation";
 
 type TourData = {
+    id: number;
     title: string;
     location: string;
     price: number;
@@ -96,6 +97,7 @@ const getTourData = async (slug: string): Promise<TourData> => {
         if (!tourDetail) notFound();
 
         return {
+            id: tourDetail.id,
             title: tourDetail.title,
             location: tourDetail.location,
             price: tourDetail.price ?? 0,
@@ -151,10 +153,9 @@ const getTourData = async (slug: string): Promise<TourData> => {
 
 export default async function TourDetailPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    const [tour, relatedTours, reviews, reviewCategories] = await Promise.all([
+    const [tour, relatedTours, reviewCategories] = await Promise.all([
         getTourData(slug),
         safeGet(() => tourApi.related(slug), [] as RelatedTour[]),
-        safeGet(() => tourApi.reviews(slug), [] as Review[]),
         safeGet(() => tourApi.reviewCategories(slug), [] as ReviewCategory[]),
     ]);
 
@@ -235,10 +236,10 @@ export default async function TourDetailPage({ params }: { params: Promise<{ slu
 
                     <Box id="reviews" pt={10} borderTop="1px solid" borderColor="gray.100">
                         <TourReviews
+                            tourId={tour.id}
                             averageRating={tour.rating}
                             totalReviews={tour.reviewCount}
                             categories={reviewCategories}
-                            reviews={reviews}
                         />
                     </Box>
                 </VStack>

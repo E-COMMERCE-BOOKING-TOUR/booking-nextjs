@@ -24,7 +24,7 @@ import {
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import { TargetGroup, NotificationType, INotification } from '@/types/notification';
 
 interface NotificationFormValues {
@@ -41,7 +41,7 @@ export default function AdminNotificationCreatePage() {
     const token = session?.user?.accessToken;
     const router = useRouter();
 
-    const { register, handleSubmit, control, watch, formState: { errors } } = useForm<NotificationFormValues>({
+    const { register, handleSubmit, control, formState: { errors } } = useForm<NotificationFormValues>({
         defaultValues: {
             type: NotificationType.update,
             target_group: TargetGroup.all,
@@ -49,7 +49,7 @@ export default function AdminNotificationCreatePage() {
         }
     });
 
-    const targetGroup = watch('target_group');
+    const targetGroup = useWatch({ control, name: 'target_group' });
 
     const createMutation = useMutation({
         mutationFn: (data: Partial<INotification>) => adminNotificationApi.create(token!, data),

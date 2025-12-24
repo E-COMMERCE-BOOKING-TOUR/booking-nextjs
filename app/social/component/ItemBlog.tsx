@@ -92,7 +92,7 @@ const ImagesGrid = ({ data, title }: { data: string[]; title: string }) => {
 };
 
 export default function ItemBlog(props: ItemBlogProps) {
-    const { images, title, tags, timestamp, views, likes, comments, href, user, id } = props;
+    const { images, title, tags, timestamp, views, likes, comments, user, id } = props;
     const { open, onOpen, onClose } = useDisclosure();
 
     const content = (

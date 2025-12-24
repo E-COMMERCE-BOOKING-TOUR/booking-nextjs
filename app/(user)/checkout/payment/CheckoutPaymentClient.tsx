@@ -10,7 +10,7 @@ import { toaster } from "@/components/chakra/toaster";
 import { numberFormat } from "@/libs/function";
 import { IBookingDetail, IPaymentMethod } from "@/types/booking";
 import { PaymentCardID } from "@/types/payment";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BookingSummaryCard } from "@/components/ui/user/BookingSummaryCard";
@@ -82,9 +82,9 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
 
     const {
         handleSubmit,
-        watch,
         setValue,
         formState: { errors },
+        control,
     } = useForm<CheckoutPaymentFormData>({
         resolver: zodResolver(checkoutPaymentSchema),
         defaultValues: {
@@ -92,7 +92,7 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
         },
     });
 
-    const selectedPaymentId = watch("booking_payment_id");
+    const selectedPaymentId = useWatch({ control, name: "booking_payment_id" });
     // const selectedPayment = paymentMethods.find(m => m.id === selectedPaymentId);
 
     // Check if Credit Card is selected

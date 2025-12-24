@@ -1,6 +1,6 @@
 "use client";
 
-import { GalleryVerticalEnd, Home, ScrollText, SquareCheck, ThumbsUp, Users, LogOut, Compass, Bell } from "lucide-react";
+import { GalleryVerticalEnd, Home, SquareCheck, ThumbsUp, Users, LogOut, Compass, Bell } from "lucide-react";
 
 import {
   Sidebar,
@@ -50,16 +50,14 @@ const sections = [
     ],
   },
   {
-    title: "Customers",
-    base: "/admin/user",
+    title: "User & Access",
+    base: ["/admin/users", "/admin/suppliers", "/admin/roles"],
     icon: Users,
-    url: "/admin/user-list",
-  },
-  {
-    title: "Articles & Blogs",
-    base: "/admin/blog",
-    icon: ScrollText,
-    url: "/admin/blog",
+    children: [
+      { title: "Users", url: "/admin/users" },
+      { title: "Suppliers", url: "/admin/suppliers" },
+      { title: "Roles & Permissions", url: "/admin/roles" },
+    ],
   },
   {
     title: "Reviews",
@@ -80,7 +78,11 @@ const sections = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const activeSection = sections.find(sec => sec.children && pathname.startsWith(sec.base));
+  const activeSection = sections.find(sec =>
+    sec.children && (Array.isArray(sec.base)
+      ? sec.base.some(b => pathname.startsWith(b))
+      : pathname.startsWith(sec.base as string))
+  );
 
   return (
     <Sidebar className="border-r border-border bg-sidebar">
@@ -107,7 +109,9 @@ export function AppSidebar() {
             >
               {sections.map((sec) => {
                 const Icon = sec.icon;
-                const isParentActive = pathname.startsWith(sec.base);
+                const isParentActive = Array.isArray(sec.base)
+                  ? sec.base.some(b => pathname.startsWith(b))
+                  : pathname.startsWith(sec.base as string);
 
                 if (!sec.children) {
                   return (
