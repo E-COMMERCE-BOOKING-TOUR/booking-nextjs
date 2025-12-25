@@ -44,6 +44,8 @@ export default async function TopPage() {
                   currentPrice={tourItem.currentPrice}
                   tags={tourItem.tags}
                   slug={tourItem.slug}
+                  currencySymbol={tourItem.currencySymbol}
+                  currencyCode={tourItem.currencyCode}
                 />
               ))
             ) : (

@@ -1,6 +1,7 @@
 import { Badge, Box, HStack, Image, Text, VStack } from "@chakra-ui/react";
 import Link from "next/link";
 import { FaMapMarkerAlt } from "react-icons/fa";
+import { formatPriceValue } from '@/utils/currency';
 
 interface TourItemProps {
   image: string;
@@ -14,6 +15,8 @@ interface TourItemProps {
   currentPrice: number;
   tags: string[];
   slug: string;
+  currencySymbol?: string;
+  currencyCode?: string;
 }
 
 const TourRating = ({ rating, ratingText, reviews }: { rating: number; ratingText: string; reviews: number }) => (
@@ -40,6 +43,8 @@ export default function TourItem({
   currentPrice,
   tags,
   slug,
+  currencySymbol = 'VND', // Default to VND if undefined
+  currencyCode,
 }: TourItemProps) {
   return (
     <VStack
@@ -86,11 +91,11 @@ export default function TourItem({
         <HStack justify="space-between" align="baseline" mt={1}>
           {originalPrice && (
             <Text fontSize="sm" color="red.400" textDecoration="line-through">
-              VND {originalPrice.toLocaleString()}
+              {currencySymbol} {formatPriceValue(originalPrice, currencyCode)}~
             </Text>
           )}
           <Text fontSize="md" fontWeight="bold" color="gray.900">
-            VND {currentPrice.toLocaleString()}
+            {currencySymbol} {formatPriceValue(currentPrice, currencyCode)}~
           </Text>
         </HStack>
       </VStack>

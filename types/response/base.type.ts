@@ -9,8 +9,8 @@ export interface ICountry {
     local_name: string | null;
     phone_code: string | null;
     divisions: IDivision[];
-    users: IUser[];    
-    tours: ITour[];     
+    users: IUser[];
+    tours: ITour[];
 }
 
 export interface IDivision {
@@ -19,6 +19,8 @@ export interface IDivision {
     level: number | string;
     name_local: string;
     code: string | null;
+    image_url?: string | null;
+    view_count?: number;
     country: ICountry;
     tours: ITour[];
     parent_id?: number | null;

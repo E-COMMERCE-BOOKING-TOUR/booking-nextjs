@@ -5,14 +5,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminStaticPagesApi, StaticPage } from '@/apis/admin/static-pages';
 import { useSession } from 'next-auth/react';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -26,7 +18,6 @@ import {
     Pencil,
     Trash2,
     ExternalLink,
-    FileText,
     Loader2,
     AlertCircle,
 } from 'lucide-react';
@@ -86,11 +77,11 @@ export default function StaticPagesListPage() {
     }
 
     return (
-        <div className="space-y-6 pb-10">
+        <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Quản Lý Trang Tĩnh</h1>
-                    <p className="text-muted-foreground mt-1">Quản lý nội dung các trang Thông tin, Điều khoản, Chính sách...</p>
+                    <p className="text-muted-foreground mt-1 text-lg">Quản lý nội dung các trang Thông tin, Điều khoản, Chính sách...</p>
                 </div>
                 <Button asChild className="bg-primary hover:bg-primary/90">
                     <Link href="/admin/static-pages/create">
@@ -101,81 +92,89 @@ export default function StaticPagesListPage() {
             </div>
 
             <div className="rounded-xl border border-white/5 bg-card/20 backdrop-blur-xl overflow-hidden shadow-2xl">
-                <Table>
-                    <TableHeader className="bg-muted/50">
-                        <TableRow>
-                            <TableHead className="w-[300px]">Tiêu đề / Slug</TableHead>
-                            <TableHead>Trạng thái</TableHead>
-                            <TableHead>Ngày cập nhật</TableHead>
-                            <TableHead className="text-right">Thao tác</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {pages?.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={4} className="h-32 text-center text-muted-foreground italic">
-                                    Chưa có trang tĩnh nào được tạo
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            pages?.map((page) => (
-                                <TableRow key={page.id} className="hover:bg-muted/30 transition-colors border-white/5">
-                                    <TableCell>
-                                        <div className="flex flex-col gap-0.5">
-                                            <span className="font-bold text-foreground">{page.title}</span>
-                                            <span className="text-xs text-muted-foreground font-mono">/{page.slug}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        {page.is_active ? (
-                                            <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-emerald-500/20">
-                                                Đang hoạt động
-                                            </Badge>
-                                        ) : (
-                                            <Badge variant="secondary" className="bg-slate-500/10 text-slate-500 border-slate-500/20">
-                                                Nháp
-                                            </Badge>
-                                        )}
-                                    </TableCell>
-                                    <TableCell className="text-muted-foreground text-sm">
-                                        {new Date(page.updated_at).toLocaleDateString('vi-VN')}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-white/10">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="w-48 bg-background/95 backdrop-blur-md border-white/10">
-                                                <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
-                                                <DropdownMenuItem asChild className="cursor-pointer">
-                                                    <Link href={`/admin/static-pages/${page.id}`}>
-                                                        <Pencil className="mr-2 h-4 w-4" />
-                                                        Chỉnh sửa
-                                                    </Link>
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem asChild className="cursor-pointer">
-                                                    <Link href={`/page/${page.slug}`} target="_blank">
-                                                        <ExternalLink className="mr-2 h-4 w-4" />
-                                                        Xem trang chủ
-                                                    </Link>
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    className="text-destructive focus:text-destructive cursor-pointer"
-                                                    onClick={() => setDeleteId(page.id)}
-                                                >
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Xóa trang
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-white/5 border-b border-white/5">
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 w-[80px]">ID</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 w-[400px]">Tiêu đề / Slug</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Trạng thái</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Ngày cập nhật</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                            {pages?.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground italic">
+                                        Chưa có trang tĩnh nào được tạo
+                                    </td>
+                                </tr>
+                            ) : (
+                                pages?.map((page) => (
+                                    <tr key={page.id} className="group hover:bg-white/[0.05] transition-all">
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className="text-xs font-mono font-bold text-primary">#{page.id}</span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-sm font-bold text-foreground">{page.title}</span>
+                                                <span className="text-xs text-muted-foreground font-mono">/{page.slug}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {page.is_active ? (
+                                                <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-emerald-500/20">
+                                                    Đang hoạt động
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="secondary" className="bg-slate-500/10 text-slate-500 border-slate-500/20">
+                                                    Nháp
+                                                </Badge>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className="text-sm text-foreground">
+                                                {new Date(page.updated_at).toLocaleDateString('vi-VN')}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" className="size-8 p-0 hover:bg-white/10">
+                                                        <MoreHorizontal className="size-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="w-48 bg-background/95 backdrop-blur-md border-white/10">
+                                                    <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
+                                                    <DropdownMenuItem asChild className="cursor-pointer">
+                                                        <Link href={`/admin/static-pages/${page.id}`}>
+                                                            <Pencil className="mr-2 size-4" />
+                                                            Chỉnh sửa
+                                                        </Link>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem asChild className="cursor-pointer">
+                                                        <Link href={`/page/${page.slug}`} target="_blank">
+                                                            <ExternalLink className="mr-2 size-4" />
+                                                            Xem trang chủ
+                                                        </Link>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        className="text-rose-500 focus:text-rose-500 cursor-pointer"
+                                                        onClick={() => setDeleteId(page.id)}
+                                                    >
+                                                        <Trash2 className="mr-2 size-4" />
+                                                        Xóa trang
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {/* Delete Confirmation */}
@@ -191,10 +190,10 @@ export default function StaticPagesListPage() {
                         <AlertDialogCancel>Hủy</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => deleteId && deleteMutation.mutate(deleteId)}
-                            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                            className="bg-rose-500 hover:bg-rose-600 text-white"
                         >
-                            {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Xác nhận xóa
+                            {deleteMutation.isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
+                            Xóa ngay
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

@@ -4,12 +4,12 @@ import { ISupplier } from "@/types/response/tour.type";
 
 export const masterApi = {
   getCountries: async () => {
-    const url = "/country/getAll";
+    const url = "/user/division/countries";
     const data: ICountry[] = await fetchC.get(url, { cache: "no-store" });
     return Array.isArray(data) ? data : [];
   },
   getDivisions: async () => {
-    const url = "/division/getAll";
+    const url = "/user/division/all";
     const data: IDivision[] = await fetchC.get(url, { cache: "no-store" });
     return Array.isArray(data) ? data : [];
   },

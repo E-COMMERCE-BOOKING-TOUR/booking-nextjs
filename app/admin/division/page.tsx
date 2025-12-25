@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminDivisionApi, CreateDivisionDTO, UpdateDivisionDTO } from '@/apis/admin/division';
 import { useSession } from 'next-auth/react';
@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import Image from 'next/image';
 import {
     Search,
     MoreHorizontal,
@@ -15,6 +16,7 @@ import {
     Trash2,
     Plus,
     MapPin,
+    ImageUp,
 } from 'lucide-react';
 import {
     DropdownMenu,
@@ -67,12 +69,15 @@ export default function AdminDivisionPage() {
     const { data: session } = useSession();
     const token = session?.user?.accessToken;
     const queryClient = useQueryClient();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCountryId, setSelectedCountryId] = useState<number | null>(null);
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [editDivision, setEditDivision] = useState<IDivision | null>(null);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     const { register, handleSubmit, reset, setValue, watch } = useForm<DivisionFormData>({
         defaultValues: {
@@ -159,6 +164,24 @@ export default function AdminDivisionPage() {
         setValue('code', division.code || '');
         setValue('country_id', division.country?.id || 0);
         setValue('parent_id', division.parent_id || null);
+        setImagePreview(division.image_url || null);
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !editDivision) return;
+
+        setUploadingImage(true);
+        try {
+            const result = await adminDivisionApi.uploadImage(editDivision.id, file, token);
+            setImagePreview(result.image_url);
+            queryClient.invalidateQueries({ queryKey: ['admin-divisions'] });
+            toast.success('Upload hình ảnh thành công');
+        } catch {
+            toast.error('Không thể upload hình ảnh');
+        } finally {
+            setUploadingImage(false);
+        }
     };
 
     const openCreate = () => {
@@ -476,6 +499,40 @@ export default function AdminDivisionPage() {
                                         ))}
                                     </SelectContent>
                                 </Select>
+                            </div>
+                            {/* Image Upload Section */}
+                            <div className="grid grid-cols-4 items-start gap-4">
+                                <Label className="text-right pt-2">Hình ảnh</Label>
+                                <div className="col-span-3 space-y-3">
+                                    {imagePreview && (
+                                        <div className="relative w-full h-32 rounded-lg overflow-hidden border">
+                                            <Image
+                                                src={imagePreview}
+                                                alt="Division preview"
+                                                fill
+                                                className="object-cover"
+                                            />
+                                        </div>
+                                    )}
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={handleImageUpload}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={uploadingImage}
+                                        className="w-full"
+                                    >
+                                        <ImageUp className="mr-2 size-4" />
+                                        {uploadingImage ? 'Đang upload...' : 'Upload hình ảnh'}
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                         <DialogFooter>

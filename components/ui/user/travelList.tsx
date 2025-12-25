@@ -1,7 +1,8 @@
 import { Box, Grid } from "@chakra-ui/react";
-import TravelItem from "./travelItem";
+import TravelItem, { LargeTravelItem } from "./travelItem";
 
 interface TravelDestination {
+    id: number;
     image: string;
     title: string;
     toursCount: number;
@@ -20,9 +21,10 @@ export default function TravelList({ destinations }: TravelListProps) {
         <Box>
             {largeItems.length > 0 && (
                 <Grid templateColumns="repeat(2, 1fr)" gap={4} mb={4}>
-                    {largeItems.map((item, index) => (
-                        <TravelItem.large
-                            key={index}
+                    {largeItems.map((item) => (
+                        <LargeTravelItem
+                            key={item.id}
+                            id={item.id}
                             image={item.image}
                             title={item.title}
                             toursCount={item.toursCount}
@@ -34,9 +36,10 @@ export default function TravelList({ destinations }: TravelListProps) {
 
             {smallItems.length > 0 && (
                 <Grid templateColumns="repeat(4, 1fr)" gap={4}>
-                    {smallItems.map((item, index) => (
+                    {smallItems.map((item) => (
                         <TravelItem
-                            key={index + 2}
+                            key={item.id}
+                            id={item.id}
                             image={item.image}
                             title={item.title}
                             toursCount={item.toursCount}

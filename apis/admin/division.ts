@@ -7,6 +7,7 @@ export interface CreateDivisionDTO {
     name_local: string;
     level?: number;
     code?: string;
+    image_url?: string;
     country_id: number;
     parent_id?: number | null;
 }
@@ -16,6 +17,7 @@ export interface UpdateDivisionDTO {
     name_local?: string;
     level?: number;
     code?: string;
+    image_url?: string;
     country_id?: number;
     parent_id?: number | null;
 }
@@ -58,5 +60,27 @@ export const adminDivisionApi = {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.delete(`/admin/division/remove/${id}`, { headers: authHeaders.headers });
+    },
+
+    uploadImage: async (id: number, file: File, token?: string): Promise<{ image_url: string }> => {
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/division/${id}/upload-image`, {
+            method: 'POST',
+            headers: {
+                ...authHeaders.headers,
+            },
+            body: formData,
+        });
+
+        if (!response.ok) {
+            throw new Error('Upload failed');
+        }
+
+        return response.json();
     },
 };

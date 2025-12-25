@@ -195,11 +195,6 @@ export default function TourCalendar({ tourSlug, variantId, durationDays, onSele
                                     <Text fontSize="2xs" color="whiteAlpha.800" position="absolute" top={-1}>End</Text>
                                 )}
                                 <Text fontSize="md" fontWeight={isPartOfSelection ? "bold" : "medium"}>{d.getDate()}</Text>
-                                {!isDisabled && daySessions && daySessions.length > 0 && !inRange && (
-                                    <Text fontSize="xs" mt={0} fontWeight="semibold" color={isStartDate || isEndDate ? "whiteAlpha.900" : "green.500"}>
-                                        {(Math.min(...daySessions.map(s => s.price)) / 1000).toFixed(0)}K~
-                                    </Text>
-                                )}
                             </Box>
                         );
                     })}

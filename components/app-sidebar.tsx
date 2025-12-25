@@ -84,7 +84,7 @@ const sections = [
     ],
   },
   {
-    title: "Content Management",
+    title: "Contents",
     base: "/admin/static-pages",
     icon: GalleryVerticalEnd,
     children: [

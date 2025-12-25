@@ -11,10 +11,14 @@ export type ITourPopular = {
     currentPrice: number;
     tags: string[];
     slug: string;
+    currencySymbol?: string;
+    currencyCode?: string;
 };
 
 export type ITourSearchResponse = {
     data: ITourPopular[];
     total: number;
+    offset?: number;
+    limit?: number;
 };
 
