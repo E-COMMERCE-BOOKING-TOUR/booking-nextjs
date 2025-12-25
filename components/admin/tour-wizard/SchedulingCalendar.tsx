@@ -67,7 +67,7 @@ export default function SchedulingCalendar({ ranges, excluded, onToggleDate, dur
 
         // Second pass for multi-day tours to detect unbookable sessions
         if (durationDays > 1) {
-            days.forEach((d, idx) => {
+            days.forEach((d) => {
                 if (d && d.isInRange && !d.isExcluded) {
                     // Check next (durationDays - 1) days
                     for (let j = 1; j < durationDays; j++) {
@@ -86,7 +86,7 @@ export default function SchedulingCalendar({ ranges, excluded, onToggleDate, dur
         }
 
         return days;
-    }, [year, month, ranges, excluded, durationDays, isDateInRange, daysInMonth, firstDayOfMonth]);
+    }, [year, month, excluded, durationDays, isDateInRange, daysInMonth, firstDayOfMonth]);
 
     return (
         <div className="w-full bg-card/20 border border-white/5 rounded-2xl p-4 backdrop-blur-sm">

@@ -44,7 +44,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 
 const StatusBadge = ({ status }: { status: string }) => {
   switch (status) {
@@ -95,12 +95,12 @@ export default function AdminBookingListPage() {
     dateFilter: ''
   });
 
-  const { register, handleSubmit, setValue, watch, reset } = useForm<FilterValues>({
+  const { register, handleSubmit, setValue, reset, control } = useForm<FilterValues>({
     defaultValues: appliedFilters
   });
 
-  const currentStatus = watch('statusFilter');
-  const currentPayment = watch('paymentFilter');
+  const currentStatus = useWatch({ control, name: 'statusFilter' });
+  const currentPayment = useWatch({ control, name: 'paymentFilter' });
 
   const { data: bookings = [], isLoading: isQueryLoading } = useQuery({
     queryKey: ['admin-bookings', token],

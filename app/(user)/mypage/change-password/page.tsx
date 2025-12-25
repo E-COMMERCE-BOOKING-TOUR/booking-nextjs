@@ -4,7 +4,6 @@ import {
     VStack,
     Heading,
     Button,
-    Stack,
     Box,
     HStack,
     Text,
@@ -27,15 +26,13 @@ export default function ChangePasswordPage() {
     const { data: session } = useSession();
     const token = session?.user?.accessToken;
 
-    const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<ChangePasswordFormData>({
+    const { register, handleSubmit, reset, getValues, formState: { errors } } = useForm<ChangePasswordFormData>({
         defaultValues: {
             oldPassword: "",
             newPassword: "",
             confirmPassword: "",
         }
     });
-
-    const newPassword = watch("newPassword");
 
     const mutation = useMutation({
         mutationFn: async (data: ChangePasswordFormData) => {
@@ -125,7 +122,7 @@ export default function ChangePasswordPage() {
                                 <Input
                                     {...register("confirmPassword", {
                                         required: "Please confirm your new password",
-                                        validate: (value) => value === watch("newPassword") || "Passwords do not match"
+                                        validate: (value) => value === getValues("newPassword") || "Passwords do not match"
                                     })}
                                     type="password"
                                     placeholder="Confirm your new password"

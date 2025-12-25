@@ -1,4 +1,5 @@
 import fetchC from "@/libs/fetchC";
+import { getAuthHeaders } from "@/libs/auth/authHeaders";
 import { ITour } from "@/types/response/tour.type";
 import { ITourPopular, ITourSearchResponse } from "@/types/response/tour";
 import { IReview } from "@/types/response/review.type";
@@ -93,10 +94,39 @@ export const tourApi = {
         });
         return res;
     },
-    reviews: async (slug: string): Promise<IReview[]> => {
-        const url = `/user/tour/${slug}/reviews`;
-        const res = await fetchC.get(url);
+    reviews: async (): Promise<IReview[]> => {
+        // Legacy support or fallback
+        return [];
+    },
+    getReviewsByTourId: async (tourId: number, token?: string) => {
+        let headers = {};
+        if (token) {
+            const authHeaders = await getAuthHeaders(token);
+            if (authHeaders.ok) headers = authHeaders.headers;
+        }
+        const url = `/user/review/tour/${tourId}`;
+        const res = await fetchC.get(url, { headers });
         return Array.isArray(res) ? res : (res?.data || []);
+    },
+    createReview: async (data: Record<string, any>, token?: string) => {
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+        return fetchC.post('/user/review/create', data, { headers: authHeaders.headers });
+    },
+    createReviewFormData: async (formData: FormData, token?: string) => {
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+        return fetchC.postFormData('/user/review/create', formData, { headers: authHeaders.headers });
+    },
+    markReviewHelpful: async (id: number, token?: string) => {
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+        return fetchC.post(`/user/review/helpful/${id}`, {}, { headers: authHeaders.headers });
+    },
+    reportReview: async (id: number, token?: string) => {
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+        return fetchC.post(`/user/review/report/${id}`, {}, { headers: authHeaders.headers });
     },
     reviewCategories: async (slug: string): Promise<ITourCategory[]> => {
         const url = `/user/tour/${slug}/review-categories`;

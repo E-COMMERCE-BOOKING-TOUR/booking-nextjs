@@ -1,4 +1,4 @@
-import { Button, Flex, Image, Menu, VStack, HStack, Box, IconButton } from '@chakra-ui/react';
+import { Button, Flex, Image, Menu, VStack, HStack, Box } from '@chakra-ui/react';
 import { NotificationBell } from './notificationBell';
 import NextLink from 'next/link';
 import bookingApi from '@/apis/booking';

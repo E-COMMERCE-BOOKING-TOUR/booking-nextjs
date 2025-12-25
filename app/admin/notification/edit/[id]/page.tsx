@@ -24,7 +24,7 @@ import {
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import { useEffect } from 'react';
 import { TargetGroup, NotificationType, INotification } from '@/types/notification';
 
@@ -51,7 +51,7 @@ export default function AdminNotificationEditPage() {
         enabled: !!token && !!id,
     });
 
-    const { register, handleSubmit, control, watch, setValue, reset, formState: { errors } } = useForm<NotificationFormValues>({
+    const { register, handleSubmit, control, setValue, reset, formState: { errors } } = useForm<NotificationFormValues>({
         defaultValues: {
             title: '',
             description: '',
@@ -75,7 +75,7 @@ export default function AdminNotificationEditPage() {
         }
     }, [detailData?.data, reset]);
 
-    const targetGroup = watch('target_group');
+    const targetGroup = useWatch({ control, name: 'target_group' });
 
     const updateMutation = useMutation({
         mutationFn: (data: Partial<INotification>) => adminNotificationApi.update(token!, id, data),

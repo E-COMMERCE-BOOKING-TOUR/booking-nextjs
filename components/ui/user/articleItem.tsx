@@ -39,7 +39,7 @@ const LargeArticleItem = ({ image, title, description, tags }: ArticleItemProps)
   </Box>
 );
 
-const SmallArticleItem = ({ image, title, description, tags, timestamp }: ArticleItemProps) => (
+const SmallArticleItem = ({ image, title, tags, timestamp }: ArticleItemProps) => (
   <HStack align="start" gap={4} bg="white" p={4} borderRadius="15px" shadow="sm" w="full">
     <Box width="250px" height="100%" borderRadius="15px" overflow="hidden">
       <Image src={image} alt={title} w="full" h="full" objectFit="cover" />

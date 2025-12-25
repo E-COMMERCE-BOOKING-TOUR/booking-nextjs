@@ -28,7 +28,7 @@ export default function BookingsPage() {
     const [page, setPage] = useState(1);
     const limit = 10;
 
-    const { data: response, isLoading } = useQuery({
+    const { data: response } = useQuery({
         queryKey: ["booking-history", token, page],
         queryFn: async () => {
             if (!token) return { data: [], total: 0, page: 1, limit: 10, totalPages: 0 };
@@ -61,7 +61,7 @@ export default function BookingsPage() {
                         <Box p={6} bg="gray.50" rounded="full">
                             <FiShoppingBag size={40} color="#CBD5E0" />
                         </Box>
-                        <Text color="gray.500" fontWeight="medium">You haven't made any bookings yet.</Text>
+                        <Text color="gray.500" fontWeight="medium">You haven&apos;t made any bookings yet.</Text>
                         <Button variant="outline" className="rounded-full border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white transition-all px-8">
                             Explore Tours
                         </Button>
@@ -85,11 +85,14 @@ export default function BookingsPage() {
                                     {/* Tour Image */}
                                     <Box bg="gray.100" rounded="xl" w="100px" h="100px" overflow="hidden" flexShrink={0} shadow="sm">
                                         {booking.tour_image ? (
-                                            <img
-                                                src={booking.tour_image}
-                                                alt=""
-                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                            />
+                                            <>
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={booking.tour_image}
+                                                    alt=""
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                />
+                                            </>
                                         ) : (
                                             <Box w="full" h="full" display="flex" alignItems="center" justifyContent="center">
                                                 <FiShoppingBag size={24} color="#CBD5E0" />

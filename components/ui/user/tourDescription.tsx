@@ -81,7 +81,7 @@ export default function TourDescription({
             {/* What's Included / Not Included */}
             <Box>
                 <Heading as="h2" size="lg" fontWeight="black" mb={8} letterSpacing="tight">
-                    What's included
+                    What&apos;s included
                 </Heading>
                 <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={12}>
                     <VStack align="stretch" gap={4}>

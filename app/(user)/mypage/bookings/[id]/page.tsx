@@ -118,6 +118,7 @@ export default function UserBookingDetailPage() {
                         <Box p={4} rounded="2xl" border="1px solid" borderColor="gray.100">
                             <HStack align="start" gap={6}>
                                 <Box w="120px" h="120px" bg="gray.200" rounded="xl" overflow="hidden" flexShrink={0}>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                         src={b.tour_image.startsWith('http') ? b.tour_image : `${process.env.NEXT_PUBLIC_API_BACKEND}/${b.tour_image}`}
                                         alt={b.tour_title}
