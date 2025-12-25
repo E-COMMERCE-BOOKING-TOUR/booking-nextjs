@@ -7,9 +7,8 @@ const article = {
         const res = await fetchC.get(url);
         return Array.isArray(res) ? res : (res?.data || []);
     },
-    create: async (data: { title: string; content: string; images?: { image_url: string }[]; tags?: string[]; tour_id?: number }, user_uuid: string) => {
-        if (!user_uuid) throw new Error("User UUID is required");
-        const url = `/user/article/create/${user_uuid}`;
+    create: async (data: { title: string; content: string; images?: { image_url: string }[]; tags?: string[]; tour_id?: number }) => {
+        const url = `/user/article/create`;
         return await fetchC.post(url, data);
     },
     getList: async (): Promise<IArticlePopular[]> => {
