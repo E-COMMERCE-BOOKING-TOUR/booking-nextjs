@@ -1,5 +1,5 @@
 'use client';
-import { Button, CloseButton, Drawer, Icon, Portal, useDisclosure } from "@chakra-ui/react";
+import { Box, Button, CloseButton, Drawer, Icon, Portal, useDisclosure } from "@chakra-ui/react";
 import { FiMenu } from "react-icons/fi";
 import { Logo, MenuLinks } from "./navbar";
 import { IBookingDetail } from "@/types/booking";
@@ -22,22 +22,23 @@ export const MobileDrawer = ({ activeBooking }: MobileDrawerProps) => {
             <Portal>
                 <Drawer.Backdrop />
                 <Drawer.Positioner>
-                    <Drawer.Content>
-                        <Drawer.Header>
+                    <Drawer.Content bg="white" maxW="300px">
+                        <Drawer.Header borderBottomWidth="1px" borderColor="gray.100" py={6}>
                             <Drawer.Title>
                                 <Logo />
                             </Drawer.Title>
                         </Drawer.Header>
-                        <Drawer.Body>
-                            <ResumeBookingButton
-                                booking={activeBooking || null}
-                                width="full"
-                                mb={4}
-                            />
+                        <Drawer.Body py={8}>
                             <MenuLinks isMobile />
+                            <Box mt={8} pt={8} borderTopWidth="1px" borderColor="gray.100">
+                                <ResumeBookingButton
+                                    booking={activeBooking || null}
+                                    width="full"
+                                />
+                            </Box>
                         </Drawer.Body>
                         <Drawer.CloseTrigger asChild>
-                            <CloseButton size="md" />
+                            <CloseButton size="lg" position="absolute" top={4} right={4} color="gray.500" />
                         </Drawer.CloseTrigger>
                     </Drawer.Content>
                 </Drawer.Positioner>

@@ -1,4 +1,4 @@
-import { Container, Grid, Text, VStack } from '@chakra-ui/react';
+import { Box, Container, Grid, Text, VStack } from '@chakra-ui/react';
 import { SearchInput, TourItem, TravelList, HeaderList } from '@/components/ui/user';
 import Header from './components/header';
 // import RecentSearch from './components/recentSearch';
@@ -6,11 +6,12 @@ import BannerHeader from './components/bannerHeader';
 import { Diagonal } from '@/components/layout/user';
 import tour from '@/apis/tour';
 import division from '@/apis/division';
+import { settingsApi } from '@/apis/settings';
 
 export default async function TopPage() {
   const popularTours = await tour.popular(8);
-  // const popularArticles = await article.popular(4);
   const trendingDestinations = await division.trending(6);
+  const settings = await settingsApi.get();
 
   return (
     <>
@@ -18,7 +19,10 @@ export default async function TopPage() {
         <Header />
         <SearchInput />
         {/* <RecentSearch /> */}
-        <BannerHeader />
+        <BannerHeader
+          banners_square={settings?.banners_square}
+          banners_rectangle={settings?.banners_rectangle}
+        />
         <div>
           <HeaderList
             title="Explore Popular Cities"
@@ -101,7 +105,7 @@ export default async function TopPage() {
           )}
         </div> */}
       </Container >
-      <VStack borderBottomRadius="calc(100vw / 16)" backgroundColor="white" paddingBottom="calc(100vw / 16)" position="relative" zIndex={2}>
+      <VStack backgroundColor="white" position="relative" zIndex={2} overflow="visible" pb={20}>
         <Container maxW="xl" mx="auto">
           <HeaderList
             title="Trending destinations"
@@ -116,6 +120,7 @@ export default async function TopPage() {
           )}
         </Container>
       </VStack>
+      <Box position="absolute" borderBottomRightRadius={20} borderBottomLeftRadius={20} zIndex={11} left={0} right={0} bg="linear-gradient(180deg, rgb(255 255 255) 0%, rgba(0, 0, 0, 0) 100%)" h="100px" />
       <Diagonal />
     </>
   );

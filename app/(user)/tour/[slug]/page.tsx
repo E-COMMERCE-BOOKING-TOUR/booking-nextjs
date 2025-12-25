@@ -226,7 +226,7 @@ export default async function TourDetailPage({ params }: { params: Promise<{ slu
                     </GridItem>
                 </Grid>
 
-                <VStack align="stretch" gap={10} mt={20}>
+                <VStack align="stretch" gap={10}>
                     <Box>
                         <Heading as="h2" size="2xl" fontWeight="black" mb={8} letterSpacing="tight">
                             Related tours

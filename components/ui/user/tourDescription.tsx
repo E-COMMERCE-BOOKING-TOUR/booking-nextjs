@@ -28,7 +28,7 @@ export default function TourDescription({
     meetingPoint,
 }: TourDescriptionProps) {
     return (
-        <VStack align="stretch" gap={12}>
+        <VStack align="stretch">
             {/* Description Section */}
             <Box>
                 <VStack align="start" gap={2} mb={4}>
@@ -157,7 +157,7 @@ export default function TourDescription({
             </Box>
 
             {/* Meeting Point */}
-            <Box bg="white" p={6} rounded="2xl" border="1px solid" borderColor="gray.200" shadow="sm">
+            <Box bg="white" p={6} rounded="2xl" border="1px solid" borderColor="gray.200">
                 <HStack gap={5} align="center">
                     <Box p={4} bg="blue.50" rounded="xl" color="main">
                         <FaGlobe size={24} />

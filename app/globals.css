@@ -103,3 +103,85 @@ select {
   border-radius: 4px;
   opacity: 1;
 }
+
+/* Footer Clip Path - Responsive */
+.footer-clip-path {
+  clip-path: polygon(0% 0%, 20% 1%, 40% 2.5%, 50% 3%, 60% 2.5%, 80% 1%, 100% 0%, 100% 100%, 0% 100%);
+}
+
+@media (min-width: 768px) {
+  .footer-clip-path {
+    /* phần màu xanh */
+    clip-path: polygon(0% 0%,
+        5% 4%,
+        10% 7.5%,
+
+        15% 10.5%,
+        20% 13%,
+        25% 15%,
+        30% 16.5%,
+        35% 17.5%,
+        40% 18.2%,
+        45% 18.7%,
+        50% 18.8%,
+        55% 18.7%,
+        60% 18.2%,
+        65% 17.5%,
+        70% 16.5%,
+        75% 15%,
+        80% 13%,
+        85% 10.5%,
+        90% 7.5%,
+        95% 4%,
+
+        100% 0%,
+        100% 100%,
+
+        0% 100%);
+  }
+}
+
+.swiper-container-custom {
+  isolation: isolate;
+}
+
+.swiper-container-custom .swiper-pagination {
+  bottom: 15px !important;
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+  width: 100% !important;
+  left: 0 !important;
+  right: 0 !important;
+}
+
+.custom-bullet {
+  display: block;
+  width: 8px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.custom-bullet-active {
+  width: 20px;
+  background: white;
+  border-radius: 4px;
+}
+
+/* Mobile adjustment for bullets */
+@media (max-width: 768px) {
+  .custom-bullet {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-bullet-active {
+    width: 16px;
+  }
+}
