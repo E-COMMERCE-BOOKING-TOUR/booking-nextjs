@@ -54,7 +54,7 @@ const ForYou = () => {
 
     const queryClient = useQueryClient();
     const createMutation = useMutation({
-        mutationFn: (vars: { data: Parameters<typeof article.create>[0]; user_uuid: string }) => article.create(vars.data, vars.user_uuid),
+        mutationFn: (vars: { data: Parameters<typeof article.create>[0] }) => article.create(vars.data),
         onSuccess: () => {
             toaster.create({
                 title: "Post created successfully",
@@ -96,8 +96,7 @@ const ForYou = () => {
                 images: images.map(url => ({ image_url: url })),
                 tags,
                 tour_id: selectedTour[0] ? parseInt(selectedTour[0]) : undefined
-            },
-            user_uuid: session.user.uuid
+            }
         });
     };
 
