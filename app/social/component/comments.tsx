@@ -1,12 +1,13 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
-import { Box, Button, Grid, GridItem, HStack, Icon, Image, Input, Text, VStack, Dialog, CloseButton, Portal, Spinner } from "@chakra-ui/react";
-import { FiMessageCircle, FiSend, FiChevronLeft, FiChevronRight, FiX } from "react-icons/fi";
+import React, { useEffect, useMemo, useState } from "react";
+import { Box, Button, Grid, GridItem, HStack, Icon, Image, Input, Text, VStack, Dialog, CloseButton, Portal, Flex, Avatar } from "@chakra-ui/react";
+import { FiMessageCircle, FiSend, FiChevronLeft, FiChevronRight, FiHeart, FiShare2, FiBookmark } from "react-icons/fi";
+import { HiDotsHorizontal } from "react-icons/hi";
 import { useSession } from "next-auth/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import articleApi from "@/apis/article";
 import { userApi } from "@/apis/user";
-// import { toaster } from "@/components/ui/toaster";
+import { dateFormat } from "@/libs/function";
 
 // Intefaces mapping to backend DTOs
 export interface CommentParams {
@@ -70,7 +71,11 @@ export function PopUpComment({
     articleId,
     images,
     comments = [],
-    refetch
+    refetch,
+    author,
+    caption,
+    createdAt,
+    likeCount
 }: {
     isOpen: boolean;
     onClose: () => void;
@@ -78,6 +83,10 @@ export function PopUpComment({
     images?: string[];
     comments?: CommentParams[];
     refetch?: () => void;
+    author?: { name: string; avatar?: string };
+    caption?: string;
+    createdAt?: string;
+    likeCount?: number;
 }) {
     const { data: session } = useSession();
     const queryClient = useQueryClient();
@@ -131,16 +140,13 @@ export function PopUpComment({
         onSuccess: () => {
             setText("");
             setReplyingTo(null);
-            // toaster.create({ description: "Comment posted", type: "success" });
             console.log("Comment posted");
             if (refetch) refetch();
-            // Invalidate queries if needed, mainly the article detail or list
             queryClient.invalidateQueries({ queryKey: ["articles"] });
             queryClient.invalidateQueries({ queryKey: ["popular-articles-infinite"] });
             queryClient.invalidateQueries({ queryKey: ["popular-articles"] });
         },
         onError: () => {
-            // toaster.create({ description: "Failed to post comment", type: "error" });
             console.error("Failed to post comment");
         }
     });
@@ -157,144 +163,208 @@ export function PopUpComment({
 
     const CommentItem = ({ node, depth = 0 }: { node: CommentNode; depth?: number }) => {
         const hasChildren = node.children.length > 0;
-        const canShowChildren = hasChildren && depth < 1;
+        const canShowChildren = hasChildren && depth < 2; // Limit nesting visual depth if too deep, but functionality remains
         const isOpenChild = !!expanded[node.id];
         const user = users[node.user_id];
 
         return (
-            <Box pl={depth ? 8 : 0} py={3} borderBottomWidth={depth ? 0 : 1} borderColor="whiteAlpha.200">
-                <HStack align="start" gap={3} paddingLeft={4}>
-                    <Box
-                        bg="whiteAlpha.300"
-                        rounded="full"
-                        minW={8}
-                        minH={8}
-                        overflow="hidden"
-                    >
-                        {/* Avatar logic: no avatar from DB as per requirement, but if user object has it we use it, else placeholder/API result */}
-                        {(user?.avatar || node.user?.avatar) && <Image src={user?.avatar || node.user?.avatar} alt={user?.name || node.user?.name} w="full" h="full" objectFit="cover" />}
-                    </Box>
-                    <VStack align="start" gap={1} flex={1}>
-                        <Text color="white" fontSize="sm" fontWeight={"bold"}>{user?.name || node.user?.name || `User ${node.user_id}`}</Text>
-                        <Text color="gray.300" fontSize="sm">
+            <Flex gap={3} mt={4} pl={depth ? 8 : 0}>
+                <Avatar.Root size="xs" flexShrink={0}>
+                    <Avatar.Fallback name={user?.name || node.user?.name || `U${node.user_id}`} />
+                    {(user?.avatar || node.user?.avatar) && <Avatar.Image src={user?.avatar || node.user?.avatar} />}
+                </Avatar.Root>
+                <VStack align="start" gap={1} flex={1}>
+                    <Text fontSize="sm" lineHeight="1.4">
+                        <Text as="span" fontWeight="bold" mr={2} cursor="pointer" _hover={{ textDecoration: 'underline' }}>
+                            {user?.name || node.user?.name || `User ${node.user_id}`}
+                        </Text>
+                        <Text as="span" color="gray.200">
                             {node.content}
                         </Text>
-                        <HStack gap={3} color="whiteAlpha.700" fontSize="xs">
-                            <Text>{new Date(node.created_at).toLocaleDateString()}</Text>
-                            <Text cursor="pointer" _hover={{ textDecoration: 'underline', color: 'blue.300' }} onClick={() => handleReply(node)}>Reply</Text>
-                            {canShowChildren ? (
-                                <Button variant="ghost" color="white" size="xs" onClick={() => toggle(node.id)} h="auto" p={0} _hover={{ bg: 'transparent', textDecoration: 'underline' }}>
-                                    {isOpenChild ? "Hide replies" : `View ${node.children.length} replies`}
-                                </Button>
+                    </Text>
+
+                    <HStack gap={4} fontSize="xs" color="gray.500" mt={0.5}>
+                        <Text>{node.created_at ? new Date(node.created_at).toLocaleDateString() : 'Just now'}</Text>
+                        {/* Placeholder for likes logic on comment */}
+                        {/* <Text fontWeight="semibold" cursor="pointer">12 likes</Text> */}
+                        <Text fontWeight="semibold" cursor="pointer" onClick={() => handleReply(node)}>Reply</Text>
+                    </HStack>
+
+                    {/* View replies button */}
+                    {canShowChildren && (
+                        <Box mt={1}>
+                            {!isOpenChild ? (
+                                <HStack gap={2} cursor="pointer" onClick={() => toggle(node.id)}>
+                                    <Box w={6} h="1px" bg="gray.500" />
+                                    <Text fontSize="xs" color="gray.500" fontWeight="semibold">
+                                        View replies ({node.children.length})
+                                    </Text>
+                                </HStack>
                             ) : null}
-                        </HStack>
-                        {canShowChildren && isOpenChild ? (
-                            <VStack align="stretch" gap={0} mt={2}>
-                                {node.children.map(ch => (
-                                    <CommentItem key={ch.id} node={ch} depth={depth + 1} />
-                                ))}
-                            </VStack>
-                        ) : null}
-                    </VStack>
-                </HStack>
-            </Box>
+                        </Box>
+                    )}
+
+                    {/* Nested Replies */}
+                    {(isOpenChild || depth > 0) && node.children.length > 0 && (
+                        <Box w="full">
+                            {node.children.map(ch => (
+                                <CommentItem key={ch.id} node={ch} depth={depth + 1} />
+                            ))}
+                        </Box>
+                    )}
+                </VStack>
+                {/* Like button for comment - placeholder interaction */}
+                <Icon as={FiHeart} boxSize={3} color="gray.500" cursor="pointer" mt={1} />
+            </Flex>
         );
     };
 
 
     return (
-        <Dialog.Root open={isOpen} onOpenChange={(details) => { if (!details.open) onClose(); }} size="lg" placement="center" motionPreset="slide-in-bottom">
+        <Dialog.Root open={isOpen} onOpenChange={(details) => { if (!details.open) onClose(); }} size="xl" placement="center" motionPreset="slide-in-bottom">
             <Portal>
-                <Dialog.Backdrop />
+                <Dialog.Backdrop bg="blackAlpha.800" backdropFilter="blur(5px)" />
                 <Dialog.Positioner>
-                    <Dialog.Content bg="black" color="white" borderRadius="xl" overflow="hidden" maxW="4xl" w="95vw">
-                        <Dialog.Header>
-                            <HStack justify="space-between" px={4} py={2}>
-                                <Text fontWeight="semibold" fontSize="lg">Comments ({comments.length})</Text>
-                                <Dialog.CloseTrigger asChild>
-                                    <CloseButton size="sm" onClick={onClose} />
-                                </Dialog.CloseTrigger>
-                            </HStack>
-                        </Dialog.Header>
-                        <Dialog.Body p={0}>
-                            <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} h="full">
-                                <GridItem>
-                                    <Box
-                                        bg="black"
-                                        w="full"
-                                        h={{ base: "40vh", md: "70vh" }}
-                                        position="relative"
-                                        display={"flex"}
-                                        justifyContent={"center"}
-                                        alignItems={"center"}
-                                    >
-                                        {images && images.length > 0 ? (
-                                            <Image src={images[imgIndex]} alt="article" maxH="full" maxW="full" objectFit="contain" />
-                                        ) : (
-                                            <Box w="full" h="full" bg="whiteAlpha.200" display="flex" alignItems="center" justifyContent="center">
-                                                <Text color="gray.500">No Image</Text>
-                                            </Box>
-                                        )}
-                                        {images && images.length > 1 ? (
-                                            <>
-                                                <Button aria-label="Prev" variant="ghost" colorScheme="whiteAlpha" position="absolute" left={2} top="50%" transform="translateY(-50%)" onClick={() => setImgIndex((p) => (p - 1 + images.length) % images.length)}>
-                                                    <Icon as={FiChevronLeft} color="white" boxSize={6} />
-                                                </Button>
-                                                <Button aria-label="Next" variant="ghost" colorScheme="whiteAlpha" position="absolute" right={2} top="50%" transform="translateY(-50%)" onClick={() => setImgIndex((p) => (p + 1) % images.length)}>
-                                                    <Icon as={FiChevronRight} color="white" boxSize={6} />
-                                                </Button>
-                                            </>
-                                        ) : null}
+                    <Dialog.Content
+                        bg="black"
+                        color="white"
+                        borderRadius="xl" // Less rounded?
+                        overflow="hidden"
+                        maxW="6xl" // Wider to resemble desktop instagram
+                        w="90vw"
+                        h="85vh" // Fixed height
+                        p={0}
+                    >
+                        {/* Close Button on top right outside? Or inside header. Instagram puts it outside often. 
+                             We'll use internal one for simplicity or custom absolute one.
+                         */}
+                        <Box position="absolute" right={2} top={2} zIndex={10}>
+                            <Dialog.CloseTrigger asChild>
+                                <CloseButton size="md" color="white" onClick={onClose} />
+                            </Dialog.CloseTrigger>
+                        </Box>
+
+                        <Grid templateColumns={{ base: "1fr", md: "1.2fr 1fr" }} h="full">
+                            {/* Left: Image Carousel */}
+                            <GridItem bg="black" display="flex" alignItems="center" justifyContent="center" position="relative" h="full" borderRight="1px solid" borderColor="whiteAlpha.200">
+                                {images && images.length > 0 ? (
+                                    <Image src={images[imgIndex]} alt="article" maxH="100%" maxW="100%" objectFit="contain" />
+                                ) : (
+                                    <Box w="full" h="full" display="flex" alignItems="center" justifyContent="center">
+                                        <Text color="gray.500">No Image</Text>
                                     </Box>
-                                </GridItem>
-                                <GridItem borderLeftWidth={{ base: 0, md: 1 }} borderColor="whiteAlpha.200" h={{ base: "40vh", md: "70vh" }} display="flex" flexDirection="column">
-                                    <VStack align="stretch" flex={1} overflowY="auto" p={2}>
-                                        {nodes.length > 0 ? (
-                                            nodes.map(n => (
-                                                <CommentItem key={n.id} node={n} />
-                                            ))
-                                        ) : (
+                                )}
+                                {images && images.length > 1 && (
+                                    <>
+                                        <Button aria-label="Prev" variant="ghost" colorScheme="whiteAlpha" position="absolute" left={2} top="50%" transform="translateY(-50%)" onClick={() => setImgIndex((p) => (p - 1 + images.length) % images.length)} borderRadius="full" p={0}>
+                                            <Icon as={FiChevronLeft} color="white" boxSize={6} />
+                                        </Button>
+                                        <Button aria-label="Next" variant="ghost" colorScheme="whiteAlpha" position="absolute" right={2} top="50%" transform="translateY(-50%)" onClick={() => setImgIndex((p) => (p + 1) % images.length)} borderRadius="full" p={0}>
+                                            <Icon as={FiChevronRight} color="white" boxSize={6} />
+                                        </Button>
+                                    </>
+                                )}
+                            </GridItem>
+
+                            {/* Right: Details & Comments */}
+                            <GridItem h="full" display="flex" flexDirection="column" bg="black">
+                                {/* Header */}
+                                <HStack p={4} borderBottom="1px solid" borderColor="whiteAlpha.200" justify="space-between">
+                                    <HStack gap={3}>
+                                        <Avatar.Root size="sm">
+                                            <Avatar.Fallback name={author?.name} />
+                                            {author?.avatar && <Avatar.Image src={author.avatar} />}
+                                        </Avatar.Root>
+                                        <Text fontWeight="bold" fontSize="sm">{author?.name || "Unknown"}</Text>
+                                        {/* <Text fontSize="sm" color="blue.400" fontWeight="semibold" cursor="pointer">• Follow</Text> */}
+                                    </HStack>
+                                    <Icon as={HiDotsHorizontal} cursor="pointer" />
+                                </HStack>
+
+                                {/* Scrollable Content */}
+                                <Box flex={1} overflowY="auto" p={4} css={{ '&::-webkit-scrollbar': { display: 'none' } }}>
+                                    {/* Author Caption */}
+                                    {caption && (
+                                        <Flex gap={3} mb={4}>
+                                            <Avatar.Root size="sm" flexShrink={0}>
+                                                <Avatar.Fallback name={author?.name} />
+                                                {author?.avatar && <Avatar.Image src={author.avatar} />}
+                                            </Avatar.Root>
+                                            <VStack align="start" gap={1}>
+                                                <Text fontSize="sm" lineHeight="1.4">
+                                                    <Text as="span" fontWeight="bold" mr={2}>{author?.name}</Text>
+                                                    <Text as="span">{caption}</Text>
+                                                </Text>
+                                                <Text fontSize="xs" color="gray.500">{createdAt ? dateFormat(createdAt) : 'Just now'}</Text>
+                                            </VStack>
+                                        </Flex>
+                                    )}
+
+                                    {/* Comments Tree */}
+                                    {nodes.length > 0 ? (
+                                        nodes.map(n => (
+                                            <CommentItem key={n.id} node={n} />
+                                        ))
+                                    ) : (
+                                        !caption && (
                                             <Box py={10} textAlign="center">
-                                                <Text color="gray.500">No comments yet. Be the first to say something!</Text>
+                                                <Text color="gray.500" fontSize="sm">No comments yet.</Text>
+                                                <Text color="gray.500" fontSize="xs">Start the conversation.</Text>
                                             </Box>
-                                        )}
-                                    </VStack>
-                                    <Box p={3} borderTopWidth={1} borderColor="whiteAlpha.200" bg="black">
-                                        {replyingTo && (
-                                            <HStack mb={2} bg="whiteAlpha.200" p={2} borderRadius="md" justify="space-between">
-                                                <Text fontSize="xs" color="gray.300">Replying to {users[replyingTo.user_id]?.name || replyingTo.user_id}</Text>
-                                                <Icon as={FiX} cursor="pointer" onClick={() => { setReplyingTo(null); setText(""); }} />
-                                            </HStack>
-                                        )}
-                                        <HStack gap={3}>
-                                            <Icon as={FiMessageCircle} />
-                                            <Input
-                                                placeholder={replyingTo ? "Write a reply..." : "Add a comment..."}
-                                                value={text}
-                                                onChange={e => setText(e.target.value)}
-                                                color="white"
-                                                bg="whiteAlpha.100"
-                                                border="none"
-                                                _focus={{ ring: 1, ringColor: "blue.500" }}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter' && !postCommentMutation.isPending) {
-                                                        handlePost();
-                                                    }
-                                                }}
-                                            />
-                                            <Button
-                                                colorScheme="blue"
-                                                onClick={handlePost}
-                                                disabled={postCommentMutation.isPending || !text.trim()}
-                                                loading={postCommentMutation.isPending}
-                                            >
-                                                <FiSend />
-                                            </Button>
+                                        )
+                                    )}
+                                </Box>
+
+                                {/* Footer Actions */}
+                                <Box p={4} borderTop="1px solid" borderColor="whiteAlpha.200">
+                                    <HStack justify="space-between" mb={3} fontSize="2xl">
+                                        <HStack gap={4}>
+                                            <Icon as={FiHeart} cursor="pointer" _hover={{ color: 'gray.400' }} />
+                                            <Icon as={FiMessageCircle} cursor="pointer" _hover={{ color: 'gray.400' }} />
+                                            <Icon as={FiShare2} cursor="pointer" _hover={{ color: 'gray.400' }} />
                                         </HStack>
-                                    </Box>
-                                </GridItem>
-                            </Grid>
-                        </Dialog.Body>
+                                        <Icon as={FiBookmark} cursor="pointer" _hover={{ color: 'gray.400' }} />
+                                    </HStack>
+                                    <Text fontWeight="bold" fontSize="sm" mb={1}>{likeCount || 0} likes</Text>
+                                    <Text fontSize="xs" color="gray.500" textTransform="uppercase" mb={4}>{createdAt ? dateFormat(createdAt) : 'Just now'}</Text>
+
+                                    {/* Input Area */}
+                                    <HStack gap={2} pt={2} borderTop="1px solid" borderColor="whiteAlpha.100">
+                                        {/* Emoji Icon placeholder */}
+                                        {/* <Icon as={MdTagFaces} color="white" boxSize={6} cursor="pointer" /> */}
+
+                                        <Input
+                                            variant="outline"
+                                            border="none"
+                                            placeholder="Add a comment..."
+                                            value={text}
+                                            onChange={e => setText(e.target.value)}
+                                            color="white"
+                                            fontSize="sm"
+                                            p={0}
+                                            _placeholder={{ color: 'gray.500' }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && !postCommentMutation.isPending) handlePost();
+                                            }}
+                                        />
+                                        <Button
+                                            variant="plain"
+                                            color="blue.400"
+                                            fontWeight="semibold"
+                                            size="sm"
+                                            p={0}
+                                            onClick={handlePost}
+                                            disabled={!text.trim() || postCommentMutation.isPending}
+                                            loading={postCommentMutation.isPending}
+                                            _hover={{ color: 'blue.300', bg: 'transparent' }}
+                                            _disabled={{ color: 'blue.800', cursor: 'not-allowed' }}
+                                        >
+                                            Post
+                                        </Button>
+                                    </HStack>
+                                </Box>
+                            </GridItem>
+                        </Grid>
                     </Dialog.Content>
                 </Dialog.Positioner>
             </Portal>

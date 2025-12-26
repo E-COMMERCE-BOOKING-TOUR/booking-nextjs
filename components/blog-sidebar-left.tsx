@@ -11,6 +11,8 @@ import {
 } from "lucide-react"
 import { useSession } from "next-auth/react";
 
+import { usePathname } from "next/navigation";
+
 type Item = {
     key: string
     label: string
@@ -38,24 +40,36 @@ export default function BlogSidebarLeft({
     className,
 }: Readonly<BlogSidebarLeftProps>) {
     const { data: session } = useSession();
+    const pathname = usePathname();
+
     return (
-        <Box className={className} w="full" h="100vh" paddingY={5} backgroundColor="whiteAlpha.400" ml={-5} borderRightWidth="1px" borderColor="blackAlpha.200">
+        <Box
+            className={className}
+            w="full"
+            p={5}
+            position={"sticky"}
+            top={"30px"}
+            h={"fit-content"}
+        >
             {session?.user?.name ?
-                <Button
+                <Button 
                     w="full"
                     paddingEnd={3}
-                    marginBottom={15}
+                    marginBottom={6}
                     variant="ghost"
-                    borderRadius="sm"
+                    borderRadius="xl"
                     justifyContent="flex-start"
                     alignItems="center"
-                    color="blackAlpha.900"
-                    _hover={{ bg: "blackAlpha.100" }}
+                    color="gray.700"
+                    _hover={{ bg: "gray.50" }}
                     fontWeight="semibold"
+                    h="auto"
+                    py={3}
+                    px={4}
                 >
 
                     <HStack w="full" gap={3}>
-                        <Avatar.Root size="lg">
+                        <Avatar.Root size="md">
                             <Avatar.Image src="https://picsum.photos/100/100" />
                             <Avatar.Fallback name="John Doe" />
                         </Avatar.Root>
@@ -63,30 +77,57 @@ export default function BlogSidebarLeft({
                     </HStack>
                 </Button> : null
             }
-            <VStack align="stretch" gap={5}>
+            <VStack align="stretch" gap={2}>
                 {items.map((it) => {
                     const IconComp = it.icon
-                    const isActive = active === it.key
+                    // Logic to determine active:
+                    // 1. If explicit 'active' prop is passed, use it.
+                    // 2. Otherwise compare pathname.
+                    // Special case for 'Home' (/social) to avoid being active on subpages if needed, OR exact match.
+                    // For now, let's use exact match for Home, and startsWith for others if preferred,
+                    // BUT simplistic approach: pathname === it.href?
+
+                    let isActive = false;
+                    if (active) {
+                        isActive = active === it.key;
+                    } else {
+                        if (it.href === '/social') {
+                            isActive = pathname === '/social';
+                        } else {
+                            isActive = pathname?.startsWith(it.href) ?? false;
+                        }
+                    }
+
                     return (
-                        <Button
-                            key={it.key}
-                            w="full"
-                            paddingEnd={10}
-                            variant="ghost"
-                            borderRadius="full"
-                            justifyContent="flex-start"
-                            alignItems="center"
-                            color="blackAlpha.900"
-                            _hover={{ bg: "blackAlpha.100" }}
-                            fontWeight={isActive ? "semibold" : "medium"}
-                        >
-                            <a href={it.href} className=" w-full flex items-center gap-3">
-                                <HStack w="full">
+                        <a key={it.key} href={it.href} className="w-full">
+                            <Button
+                                w="full"
+                                variant="ghost"
+                                borderRadius="xl"
+                                justifyContent="flex-start"
+                                alignItems="center"
+                                color={isActive ? "white" : "gray.500"}
+                                bg={isActive ? "#00cec9" : "transparent"}
+                                _hover={{
+                                    bg: isActive ? "#00cec9" : "gray.50",
+                                    transform: "translateY(-2px)",
+                                    boxShadow: isActive ? "lg" : "none"
+                                }}
+                                transition="all 0.2s"
+                                fontWeight={isActive ? "600" : "500"}
+                                fontSize="0.95rem"
+                                h="auto"
+                                py={3}
+                                px={5}
+                            >
+
+                                <HStack w="full" gap={4}>
                                     <Icon as={IconComp} boxSize={5} />
-                                    <Text fontSize={"lg"}>{it.label}</Text>
+                                    <Text>{it.label}</Text>
                                 </HStack>
-                            </a>
-                        </Button>
+
+                            </Button>
+                        </a>
                     )
                 })}
             </VStack>

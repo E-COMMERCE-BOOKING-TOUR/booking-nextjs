@@ -47,8 +47,8 @@ const ImagesGrid = ({ data, title }: { data: string[]; title: string }) => {
     const n = data.length;
     if (n === 1) {
         return (
-            <Box borderRadius="md" w="full" display="flex" justifyContent="center" alignItems="center" overflow="hidden" mb={3} paddingX={100}>
-                <Image src={data[0]} alt={title} w="300px" h="auto" objectFit="cover" />
+            <Box borderRadius="md" w="full" display="flex" justifyContent="center" alignItems="center" overflow="hidden" mb={3}>
+                <Image src={data[0]} alt={title} w="full" h="300px" objectFit="cover" />
             </Box>
         );
     }
@@ -108,16 +108,19 @@ export default function ItemBlog(props: ItemBlogProps) {
         <Box
             bg="white"
             color="black"
-            borderRadius="md"
-            p={4}
-            boxShadow="sm"
+            borderRadius="2xl"
+            p={6}
+            shadow="sm"
+            border="1px solid"
+            borderColor="gray.100"
             w={'full'}
             justifyContent={'center'}
             alignItems={'center'}
             gap={5}
+            mx={3}
         >
             {/* Header */}
-            <HStack align="center" gap={5} mb={2} justifyContent={'center'}>
+            <HStack align="center" gap={4} mb={4} justifyContent={'center'}>
                 {user?.avatar ? (
                     <Avatar.Root size="md">
                         <Avatar.Fallback name={user.name} />
@@ -130,12 +133,12 @@ export default function ItemBlog(props: ItemBlogProps) {
                     </Avatar.Root>
                 )}
                 <VStack align="start" gap={0} flex={1}>
-                    <Text fontWeight="bold" color="black">{user?.name || "John Doe"}</Text>
-                    <HStack gap={2} fontSize="xs" color="gray.600">
+                    <Text fontWeight="bold" color="black" fontSize="md">{user?.name || "John Doe"}</Text>
+                    <HStack gap={2} fontSize="xs" color="gray.500">
                         {created_at ? <Text>{dateFormat(created_at)}</Text> : null}
                     </HStack>
                 </VStack>
-                <HStack gap={2}>
+                {/* <HStack gap={2}>
                     <Button size="md" bg={'blackAlpha.300'} >
                         <FiBookmark size={25} color="black" />
                     </Button>
@@ -143,50 +146,65 @@ export default function ItemBlog(props: ItemBlogProps) {
                         <Text color={'black'}>View Tour</Text>
                         <FiArrowRight size={25} color="black" />
                     </Button>
-                </HStack>
+                </HStack> */}
             </HStack>
 
             {/* Text */}
-            <Text fontSize="md" color="black" mb={1}>
+            <Text fontSize="lg" fontWeight="600" color="black" mb={2}>
                 {title}
             </Text>
             {tags && tags.length > 0 && <TagList tags={tags} />}
-            <Box mb={3} />
+            <Box mb={4} />
 
-            {images && images.length > 0 ? <ImagesGrid key={'das'} title={title} data={imageUrls} /> : null}
+            {images && images.length > 0 ? (
+                <Box borderRadius="xl" overflow="hidden" mb={5}>
+                    <ImagesGrid key={'das'} title={title} data={imageUrls} />
+                </Box>
+            ) : null}
 
-            {/* Footer options */}
-            <VStack align="stretch" gap={4}>
-                <Grid templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }} gap={1} w="full">
-                    {[
-                        { key: 'city', label: 'City', icon: FiMapPin, subLabel: 'Ho Chi Minh City' },
-                        { key: 'date', label: 'Date', icon: FiCalendar, subLabel: dateFormat(created_at) },
-                        { key: 'weather', label: 'Weather', icon: FiCloud, subLabel: 'Sunny' },
-                    ]?.map((it) => (
-                        <Box
-                            key={it.key}
-                            bg="blackAlpha.100"
-                            borderWidth={"1px"}
-                            borderColor={'black.600'}
-                            px={3}
-                            py={2}
-                            minH={16}
-                        >
-                            <HStack gap={2} align="center">
-                                <Icon as={it.icon} color="blackAlpha.800" />
-                                <Text color={'blackAlpha.900'} fontWeight={'semibold'}> {it.label}</Text>
-                            </HStack>
-                            <Text mt={1} color={'blackAlpha.800'} fontSize={'sm'} lineClamp={1}>{it.subLabel}</Text>
-                        </Box>
-                    ))}
-                </Grid>
-                <HStack gap={4}>
-                    <Button size="xl" variant="ghost" gap={2} color={'blackAlpha.800'} _hover={{ color: 'blackAlpha.800' }}><Icon as={FiThumbsUp} />{count_likes ?? 0}</Button>
-                    <Button size="xl" variant="ghost" gap={2} color={'blackAlpha.800'} _hover={{ color: 'blackAlpha.800' }} onClick={onOpen}><Icon as={FiMessageCircle} />{count_comments ?? 0}</Button>
-                    <Button size="xl" variant="ghost" gap={2} color={'blackAlpha.800'} _hover={{ color: 'blackAlpha.800' }}><Icon as={FiEye} />{count_views ?? 0}</Button>
-                </HStack>
-            </VStack>
-            <PopUpComment isOpen={open} onClose={onClose} images={imageUrls} comments={comments || []} />
+            {/* Stats Grid */}
+            <Grid templateColumns={{ base: "repeat(3, 1fr)" }} gap={3} w="full" mb={5}>
+                {[
+                    { key: 'city', label: 'LOCATION', value: 'Ho Chi Minh', icon: FiMapPin },
+                    { key: 'date', label: 'DATE', value: dateFormat(created_at), icon: FiCalendar },
+                    { key: 'weather', label: 'WEATHER', value: 'Sunny', icon: FiCloud },
+                ]?.map((it) => (
+                    <Box
+                        key={it.key}
+                        bg="gray.50"
+                        borderRadius="lg"
+                        p={3}
+                        textAlign="center"
+                    >
+                        <Text fontSize="xs" color="gray.500" textTransform="uppercase" letterSpacing="0.5px" mb={1}>{it.label}</Text>
+                        <Text fontSize="sm" fontWeight="600" color="gray.800" lineClamp={1}>{it.value}</Text>
+                    </Box>
+                ))}
+            </Grid>
+
+            {/* Actions */}
+            <HStack gap={6} pt={4} borderTop="1px solid" borderColor="gray.100">
+                <Button size="sm" variant="ghost" color="gray.500" _hover={{ color: "blue.500" }} px={0} gap={2}>
+                    <Icon as={FiThumbsUp} /> <Text>{count_likes ?? 0} Likes</Text>
+                </Button>
+                <Button size="sm" variant="ghost" color="gray.500" _hover={{ color: "blue.500" }} px={0} gap={2} onClick={onOpen}>
+                    <Icon as={FiMessageCircle} /> <Text>{count_comments ?? 0} Comments</Text>
+                </Button>
+                <Button size="sm" variant="ghost" color="gray.500" _hover={{ color: "blue.500" }} px={0} gap={2}>
+                    <Icon as={FiShare2} /> <Text>Share</Text>
+                </Button>
+            </HStack>
+            <PopUpComment
+                isOpen={open}
+                onClose={onClose}
+                images={imageUrls}
+                comments={comments || []}
+                articleId={props.id ? props.id.toString() : undefined}
+                author={{ name: user?.name || "Unknown", avatar: user?.avatar ?? undefined }}
+                caption={props.content}
+                createdAt={created_at}
+                likeCount={count_likes}
+            />
         </Box>
     );
 
@@ -198,7 +216,7 @@ export function ItemBlogLarge(props: ItemBlogProps) {
     const imageUrls = images?.map(img => img.image_url) || [];
 
     const cardContent = (
-        <Box bg="white" color="black" borderRadius="md" overflow="hidden" boxShadow="sm">
+        <Box bg="white" color="black" borderRadius="xl" overflow="hidden" shadow="sm" border="1px solid" borderColor="gray.100">
             {images && images.length > 0 ? (
                 images.length === 1 ? (
                     <Box h="240px" w="full">

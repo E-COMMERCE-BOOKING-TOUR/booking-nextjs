@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
-import { Box, List, Spinner, Center, Text } from "@chakra-ui/react";
-import ItemBlog from "@/app/social/component/ItemBlog";
+import { Box, Spinner, Center, Text, SimpleGrid } from "@chakra-ui/react";
+import ProfilePostCard from "./ProfilePostCard";
 import { useQuery } from "@tanstack/react-query";
 import type { IArticlePopular } from "@/types/response/article";
 import article from "@/apis/article";
@@ -15,7 +15,6 @@ const PostLike = () => {
         queryFn: async (): Promise<IArticlePopular[]> => {
             if (!session?.user?.accessToken) return [];
             const res = await article.getLikedArticles(session.user.accessToken);
-            console.log(res);
             return res;
         },
         enabled: !!session?.user?.accessToken,
@@ -23,30 +22,23 @@ const PostLike = () => {
     });
 
     if (isLoading) {
-        return <Center py={10}><Spinner size="xl" color="white" /></Center>;
+        return <Center py={10}><Spinner size="xl" color="#00cec9" /></Center>;
     }
 
     if (!articles || articles.length === 0) {
         return (
-            <Box p={8} textAlign="center">
-                <Text color="whiteAlpha.500">You haven't liked any articles yet.</Text>
+            <Box p={8} textAlign="center" w="full">
+                <Text color="gray.500">You haven't liked any articles yet.</Text>
             </Box>
         );
     }
 
     return (
-        <List.Root w="full" variant="marker" gap={3} display="flex" flexDirection="column" alignItems={'center'}>
-            {articles.map((item: IArticlePopular, index: number) => (
-                <List.Item key={index.toString()}
-                    w="full"
-                    display={'flex'}
-                    alignItems={'center'}
-                    justifyContent={'center'}
-                >
-                    <ItemBlog {...item} />
-                </List.Item>
+        <SimpleGrid columns={{ base: 2, md: 3 }} gap={4} w="full">
+            {articles.map((item: IArticlePopular) => (
+                <ProfilePostCard key={item.id} article={item} />
             ))}
-        </List.Root>
+        </SimpleGrid>
     );
 };
 

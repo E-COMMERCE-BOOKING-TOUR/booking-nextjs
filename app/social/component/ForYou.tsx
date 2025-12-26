@@ -111,13 +111,13 @@ const ForYou = () => {
     };
 
     return (
-        <VStack align="stretch" gap={3}>
-            {session?.user ? (
-                <Box bg="white" color="black" p={4} borderRadius="lg" boxShadow="lg">
+        <VStack align="stretch" gap={3} >
+            {/* {session?.user ? ( */}
+                <Box bg="white" color="black" p={6} mx={3} borderRadius="2xl" shadow="sm" border="1px solid" borderColor="gray.100">
                     <HStack align="flex-start" gap={3}>
                         <Avatar.Root size="lg">
                             <Avatar.Image src={"https://picsum.photos/100/100"} />
-                            <Avatar.Fallback name={session.user.name || "User"} />
+                            {/* <Avatar.Fallback name={session.user.name || "User"} /> */}
                         </Avatar.Root>
                         <VStack align="stretch" gap={3} flex={1}>
                             <Textarea
@@ -172,9 +172,10 @@ const ForYou = () => {
                             </HStack>
                         </VStack>
                     </HStack>
-                </Box>)
-                : null
-            }
+                </Box>
+                {/* ) */}
+                {/* : null
+            } */}
 
             {isLoading ? (
                 <Center py={10}>

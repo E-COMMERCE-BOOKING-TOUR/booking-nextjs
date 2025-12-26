@@ -18,10 +18,20 @@ export default function BlogSidebarRight() {
       w={{ base: "full", lg: "300px" }}
       display={{ base: "none", lg: "block" }}
       position="sticky"
-      top="100px" // Adjust based on your header height
+      top="30px"
       h="fit-content"
+      paddingTop="1.25rem"
     >
-      <Box bg="white" color="black" borderRadius="xl" p={5} shadow="sm" mb={6}>
+      <Box
+        bg="white"
+        color="black"
+        borderRadius="2xl"
+        p={5}
+        shadow="sm"
+        mb={6}
+        border="1px solid"
+        borderColor="gray.100"
+      >
         <Heading size="md" mb={4}>Trending Tags</Heading>
 
         {isLoading ? (
@@ -29,15 +39,20 @@ export default function BlogSidebarRight() {
             <Spinner color="blue.500" />
           </Flex>
         ) : (
-          <VStack align="stretch" gap={3}>
-            {trendingTags?.map((tag) => (
+          <VStack align="stretch" gap={0}>
+            {trendingTags?.map((tag, index, arr) => (
               <Link href={`/social/explore?tag=${tag._id}`} key={tag._id}>
-                <HStack justify="space-between" cursor="pointer" _hover={{ bg: "gray.50" }} p={2} borderRadius="md" transition="all 0.2s">
-                  <VStack align="start" gap={0}>
-                    <Text fontWeight="bold" fontSize="sm">#{tag._id}</Text>
-                    <Text color="gray.500" fontSize="xs">{tag.count} posts</Text>
-                  </VStack>
-                  {/* <Badge colorScheme="blue" variant="subtle">Trending</Badge> */}
+                <HStack
+                  justify="space-between"
+                  cursor="pointer"
+                  _hover={{ bg: "gray.50" }}
+                  py={3}
+                  borderBottom={index !== arr.length - 1 ? "1px solid" : "none"}
+                  borderColor="gray.100"
+                  transition="all 0.2s"
+                >
+                  <Text fontWeight="semibold" fontSize="md">#{tag._id}</Text>
+                  <Text color="gray.500" fontSize="sm">{tag.count} posts</Text>
                 </HStack>
               </Link>
             ))}
