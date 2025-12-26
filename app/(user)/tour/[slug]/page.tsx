@@ -44,6 +44,7 @@ type TourData = {
         capacity: string;
     };
     meetingPoint: string;
+    currencySymbol?: string;
     variants: {
         id: number;
         name: string;
@@ -102,6 +103,7 @@ const getTourData = async (slug: string): Promise<TourData> => {
             location: tourDetail.location,
             price: tourDetail.price ?? 0,
             oldPrice: tourDetail.oldPrice,
+            currencySymbol: tourDetail.currencySymbol,
             rating: tourDetail.rating ?? 0,
             reviewCount: tourDetail.reviewCount ?? 0,
             score: tourDetail.score ?? 0,
@@ -181,6 +183,7 @@ export default async function TourDetailPage({ params }: { params: Promise<{ slu
                             rating={tour.rating}
                             price={tour.price}
                             oldPrice={tour.oldPrice}
+                            currencySymbol={tour.currencySymbol}
                             slug={slug}
                             variants={tour.variants}
                             durationDays={tour.details.duration ? parseInt(tour.details.duration) : 1}
@@ -226,7 +229,7 @@ export default async function TourDetailPage({ params }: { params: Promise<{ slu
                     </GridItem>
                 </Grid>
 
-                <VStack align="stretch" gap={10} mt={20}>
+                <VStack align="stretch" gap={10}>
                     <Box>
                         <Heading as="h2" size="2xl" fontWeight="black" mb={8} letterSpacing="tight">
                             Related tours

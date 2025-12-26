@@ -2,6 +2,7 @@ import fetchC from "@/libs/fetchC";
 import { getAuthHeaders } from "@/libs/auth/authHeaders";
 import { ITour } from "@/types/response/tour.type";
 import { ITourPopular, ITourSearchResponse } from "@/types/response/tour";
+export type { ITourPopular, ITourSearchResponse };
 import { IReview } from "@/types/response/review.type";
 import { ITourCategory } from "@/types/response/tour.type";
 
@@ -18,7 +19,8 @@ export interface ITourSession {
 export type ITourSearchParams = {
     keyword?: string;
     destinations?: string[];
-    tags?: string[];
+    country_ids?: number[];
+    division_ids?: number[];
     minPrice?: number;
     maxPrice?: number;
     minRating?: number;
@@ -42,8 +44,12 @@ const toQueryRecord = (params?: ITourSearchParams): Record<string, string> | und
         query.destinations = params.destinations.join(',');
     }
 
-    if (params.tags?.length) {
-        query.tags = params.tags.join(',');
+    if (params.country_ids?.length) {
+        query.country_ids = params.country_ids.join(',');
+    }
+
+    if (params.division_ids?.length) {
+        query.division_ids = params.division_ids.join(',');
     }
 
     if (typeof params.minPrice === 'number') {

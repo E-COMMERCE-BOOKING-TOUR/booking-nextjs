@@ -16,11 +16,9 @@ import { useRouter } from "next/navigation";
 
 interface SearchData {
   destination: string;
-  checkIn: Date | null;
-  checkOut: Date | null;
-  rooms: number;
-  adults: number;
-  children: number;
+  startDate: Date | null;
+  endDate: Date | null;
+  travelers: number;
 }
 
 interface SearchInputProps {
@@ -32,45 +30,48 @@ export default function SearchInput({ defaultDestination = "" }: SearchInputProp
 
   const [searchData, setSearchData] = useState<SearchData>({
     destination: defaultDestination,
-    checkIn: null,
-    checkOut: null,
-    rooms: 1,
-    adults: 2,
-    children: 0,
+    startDate: null,
+    endDate: null,
+    travelers: 2,
   });
 
   // Initialize dates on client side only to avoid hydration mismatch
   useEffect(() => {
-    // Avoid synchronous setState in effect for React Compiler performance
     const initDates = () => {
       const today = new Date();
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      const nextWeek = new Date();
+      nextWeek.setDate(nextWeek.getDate() + 7);
 
       setSearchData(prev => ({
         ...prev,
-        checkIn: today,
-        checkOut: tomorrow,
+        startDate: today,
+        endDate: nextWeek,
       }));
     };
 
-    // We use requestAnimationFrame to move the update out of the synchronous effect body
     requestAnimationFrame(initDates);
   }, []);
 
   const formatDate = (date: Date | null) => {
-    if (!date) return "Select date";
+    if (!date) return "";
     return date.toLocaleDateString("en-US", {
-      weekday: "short",
       month: "short",
       day: "numeric",
     });
   };
 
+  const formatDateRange = () => {
+    if (!searchData.startDate && !searchData.endDate) return "Select dates";
+    const start = formatDate(searchData.startDate);
+    const end = formatDate(searchData.endDate);
+    if (start && end) return `${start} - ${end}`;
+    return start || end || "Select dates";
+  };
+
   const getNightCount = () => {
-    if (!searchData.checkIn || !searchData.checkOut) return 0;
-    const diff = searchData.checkOut.getTime() - searchData.checkIn.getTime();
-    return Math.round(diff / 86400000);
+    if (!searchData.startDate || !searchData.endDate) return 0;
+    const diff = searchData.endDate.getTime() - searchData.startDate.getTime();
+    return Math.max(0, Math.round(diff / 86400000));
   };
 
   const toDateParam = (date: Date | null) => date ? date.toISOString().split("T")[0] : "";
@@ -83,11 +84,15 @@ export default function SearchInput({ defaultDestination = "" }: SearchInputProp
       params.set("keyword", destination);
     }
 
-    params.set("checkIn", toDateParam(searchData.checkIn));
-    params.set("checkOut", toDateParam(searchData.checkOut));
-    params.set("rooms", String(searchData.rooms));
-    params.set("adults", String(searchData.adults));
-    params.set("children", String(searchData.children));
+    if (searchData.startDate) {
+      params.set("startDate", toDateParam(searchData.startDate));
+    }
+    if (searchData.endDate) {
+      params.set("endDate", toDateParam(searchData.endDate));
+    }
+    if (searchData.travelers > 0) {
+      params.set("travelers", String(searchData.travelers));
+    }
 
     const queryString = params.toString();
     router.push(queryString ? `/tour/list?${queryString}` : "/tour/list");
@@ -116,7 +121,6 @@ export default function SearchInput({ defaultDestination = "" }: SearchInputProp
         _hover={{ bg: "gray.200" }}
         borderRadius="15px"
         transition="all 0.2s"
-        position="relative"
       >
         <HStack gap={2} mb={1}>
           <Box color="main" fontSize="lg">
@@ -148,108 +152,7 @@ export default function SearchInput({ defaultDestination = "" }: SearchInputProp
         />
       </VStack>
 
-      {/* Check-in Field */}
-      <Popover.Root>
-        <Popover.Trigger asChild>
-          <VStack
-            alignItems="flex-start"
-            flex={1}
-            px={5}
-            py={4}
-            gap={1}
-            cursor="pointer"
-            bg="gray.100"
-            _hover={{ bg: "gray.200" }}
-            borderRadius="15px"
-            transition="all 0.2s"
-          >
-            <HStack gap={2} mb={1}>
-              <Box color="main" fontSize="lg">
-                <FaCalendarAlt />
-              </Box>
-              <Text fontSize="xs" fontWeight="bold" color="gray.600" textTransform="uppercase" letterSpacing="wide">
-                Check-in
-              </Text>
-            </HStack>
-            <VStack alignItems="flex-start" gap={0}>
-              <Text fontSize="md" fontWeight="semibold" color="gray.800">
-                {formatDate(searchData.checkIn)}
-              </Text>
-              <Text fontSize="xs" color="main" fontWeight="medium">
-                {getNightCount()} night{getNightCount() !== 1 ? "s" : ""}
-              </Text>
-            </VStack>
-          </VStack>
-        </Popover.Trigger>
-        <Portal>
-          <Popover.Positioner>
-            <Popover.Content>
-              <Popover.Body>
-                <Input
-                  type="date"
-                  value={searchData.checkIn ? searchData.checkIn.toISOString().split("T")[0] : ""}
-                  onChange={(e) =>
-                    setSearchData({
-                      ...searchData,
-                      checkIn: new Date(e.target.value),
-                    })
-                  }
-                />
-              </Popover.Body>
-            </Popover.Content>
-          </Popover.Positioner>
-        </Portal>
-      </Popover.Root>
-
-      {/* Check-out Field */}
-      <Popover.Root>
-        <Popover.Trigger asChild>
-          <VStack
-            alignItems="flex-start"
-            flex={1}
-            px={5}
-            py={4}
-            gap={1}
-            cursor="pointer"
-            bg="gray.100"
-            _hover={{ bg: "gray.200" }}
-            borderRadius="15px"
-            transition="all 0.2s"
-          >
-            <HStack gap={2} mb={1}>
-              <Box color="main" fontSize="lg">
-                <FaCalendarAlt />
-              </Box>
-              <Text fontSize="xs" fontWeight="bold" color="gray.600" textTransform="uppercase" letterSpacing="wide">
-                Check-out
-              </Text>
-            </HStack>
-            <Text fontSize="md" fontWeight="semibold" color="gray.800">
-              {formatDate(searchData.checkOut)}
-            </Text>
-          </VStack>
-        </Popover.Trigger>
-        <Portal>
-          <Popover.Positioner>
-            <Popover.Content>
-              <Popover.Body>
-                <Input
-                  type="date"
-                  value={searchData.checkOut ? searchData.checkOut.toISOString().split("T")[0] : ""}
-                  onChange={(e) =>
-                    setSearchData({
-                      ...searchData,
-                      checkOut: new Date(e.target.value),
-                    })
-                  }
-                />
-              </Popover.Body>
-            </Popover.Content>
-          </Popover.Positioner>
-        </Portal>
-      </Popover.Root>
-
-      {/* Rooms and Guests Field */}
+      {/* Date Range Field */}
       <Popover.Root>
         <Popover.Trigger asChild>
           <VStack
@@ -266,132 +169,128 @@ export default function SearchInput({ defaultDestination = "" }: SearchInputProp
           >
             <HStack gap={2} mb={1}>
               <Box color="main" fontSize="lg">
+                <FaCalendarAlt />
+              </Box>
+              <Text fontSize="xs" fontWeight="bold" color="gray.600" textTransform="uppercase" letterSpacing="wide">
+                Dates
+              </Text>
+            </HStack>
+            <VStack alignItems="flex-start" gap={0}>
+              <Text fontSize="md" fontWeight="semibold" color="gray.800">
+                {formatDateRange()}
+              </Text>
+              <Text fontSize="xs" color="main" fontWeight="medium">
+                {getNightCount()} night{getNightCount() !== 1 ? "s" : ""}
+              </Text>
+            </VStack>
+          </VStack>
+        </Popover.Trigger>
+        <Portal>
+          <Popover.Positioner>
+            <Popover.Content p={4} minW="280px">
+              <Popover.Body>
+                <VStack gap={4} align="stretch">
+                  <Box>
+                    <Text fontSize="sm" fontWeight="medium" mb={2}>Start Date</Text>
+                    <Input
+                      type="date"
+                      value={searchData.startDate ? searchData.startDate.toISOString().split("T")[0] : ""}
+                      onChange={(e) =>
+                        setSearchData({
+                          ...searchData,
+                          startDate: e.target.value ? new Date(e.target.value) : null,
+                        })
+                      }
+                    />
+                  </Box>
+                  <Box>
+                    <Text fontSize="sm" fontWeight="medium" mb={2}>End Date</Text>
+                    <Input
+                      type="date"
+                      value={searchData.endDate ? searchData.endDate.toISOString().split("T")[0] : ""}
+                      min={searchData.startDate ? searchData.startDate.toISOString().split("T")[0] : ""}
+                      onChange={(e) =>
+                        setSearchData({
+                          ...searchData,
+                          endDate: e.target.value ? new Date(e.target.value) : null,
+                        })
+                      }
+                    />
+                  </Box>
+                </VStack>
+              </Popover.Body>
+            </Popover.Content>
+          </Popover.Positioner>
+        </Portal>
+      </Popover.Root>
+
+      {/* Travelers Field */}
+      <Popover.Root>
+        <Popover.Trigger asChild>
+          <VStack
+            alignItems="flex-start"
+            flex={1}
+            px={5}
+            py={4}
+            gap={1}
+            cursor="pointer"
+            bg="gray.100"
+            _hover={{ bg: "gray.200" }}
+            borderRadius="15px"
+            transition="all 0.2s"
+          >
+            <HStack gap={2} mb={1}>
+              <Box color="main" fontSize="lg">
                 <FaUsers />
               </Box>
               <Text fontSize="xs" fontWeight="bold" color="gray.600" textTransform="uppercase" letterSpacing="wide">
-                Rooms and Guests
+                Travelers
               </Text>
             </HStack>
             <Text fontSize="md" fontWeight="semibold" color="gray.800">
-              {searchData.rooms} room{searchData.rooms !== 1 ? "s" : ""},{" "}
-              {searchData.adults} adult{searchData.adults !== 1 ? "s" : ""},{" "}
-              {searchData.children} children
+              {searchData.travelers} traveler{searchData.travelers !== 1 ? "s" : ""}
             </Text>
           </VStack>
         </Popover.Trigger>
         <Portal>
           <Popover.Positioner>
-            <Popover.Content p={4} minW="300px">
+            <Popover.Content p={4} minW="200px">
               <Popover.Body>
-                <VStack gap={5} align="stretch">
-                  <HStack justifyContent="space-between">
-                    <Text fontSize="sm" fontWeight="medium">Rooms</Text>
-                    <HStack gap={3}>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        colorScheme="blue"
-                        onClick={() =>
-                          setSearchData({
-                            ...searchData,
-                            rooms: Math.max(1, searchData.rooms - 1),
-                          })
-                        }
-                        disabled={searchData.rooms <= 1}
-                      >
-                        -
-                      </Button>
-                      <Text w="40px" textAlign="center" fontWeight="semibold">
-                        {searchData.rooms}
-                      </Text>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        colorScheme="blue"
-                        onClick={() =>
-                          setSearchData({
-                            ...searchData,
-                            rooms: searchData.rooms + 1,
-                          })
-                        }
-                      >
-                        +
-                      </Button>
-                    </HStack>
+                <HStack justifyContent="space-between">
+                  <Text fontSize="sm" fontWeight="medium">Travelers</Text>
+                  <HStack gap={3}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      colorScheme="blue"
+                      onClick={() =>
+                        setSearchData({
+                          ...searchData,
+                          travelers: Math.max(1, searchData.travelers - 1),
+                        })
+                      }
+                      disabled={searchData.travelers <= 1}
+                    >
+                      -
+                    </Button>
+                    <Text w="40px" textAlign="center" fontWeight="semibold">
+                      {searchData.travelers}
+                    </Text>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      colorScheme="blue"
+                      onClick={() =>
+                        setSearchData({
+                          ...searchData,
+                          travelers: searchData.travelers + 1,
+                        })
+                      }
+                    >
+                      +
+                    </Button>
                   </HStack>
-                  <Box h="1px" bg="gray.200" />
-                  <HStack justifyContent="space-between">
-                    <Text fontSize="sm" fontWeight="medium">Adults</Text>
-                    <HStack gap={3}>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        colorScheme="blue"
-                        onClick={() =>
-                          setSearchData({
-                            ...searchData,
-                            adults: Math.max(1, searchData.adults - 1),
-                          })
-                        }
-                        disabled={searchData.adults <= 1}
-                      >
-                        -
-                      </Button>
-                      <Text w="40px" textAlign="center" fontWeight="semibold">
-                        {searchData.adults}
-                      </Text>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        colorScheme="blue"
-                        onClick={() =>
-                          setSearchData({
-                            ...searchData,
-                            adults: searchData.adults + 1,
-                          })
-                        }
-                      >
-                        +
-                      </Button>
-                    </HStack>
-                  </HStack>
-                  <Box h="1px" bg="gray.200" />
-                  <HStack justifyContent="space-between">
-                    <Text fontSize="sm" fontWeight="medium">Children</Text>
-                    <HStack gap={3}>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        colorScheme="blue"
-                        onClick={() =>
-                          setSearchData({
-                            ...searchData,
-                            children: Math.max(0, searchData.children - 1),
-                          })
-                        }
-                        disabled={searchData.children <= 0}
-                      >
-                        -
-                      </Button>
-                      <Text w="40px" textAlign="center" fontWeight="semibold">
-                        {searchData.children}
-                      </Text>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        colorScheme="blue"
-                        onClick={() =>
-                          setSearchData({
-                            ...searchData,
-                            children: searchData.children + 1,
-                          })
-                        }
-                      >
-                        +
-                      </Button>
-                    </HStack>
-                  </HStack>
-                </VStack>
+                </HStack>
               </Popover.Body>
             </Popover.Content>
           </Popover.Positioner>

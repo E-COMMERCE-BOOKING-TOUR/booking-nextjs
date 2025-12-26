@@ -257,8 +257,8 @@ export default function TourReviews({
                     </VStack>
                 </Box>
 
-                <Box bg="white" p={8} rounded="3xl" border="1px solid" borderColor="gray.100" shadow="sm">
-                    <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gapX={12} gapY={5}>
+                <Flex bg="white" p={8} rounded="3xl" border="1px solid" borderColor="gray.100" shadow="sm">
+                    <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gapX={12} gapY={5} w="full">
                         {categories.map((category, idx) => (
                             <HStack key={idx} gap={4} justify="space-between">
                                 <Text fontSize="sm" fontWeight="black" color="gray.700" flex={1}>
@@ -282,7 +282,7 @@ export default function TourReviews({
                             </HStack>
                         ))}
                     </Grid>
-                </Box>
+                </Flex>
             </Grid>
 
             {/* Filters */}
@@ -312,20 +312,6 @@ export default function TourReviews({
                         </NativeSelect.Field>
 
                     </NativeSelect.Root>
-
-                    <Button
-                        bg="main"
-                        color="white"
-                        rounded="xl"
-                        px={4}
-                        fontWeight="black"
-                        textTransform="uppercase"
-                        fontSize="xs"
-                        letterSpacing="widest"
-                        onClick={() => setVisibleReviews(5)}
-                    >
-                        Reset
-                    </Button>
                 </Grid>
             </Box>
 

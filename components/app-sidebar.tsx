@@ -1,6 +1,6 @@
 "use client";
 
-import { GalleryVerticalEnd, Home, SquareCheck, ThumbsUp, Users, LogOut, Compass, Bell } from "lucide-react";
+import { GalleryVerticalEnd, Home, SquareCheck, ThumbsUp, Users, LogOut, Compass, Bell, MapPin, Settings } from "lucide-react";
 
 import {
   Sidebar,
@@ -60,6 +60,15 @@ const sections = [
     ],
   },
   {
+    title: "Master Data",
+    base: ["/admin/division", "/admin/currency"],
+    icon: MapPin,
+    children: [
+      { title: "Divisions", url: "/admin/division" },
+      { title: "Currencies", url: "/admin/currency" },
+    ],
+  },
+  {
     title: "Reviews",
     base: "/admin/review",
     icon: ThumbsUp,
@@ -73,6 +82,20 @@ const sections = [
       { title: "All Notifications", url: "/admin/notification" },
       { title: "Create New", url: "/admin/notification/create" },
     ],
+  },
+  {
+    title: "Contents",
+    base: "/admin/static-pages",
+    icon: GalleryVerticalEnd,
+    children: [
+      { title: "Static Pages", url: "/admin/static-pages" },
+    ],
+  },
+  {
+    title: "Settings",
+    base: "/admin/settings",
+    icon: Settings,
+    url: "/admin/settings",
   },
 ];
 

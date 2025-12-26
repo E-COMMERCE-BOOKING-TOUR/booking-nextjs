@@ -1,5 +1,6 @@
 import { Button, Flex, Image, Menu, VStack, HStack, Box } from '@chakra-ui/react';
 import { NotificationBell } from './notificationBell';
+import { Header } from './header';
 import NextLink from 'next/link';
 import bookingApi from '@/apis/booking';
 import { IBookingDetail } from '@/types/booking';
@@ -9,6 +10,7 @@ import { auth } from '@/libs/auth/auth';
 import { IUserAuth } from '@/types/response/auth.type';
 import { MobileDrawer } from './navMobileDrawer';
 import { LogoutButton } from './logoutButton';
+import { SiteSettings } from '@/apis/admin/settings';
 
 type NavItem = {
   name: string;
@@ -22,19 +24,19 @@ const navItems: NavItem[] = [
   },
   {
     name: 'About us',
-    link: '/about',
+    link: '/page/about-us',
   },
   {
     name: 'Popular Articles',
     link: '/social',
   },
-  {
-    name: 'Help',
-    link: '/contact-us',
-  },
 ];
 
-export default async function UserNavbar() {
+interface NavbarProps {
+  settings?: SiteSettings | null;
+}
+
+export default async function UserNavbar({ settings }: NavbarProps) {
   const session = await auth();
   const user = session?.user as (IUserAuth & { accessToken?: string }) | undefined;
   const isLoggedIn = !!user;
@@ -53,17 +55,21 @@ export default async function UserNavbar() {
 
   return (
     <>
-      <Flex justifyContent="space-between" alignItems="center" padding={{ base: 5, md: 10 }} position="relative">
+      <Header>
         <NextLink href="/">
-          <Logo />
+          <Logo logoUrl={settings?.logo_url} />
         </NextLink>
-        {/* Desktop Menu */}
-        <Box display={{ base: "none", md: "block" }}>
-          <MenuLinks />
+
+        {/* Desktop Menu - Centered */}
+        <Box display={{ base: "none", md: "block" }} flex={1} paddingX={8}>
+          <Flex justify="center">
+            <MenuLinks />
+          </Flex>
         </Box>
-        <HStack>
+
+        <HStack gap={3}>
           {/* Authentication Buttons */}
-          <Flex gap={2}>
+          <Flex gap={2} alignItems="center">
             {isLoggedIn ? (
               <>
                 <NotificationBell />
@@ -72,21 +78,23 @@ export default async function UserNavbar() {
               </>
             ) : (
               <>
-                <Button asChild variant="ghost">
-                  <NextLink href="/user-login">Sign in</NextLink>
-                </Button>
-                <Button asChild rounded="full" paddingX={{ base: 5, md: 10 }} bg="main" color="white">
+                <Box display={{ base: "none", sm: "block" }}>
+                  <Button asChild variant="ghost" fontWeight="medium">
+                    <NextLink href="/user-login">Sign in</NextLink>
+                  </Button>
+                </Box>
+                <Button asChild rounded="full" paddingX={{ base: 4, md: 6 }} bg="main" color="white" _hover={{ bg: "main.dark", transform: "translateY(-1px)" }} transition="all 0.2s">
                   <NextLink href="/user-register">Sign up</NextLink>
                 </Button>
               </>
             )}
           </Flex>
           {/* Mobile Drawer */}
-          <Box display={{ base: "block", md: "none" }} marginLeft={3}>
+          <Box display={{ base: "block", md: "none" }}>
             <MobileDrawer activeBooking={activeBooking} />
           </Box>
         </HStack>
-      </Flex>
+      </Header>
     </>
   );
 }
@@ -118,13 +126,8 @@ export const MenuLinks = ({ isMobile = false }) => {
   return (
     <LinkComponent
       gap={isMobile ? 4 : 8}
-      align="center"
-      position="absolute"
-      left="50%"
-      transform="translate(-50%, -50%)"
-      top="50%"
+      align={isMobile ? "stretch" : "center"}
       justifyContent="center"
-      textAlign="center"
     >
       {navItems.map((link) => (
         <NavItem key={link.name} item={link} />
@@ -133,10 +136,10 @@ export const MenuLinks = ({ isMobile = false }) => {
   );
 };
 
-export const Logo = () => {
+export const Logo = ({ logoUrl }: { logoUrl?: string | null }) => {
   return (
     <Image
-      src="/assets/images/logo.png"
+      src={logoUrl || "/assets/images/logo.png"}
       objectFit="contain"
       alt="logo"
       width={200}

@@ -10,6 +10,7 @@ import logout from "@/actions/logout";
 import { tourApi, ITourSession } from "@/apis/tour";
 import { useQuery } from "@tanstack/react-query";
 import Breadcrumb from "./breadcrumb";
+import { formatPriceValue } from '@/utils/currency';
 
 interface TourVariant {
     id: number;
@@ -37,9 +38,11 @@ interface TourHeaderProps {
     variants: TourVariant[];
     durationDays: number;
     breadcrumbItems: { label: string; href: string }[];
+    currencySymbol?: string;
+    currencyCode?: string;
 }
 
-export default function TourHeader({ title, location, rating, price, oldPrice, slug, variants, durationDays, breadcrumbItems }: TourHeaderProps) {
+export default function TourHeader({ title, location, rating, price, oldPrice, slug, variants, durationDays, breadcrumbItems, currencySymbol = 'VND', currencyCode }: TourHeaderProps) {
     const router = useRouter();
     const [startDate, setStartDate] = useState<Date | null>(null);
     const [selectedVariantId, setSelectedVariantId] = useState<number | null>(() => variants?.[0]?.id || null);
@@ -242,12 +245,12 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                         From
                     </Text>
                     <Heading as="h2" size="4xl" color="main" fontWeight="black" letterSpacing="tight">
-                        VND {price.toLocaleString()}
+                        {currencySymbol} {formatPriceValue(price, currencyCode)}
                     </Heading>
                     <HStack gap={2} mt={1}>
                         {oldPrice && (
                             <Text as="del" color="gray.400" fontSize="sm" fontWeight="medium">
-                                VND {oldPrice.toLocaleString()}
+                                {currencySymbol} {formatPriceValue(oldPrice, currencyCode)}
                             </Text>
                         )}
                         <Text color="gray.500" fontSize="xs" fontWeight="bold">
@@ -445,4 +448,3 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
         </Flex >
     );
 }
-

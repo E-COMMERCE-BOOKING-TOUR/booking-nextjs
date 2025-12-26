@@ -1,41 +1,82 @@
-import Banner from '@/components/ui/user/banner';
-import { Box, Carousel, Grid, GridItem, Image } from "@chakra-ui/react"
+"use client";
 
-export default function BannerHeader() {
+import { Box, Grid, GridItem, Image } from "@chakra-ui/react";
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, Pagination } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/pagination';
+
+interface BannerHeaderProps {
+  banners_square?: string[] | null;
+  banners_rectangle?: string[] | null;
+}
+
+export default function BannerHeader({ banners_square, banners_rectangle }: BannerHeaderProps) {
+  // Default placeholders
+  const rectItems = banners_rectangle && banners_rectangle.length > 0
+    ? banners_rectangle
+    : ["/assets/images/banner-1.png", "/assets/images/banner-2.png"];
+
+  const squareItems = banners_square && banners_square.length > 0
+    ? banners_square
+    : ["/assets/images/banner-small-1.png", "/assets/images/banner-small-2.png"];
+
   return (
-    <Banner>
-      <Grid templateColumns={{ base: "repeat(1, 1fr)", md: "repeat(3, 1fr)" }} gap={4}>
-        <GridItem colSpan={{ base: 1, md: 2 }}>
-          <CarouselBanner items={["/assets/images/banner-1.png", "/assets/images/banner-2.png"]} />
+    <Box py={8} width="100%" overflow="hidden">
+      <Grid
+        templateColumns={{ base: "1fr", md: "minmax(0, 2fr) minmax(0, 1fr)" }}
+        gap={6}
+        width="100%"
+      >
+        <GridItem minWidth={0}>
+          <SwiperBanner items={rectItems} height={{ base: "180px", sm: "250px", md: "350px" }} />
         </GridItem>
-        <GridItem colSpan={{ base: 1, md: 1 }}>
-          <CarouselBanner items={["/assets/images/banner-small-1.png", "/assets/images/banner-small-2.png"]} />
+        <GridItem display={{ base: "none", md: "block" }} minWidth={0}>
+          <SwiperBanner items={squareItems} height="350px" />
         </GridItem>
       </Grid>
-    </Banner>
+    </Box>
   );
 }
 
-const CarouselBanner = ({ items }: { items: string[] }) => {
+const SwiperBanner = ({ items, height }: { items: string[], height: any }) => {
   return (
-    <Carousel.Root slideCount={items.length} maxW="100%" mx="auto" allowMouseDrag autoplay={{ delay: 5000 }} loop={true}>
-      <Carousel.ItemGroup>
+    <Box
+      width="100%"
+      height={height}
+      borderRadius={{ base: "20px", md: "30px" }}
+      overflow="hidden"
+      position="relative"
+      className="swiper-container-custom"
+    >
+      <Swiper
+        modules={[Autoplay, Pagination]}
+        pagination={{
+          clickable: true,
+          bulletClass: 'custom-bullet',
+          bulletActiveClass: 'custom-bullet-active',
+        }}
+        autoplay={{ delay: 5000, disableOnInteraction: false }}
+        loop={true}
+        style={{ width: '100%', height: '100%' }}
+        onInit={(swiper) => {
+          setTimeout(() => swiper.update(), 100);
+        }}
+      >
         {items.map((item, index) => (
-          <Carousel.Item key={index} index={index}>
-            <Image src={item} alt={`Banner ${index + 1}`} width="100%" height="300px" objectFit="cover" borderRadius="25px" />
-          </Carousel.Item>
+          <SwiperSlide key={index} style={{ width: '100%', height: '100%' }}>
+            <Box width="100%" height="100%" position="relative">
+              <Image
+                src={item}
+                alt={`Banner ${index + 1}`}
+                width="100%"
+                height="100%"
+                objectFit="cover"
+              />
+            </Box>
+          </SwiperSlide>
         ))}
-      </Carousel.ItemGroup>
-
-      <Box position="absolute" bottom="6" width="full">
-        <Carousel.Indicators
-          transition="width 0.2s ease-in-out"
-          transformOrigin="center"
-          opacity="0.5"
-          boxSize="2"
-          _current={{ width: "10", bg: "colorPalette.subtle", opacity: 1 }}
-        />
-      </Box>
-    </Carousel.Root>
+      </Swiper>
+    </Box>
   );
 }

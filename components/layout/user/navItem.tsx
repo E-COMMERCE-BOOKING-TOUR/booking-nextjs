@@ -16,25 +16,31 @@ export const NavItem = ({ item }: { item: NavItem }) => {
             asChild
             position="relative"
             fontWeight="bold"
-            color={isActive ? "main" : "gray.500"}
-            paddingX={{ base: 5, md: 10 }}
-            fontSize="18px"
+            color={isActive ? "main" : "gray.600"}
+            paddingX={{ base: 4, md: 6 }}
+            paddingY={2}
+            fontSize={{ base: "lg", md: "sm" }}
+            letterSpacing="wide"
+            textTransform="uppercase"
+            transition="color 0.2s ease"
             _before={{
                 content: '""',
                 position: "absolute",
                 left: "50%",
                 transform: "translateX(-50%)",
-                bottom: -3,
-                width: "100%",
+                bottom: 0,
+                width: isActive ? "20px" : "0px",
                 height: "2px",
                 bg: "main",
-                borderRadius: "999px",
+                borderRadius: "full",
                 opacity: isActive ? 1 : 0,
-                transition: "opacity 0.2s ease, transform 0.2s ease",
+                transition: "all 0.3s ease",
             }}
             _hover={{
                 color: "main",
+                textDecoration: "none",
                 _before: {
+                    width: "20px",
                     opacity: 1,
                 },
             }}

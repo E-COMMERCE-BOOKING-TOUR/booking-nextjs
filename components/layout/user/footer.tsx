@@ -1,74 +1,159 @@
-import { Box, Container, Grid, HStack, Link, Text, VStack } from "@chakra-ui/react";
+"use client";
+import {
+  Box,
+  Container,
+  Grid,
+  HStack,
+  Link,
+  Text,
+  VStack,
+  Heading,
+  Icon,
+  IconButton,
+} from "@chakra-ui/react";
+import {
+  FaFacebookF,
+  FaTwitter,
+  FaInstagram,
+  FaYoutube,
+  FaCcVisa,
+  FaCcMastercard,
+  FaCcPaypal,
+  FaGooglePay,
+  FaApplePay
+} from "react-icons/fa";
+import { SiteSettings } from "@/apis/admin/settings";
 
-const FooterLink = ({ children }: { children: React.ReactNode }) => (
-  <Link fontSize="sm" color="whiteAlpha.800" _hover={{ color: "white" }}>
+const FooterLink = ({ children, href = "#" }: { children: React.ReactNode; href?: string }) => (
+  <Link
+    href={href}
+    fontSize="sm"
+    color="whiteAlpha.700"
+    transition="all 0.2s"
+    _hover={{ color: "white", textDecoration: "none", opacity: 0.8 }}
+  >
     {children}
   </Link>
 );
 
-const PaymentIcon = ({ alt }: { alt: string }) => (
-  <Box w="50px" h="32px" bg="white" borderRadius="md" display="flex" alignItems="center" justifyContent="center" p={1}>
-    <Text fontSize="xs" fontWeight="bold" color="gray.700">{alt}</Text>
-  </Box>
-);
+const SocialButton = ({ icon, label, href }: { icon: React.ElementType; label: string; href?: string | null }) => {
+  if (!href) return null;
 
-export default function UserFooter() {
   return (
-    <Box bg="tertiary" color="white" py={12} pt={16}>
-      <Container maxW="2xl">
-        <Grid templateColumns={{ base: "repeat(1, 1fr)", md: "repeat(3, 1fr)" }} gap={8} mb={12}>
-          {/* Company */}
-          <VStack align="stretch" gap={2}>
-            <Text fontSize="sm" fontWeight="semibold" mb={2}>Company</Text>
-            <FooterLink>About Us</FooterLink>
-            <FooterLink>Blog</FooterLink>
-            <FooterLink>Press Room</FooterLink>
-            <FooterLink>Careers</FooterLink>
-          </VStack>
+    <Link
+      href={href}
+      target="_blank"
+      aria-label={label}
+      color="whiteAlpha.700"
+      borderRadius="full"
+      p={4}
+      _hover={{ color: "white", bg: "whiteAlpha.200" }}
+    >
+      <Icon as={icon} />
+    </Link>
+  );
+};
 
-          {/* Help */}
-          <VStack align="stretch" gap={2}>
-            <Text fontSize="sm" fontWeight="semibold" mb={2}>Help</Text>
-            <FooterLink>Contact us</FooterLink>
-            <FooterLink>FAQs</FooterLink>
-            <FooterLink>Terms and conditions</FooterLink>
-            <FooterLink>Privacy policy</FooterLink>
-            <FooterLink>Sitemap</FooterLink>
-          </VStack>
+interface FooterProps {
+  settings?: SiteSettings | null;
+}
 
-          {/* Payment & Company Info */}
-          <VStack align="stretch" gap={6}>
-            <VStack align="stretch" gap={3}>
-              <Text fontSize="sm" fontWeight="semibold">Payment methods possible</Text>
-              <HStack flexWrap="wrap" gap={2}>
-                <PaymentIcon alt="MC" />
-                <PaymentIcon alt="BP" />
-                <PaymentIcon alt="VISA" />
-                <PaymentIcon alt="AMEX" />
-                <PaymentIcon alt="DIS" />
-                <PaymentIcon alt="SF" />
-                <PaymentIcon alt="GP" />
-                <PaymentIcon alt="AP" />
-                <PaymentIcon alt="PP" />
-                <PaymentIcon alt="ME" />
+export default function UserFooter({ settings }: FooterProps) {
+  const companyTitle = settings?.company_name || "TOURGUIDE";
+
+  return (
+    <Box
+      bg="main"
+      color="white"
+      pt={{ base: 16, md: 36 }}
+      pb={10}
+      mt={{ base: "-30px", md: "-20px" }}
+      position="relative"
+      zIndex={10}
+      className="footer-clip-path"
+    >
+      <Container maxW="xl" pt={10}>
+        <Grid
+          templateColumns={{ base: "1fr", md: "2fr 1fr 1fr" }}
+          gap={{ base: 12, md: 12 }}
+          mb={12}
+          textAlign={{ base: "center", md: "left" }}
+        >
+          {/* Column 1: Brand & Payments */}
+          <VStack align={{ base: "center", md: "stretch" }} gap={6}>
+            <VStack align={{ base: "center", md: "stretch" }} gap={5}>
+              <Heading size="md" fontWeight="black" letterSpacing="tighter" textTransform="uppercase">
+                {companyTitle.includes(' ') ? (
+                  <>
+                    {companyTitle.split(' ')[0]}
+                    <Text as="span" color="secondary">{companyTitle.split(' ').slice(1).join(' ')}</Text>
+                  </>
+                ) : (
+                  <>
+                    {companyTitle}
+                    <Text as="span" color="secondary">GUIDE</Text>
+                  </>
+                )}
+              </Heading>
+              <Text color="whiteAlpha.800" fontSize="sm" lineHeight="tall" maxW="320px">
+                {settings?.footer_description || "Trải nghiệm vẻ đẹp Việt Nam cùng các chuyên gia địa phương. Uy tín, tận tâm và chuyên nghiệp."}
+              </Text>
+              <HStack gap={1} justify={{ base: "center", md: "flex-start" }}>
+                <SocialButton icon={FaFacebookF} label="Facebook" href={settings?.facebook_url} />
+                <SocialButton icon={FaInstagram} label="Instagram" href={settings?.instagram_url} />
+                <SocialButton icon={FaTwitter} label="Twitter" href={settings?.twitter_url} />
+                <SocialButton icon={FaYoutube} label="YouTube" href={settings?.youtube_url} />
               </HStack>
             </VStack>
-            <VStack align="stretch" gap={2}>
-              <Text fontSize="sm" fontWeight="semibold">Company</Text>
-              <FooterLink>Become a Tour guide for Us</FooterLink>
+
+            <Box pt={2}>
+              <Text fontSize="xs" fontWeight="black" textTransform="uppercase" letterSpacing="widest" color="secondary" mb={3}>Thanh toán an toàn</Text>
+              <HStack gap={4} color="whiteAlpha.400" flexWrap="wrap" justify={{ base: "center", md: "flex-start" }}>
+                <Icon as={FaCcVisa} w={6} h={6} />
+                <Icon as={FaCcMastercard} w={6} h={6} />
+                <Icon as={FaCcPaypal} w={6} h={6} />
+                <Icon as={FaGooglePay} w={8} h={8} />
+                <Icon as={FaApplePay} w={8} h={8} />
+              </HStack>
+            </Box>
+          </VStack>
+
+          {/* Column 2: Destinations */}
+          <VStack align={{ base: "center", md: "stretch" }} gap={4}>
+            <Text fontSize="xs" fontWeight="black" textTransform="uppercase" letterSpacing="widest" color="secondary">Liên hệ</Text>
+            <VStack align={{ base: "center", md: "stretch" }} gap={2} fontSize="sm" color="whiteAlpha.700">
+              <Text>{settings?.address}</Text>
+              <Text>{settings?.phone}</Text>
+              <Text>{settings?.email}</Text>
+            </VStack>
+          </VStack>
+
+          {/* Column 3: Support */}
+          <VStack align={{ base: "center", md: "stretch" }} gap={4}>
+            <Text fontSize="xs" fontWeight="black" textTransform="uppercase" letterSpacing="widest" color="secondary">Hỗ trợ</Text>
+            <VStack align={{ base: "center", md: "stretch" }} gap={2}>
+              <FooterLink href="/page/about-us">Về chúng tôi</FooterLink>
+              <FooterLink href="/page/faqs">Câu hỏi thường gặp</FooterLink>
+              <FooterLink href="/page/privacy-policy">Chính sách bảo mật</FooterLink>
+              <FooterLink href="/page/terms-of-use">Điều khoản sử dụng</FooterLink>
             </VStack>
           </VStack>
         </Grid>
 
         {/* Bottom Section */}
-        <Box pt={8} borderTop="1px solid" borderColor="whiteAlpha.300">
-          <HStack justify="space-between" align="center">
-            <Text fontSize="sm" color="whiteAlpha.700">
-              Copyright 2025 Tour Guide. All Rights Reserved
+        <Box pt={8} borderTop="1px solid" borderColor="whiteAlpha.100">
+          <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={6} alignItems="center" textAlign={{ base: "center", md: "left" }}>
+            <Text fontSize="10px" color="whiteAlpha.500" fontWeight="bold" textTransform="uppercase" letterSpacing="wider">
+              {settings?.copyright_text || `© ${2025} Tour Guide. Tất cả các quyền được bảo lưu.`}
             </Text>
-          </HStack>
+            <HStack gap={6} justify={{ base: "center", md: "flex-end" }}>
+              <Link href="/page/terms-of-use" fontSize="10px" color="whiteAlpha.400" fontWeight="bold" textTransform="uppercase" _hover={{ color: "white" }}>Điều khoản</Link>
+              <Link href="/page/privacy-policy" fontSize="10px" color="whiteAlpha.400" fontWeight="bold" textTransform="uppercase" _hover={{ color: "white" }}>Bảo mật</Link>
+              <Link fontSize="10px" color="whiteAlpha.400" fontWeight="bold" textTransform="uppercase" _hover={{ color: "white" }}>Sitemap</Link>
+            </HStack>
+          </Grid>
         </Box>
       </Container>
-    </Box>
+    </Box >
   );
 }
