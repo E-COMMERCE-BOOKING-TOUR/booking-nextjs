@@ -81,16 +81,16 @@ export default function AdminNotificationEditPage() {
         mutationFn: (data: Partial<INotification>) => adminNotificationApi.update(token!, id, data),
         onSuccess: (res) => {
             if (res.ok) {
-                toast.success('Cập nhật thông báo thành công');
+                toast.success('Notification updated successfully');
                 queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
                 queryClient.invalidateQueries({ queryKey: ['admin-notification-detail', id] });
                 router.push('/admin/notification');
             } else {
-                toast.error(res.error || 'Lỗi khi cập nhật thông báo');
+                toast.error(res.error || 'Error updating notification');
             }
         },
         onError: (error: any) => {
-            toast.error(error.message || 'Lỗi hệ thống');
+            toast.error(error.message || 'System error');
         }
     });
 
@@ -130,9 +130,9 @@ export default function AdminNotificationEditPage() {
                     <Link href="/admin/notification"><ArrowLeft className="size-4" /></Link>
                 </Button>
                 <div>
-                    <h1 className="text-2xl font-black text-foreground">Chỉnh Sửa Thông Báo #{id}</h1>
+                    <h1 className="text-2xl font-black text-foreground">Edit Notification #{id}</h1>
                     <p className="text-muted-foreground text-sm font-medium mt-1">
-                        Cập nhật nội dung hoặc đối tượng nhận của thông báo này.
+                        Update content or target audience of this notification.
                     </p>
                 </div>
             </div>
@@ -144,29 +144,29 @@ export default function AdminNotificationEditPage() {
                             <CardHeader className="border-b border-white/5">
                                 <CardTitle className="text-lg font-bold flex items-center gap-2">
                                     <Bell className="size-5 text-primary" />
-                                    Nội dung thông báo
+                                    Notification Content
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-6 space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="title">Tiêu đề</Label>
+                                    <Label htmlFor="title">Title</Label>
                                     <Input
                                         id="title"
-                                        placeholder="Nhập tiêu đề thông báo..."
+                                        placeholder="Enter notification title..."
                                         className="bg-white/5 border-white/10"
-                                        {...register('title', { required: 'Tiêu đề là bắt buộc' })}
+                                        {...register('title', { required: 'Title is required' })}
                                     />
                                     {errors.title && <span className="text-xs text-rose-500">{errors.title.message}</span>}
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="description">Nội dung</Label>
+                                    <Label htmlFor="description">Description</Label>
                                     <Textarea
                                         id="description"
-                                        placeholder="Nhập nội dung chi tiết..."
+                                        placeholder="Enter detailed description..."
                                         rows={5}
                                         className="bg-white/5 border-white/10"
-                                        {...register('description', { required: 'Nội dung là bắt buộc' })}
+                                        {...register('description', { required: 'Description is required' })}
                                     />
                                     {errors.description && <span className="text-xs text-rose-500">{errors.description.message}</span>}
                                 </div>
@@ -177,21 +177,21 @@ export default function AdminNotificationEditPage() {
                             <CardHeader className="border-b border-white/5">
                                 <CardTitle className="text-lg font-bold flex items-center gap-2">
                                     <Save className="size-5 text-primary" />
-                                    Cài đặt gửi
+                                    Delivery Settings
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-6 space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <Label>Phân loại</Label>
+                                        <Label>Type</Label>
                                         <Controller
                                             name="type"
                                             control={control}
-                                            rules={{ required: 'Vui lòng chọn loại thông báo' }}
+                                            rules={{ required: 'Please select notification type' }}
                                             render={({ field }) => (
                                                 <Select key={field.value} onValueChange={field.onChange} value={field.value}>
                                                     <SelectTrigger className="bg-white/5 border-white/10">
-                                                        <SelectValue placeholder="Chọn loại thông báo" />
+                                                        <SelectValue placeholder="Select notification type" />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {Object.values(NotificationType).map((type) => (
@@ -205,21 +205,21 @@ export default function AdminNotificationEditPage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label>Đối tượng nhận</Label>
+                                        <Label>Target Audience</Label>
                                         <Controller
                                             name="target_group"
                                             control={control}
-                                            rules={{ required: 'Vui lòng chọn đối tượng nhận' }}
+                                            rules={{ required: 'Please select target audience' }}
                                             render={({ field }) => (
                                                 <Select key={field.value} onValueChange={field.onChange} value={field.value}>
                                                     <SelectTrigger className="bg-white/5 border-white/10">
-                                                        <SelectValue placeholder="Chọn đối tượng" />
+                                                        <SelectValue placeholder="Select audience" />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value={TargetGroup.all}>Tất cả người dùng</SelectItem>
-                                                        <SelectItem value={TargetGroup.admin}>Chỉ Admin</SelectItem>
-                                                        <SelectItem value={TargetGroup.supplier}>Chỉ Nhà cung cấp (Supplier)</SelectItem>
-                                                        <SelectItem value={TargetGroup.specific}>Người dùng cụ thể</SelectItem>
+                                                        <SelectItem value={TargetGroup.all}>All Users</SelectItem>
+                                                        <SelectItem value={TargetGroup.admin}>Admin Only</SelectItem>
+                                                        <SelectItem value={TargetGroup.supplier}>Supplier Only</SelectItem>
+                                                        <SelectItem value={TargetGroup.specific}>Specific Users</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             )}
@@ -230,10 +230,10 @@ export default function AdminNotificationEditPage() {
 
                                 {targetGroup === TargetGroup.specific && (
                                     <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                                        <Label htmlFor="user_ids_str">ID người dùng (cách nhau bởi dấu phẩy)</Label>
+                                        <Label htmlFor="user_ids_str">User IDs (comma separated)</Label>
                                         <Input
                                             id="user_ids_str"
-                                            placeholder="VD: 1, 2, 5, 10"
+                                            placeholder="e.g. 1, 2, 5, 10"
                                             className="bg-white/5 border-white/10"
                                             {...register('user_ids_str')}
                                         />
@@ -252,7 +252,7 @@ export default function AdminNotificationEditPage() {
                                             />
                                         )}
                                     />
-                                    <Label htmlFor="is_error" className="cursor-pointer">Đây là thông báo lỗi/cảnh báo quan trọng</Label>
+                                    <Label htmlFor="is_error" className="cursor-pointer">This is a critical error/warning notification</Label>
                                 </div>
                             </CardContent>
                         </Card>
@@ -261,7 +261,7 @@ export default function AdminNotificationEditPage() {
                     <div className="space-y-6">
                         <Card className="border-white/5 bg-primary/10 border-primary/20 backdrop-blur-xl">
                             <CardHeader>
-                                <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80">Hành động</CardTitle>
+                                <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80">Actions</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 <Button
@@ -269,7 +269,7 @@ export default function AdminNotificationEditPage() {
                                     className="w-full bg-primary hover:bg-primary/90 font-bold"
                                     disabled={updateMutation.isPending}
                                 >
-                                    {updateMutation.isPending ? 'Đang lưu...' : 'Lưu thay đổi'}
+                                    {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
                                 </Button>
                                 <Button
                                     type="button"
@@ -277,7 +277,7 @@ export default function AdminNotificationEditPage() {
                                     className="w-full border-white/10"
                                     asChild
                                 >
-                                    <Link href="/admin/notification">Hủy bỏ</Link>
+                                    <Link href="/admin/notification">Cancel</Link>
                                 </Button>
                             </CardContent>
                         </Card>

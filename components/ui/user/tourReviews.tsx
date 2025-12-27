@@ -23,7 +23,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import tourApi from "@/apis/tour";
 import { toaster } from "@/components/chakra/toaster";
+import { useSearchParams } from "next/navigation";
 import ReviewForm from "./ReviewForm";
+import { useTranslation } from "@/libs/i18n/client";
+import { cookieName, fallbackLng } from "@/libs/i18n/settings";
+import Cookies from "js-cookie";
 
 interface Review {
     id: string;
@@ -54,6 +58,7 @@ interface TourReviewsProps {
     averageRating: number;
     totalReviews: number;
     categories: ReviewCategory[];
+    lng?: string;
 }
 
 export default function TourReviews({
@@ -61,7 +66,11 @@ export default function TourReviews({
     averageRating,
     totalReviews,
     categories,
+    lng: propLng
 }: TourReviewsProps & { tourId: number }) {
+    const searchParams = useSearchParams();
+    const lng = propLng || searchParams?.get('lng') || fallbackLng;
+    const { t } = useTranslation(lng);
     const { data: session, status } = useSession();
     const token = session?.user?.accessToken;
     const queryClient = useQueryClient();
@@ -80,16 +89,16 @@ export default function TourReviews({
         mutationFn: (reviewId: string) => tourApi.markReviewHelpful(Number(reviewId), token),
         onSuccess: () => {
             toaster.create({
-                title: "Thành công",
-                description: "Đã đánh dấu là hữu ích",
+                title: t("confirm"),
+                description: t("mark_helpful_success"),
                 type: "success",
             });
             queryClient.invalidateQueries({ queryKey: ['reviews', tourId] });
         },
         onError: (error: Error) => {
             toaster.create({
-                title: "Lỗi",
-                description: error?.message || "Không thể thực hiện",
+                title: "Error",
+                description: error?.message || t("could_not_perform"),
                 type: "error",
             });
         }
@@ -99,16 +108,16 @@ export default function TourReviews({
         mutationFn: (reviewId: string) => tourApi.reportReview(Number(reviewId), token),
         onSuccess: () => {
             toaster.create({
-                title: "Báo cáo",
-                description: "Đã gửi báo cáo đánh giá",
+                title: t("report"),
+                description: t("report_success"),
                 type: "success",
             });
             queryClient.invalidateQueries({ queryKey: ['reviews', tourId] });
         },
         onError: (error: Error) => {
             toaster.create({
-                title: "Lỗi",
-                description: error?.message || "Không thể báo cáo",
+                title: "Error",
+                description: error?.message || t("could_not_report"),
                 type: "error",
             });
         }
@@ -117,8 +126,8 @@ export default function TourReviews({
     const handleMarkHelpful = (reviewId: string) => {
         if (!session) {
             toaster.create({
-                title: "Yêu cầu đăng nhập",
-                description: "Vui lòng đăng nhập để bình chọn",
+                title: t("login_required"),
+                description: t("login_to_vote"),
                 type: "warning",
             });
             return;
@@ -129,16 +138,16 @@ export default function TourReviews({
     const handleReportReview = (review: Review) => {
         if (!session) {
             toaster.create({
-                title: "Yêu cầu đăng nhập",
-                description: "Vui lòng đăng nhập để báo cáo",
+                title: t("login_required"),
+                description: t("login_to_report"),
                 type: "warning",
             });
             return;
         }
         if (review.is_reported) {
             toaster.create({
-                title: "Đã báo cáo",
-                description: "Đánh giá này đã được báo cáo trước đó",
+                title: t("reported_title"),
+                description: t("already_reported"),
                 type: "info",
             });
             return;
@@ -211,9 +220,9 @@ export default function TourReviews({
             <HStack justify="space-between" align="center">
                 <VStack align="start" gap={1}>
                     <Heading as="h2" size="xl" fontWeight="black" letterSpacing="tight">
-                        Guest reviews
+                        {t("guest_reviews")}
                     </Heading>
-                    <Text color="gray.500" fontSize="sm">What people are saying about this tour</Text>
+                    <Text color="gray.500" fontSize="sm">{t("reviews_subtitle")}</Text>
                 </VStack>
                 {session?.user && (
                     <Button
@@ -222,7 +231,7 @@ export default function TourReviews({
                         onClick={() => setIsWritingReview(!isWritingReview)}
                         _hover={{ bg: "blue.700" }}
                     >
-                        {isWritingReview ? "Cancel Review" : "Write a Review"}
+                        {isWritingReview ? t("cancel_review") : t("write_review")}
                     </Button>
                 )}
             </HStack>
@@ -232,6 +241,7 @@ export default function TourReviews({
                     tourId={tourId}
                     onSuccess={() => setIsWritingReview(false)}
                     onCancel={() => setIsWritingReview(false)}
+                    lng={lng}
                 />
             )}
 
@@ -252,7 +262,7 @@ export default function TourReviews({
                             ))}
                         </HStack>
                         <Text fontSize="sm" fontWeight="black" color="gray.600" textTransform="uppercase" letterSpacing="widest">
-                            {totalReviews} verified reviews
+                            {t("found_tours", { count: totalReviews })}
                         </Text>
                     </VStack>
                 </Box>
@@ -294,21 +304,21 @@ export default function TourReviews({
                 >
                     <NativeSelect.Root>
                         <NativeSelect.Field borderRadius="xl" bg="white" value={sortBy} onChange={(e) => onFilterChange("sort", e.target.value)}>
-                            <option value="recommended">Recommended</option>
-                            <option value="recent">Most Recent</option>
-                            <option value="highest">Highest Rating</option>
-                            <option value="lowest">Lowest Rating</option>
+                            <option value="recommended">{t("recommended")}</option>
+                            <option value="recent">{t("most_recent")}</option>
+                            <option value="highest">{t("highest_rating")}</option>
+                            <option value="lowest">{t("lowest_rating")}</option>
                         </NativeSelect.Field>
                     </NativeSelect.Root>
 
                     <NativeSelect.Root>
                         <NativeSelect.Field borderRadius="xl" bg="white" value={ratingFilter} onChange={(e) => onFilterChange("rating", e.target.value)}>
-                            <option value="all">Rating: All</option>
-                            <option value="5">5 Stars</option>
-                            <option value="4">4 Stars</option>
-                            <option value="3">3 Stars</option>
-                            <option value="2">2 Stars</option>
-                            <option value="1">1 Star</option>
+                            <option value="all">{t("rating_all")}</option>
+                            <option value="5">{t("stars_5")}</option>
+                            <option value="4">{t("stars_4")}</option>
+                            <option value="3">{t("stars_3")}</option>
+                            <option value="2">{t("stars_2")}</option>
+                            <option value="1">{t("stars_1")}</option>
                         </NativeSelect.Field>
 
                     </NativeSelect.Root>
@@ -318,7 +328,7 @@ export default function TourReviews({
             {/* Reviews List */}
             <VStack align="stretch" gap={0}>
                 {isReviewsLoading ? (
-                    <Text textAlign="center" py={10} color="gray.500">Loading reviews...</Text>
+                    <Text textAlign="center" py={10} color="gray.500">{t("loading_reviews")}</Text>
                 ) : (
                     <>
                         {filteredReviews.slice(0, visibleReviews).map((review: Review) => (
@@ -347,13 +357,13 @@ export default function TourReviews({
                                                     )}
                                                 </HStack>
                                                 <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                                                    {new Date(review.created_at || review.date).toLocaleDateString()}
+                                                    {new Date(review.created_at || review.date).toLocaleDateString(lng === 'vi' ? 'vi-VN' : 'en-US')}
                                                 </Text>
                                             </VStack>
                                         </HStack>
                                         {review.verified && (
                                             <Badge variant="subtle" colorPalette="blue" rounded="full" px={2} fontSize="10px" textTransform="none">
-                                                Verified Booking
+                                                {t("verified_booking")}
                                             </Badge>
                                         )}
                                     </VStack>
@@ -396,7 +406,7 @@ export default function TourReviews({
                             </Box>
                         ))}
                         {filteredReviews.length === 0 && (
-                            <Text textAlign="center" py={10} color="gray.500">No reviews yet. Be the first to write one!</Text>
+                            <Text textAlign="center" py={10} color="gray.500">{t("no_reviews_yet")}</Text>
                         )}
                     </>
                 )}
@@ -416,7 +426,7 @@ export default function TourReviews({
                         _hover={{ bg: "main", color: "white", borderColor: "main" }}
                         onClick={handleLoadMore}
                     >
-                        Show more reviews
+                        {t("show_more_reviews")}
                     </Button>
                 </Flex>
             )}

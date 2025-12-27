@@ -1,5 +1,6 @@
 import { Box, Flex, Text, Stack, VStack } from "@chakra-ui/react";
 import type { TourTestimonial } from "@/types/tour";
+import { useTranslation } from "@/libs/i18n";
 
 interface TourSidebarProps {
     score: number;
@@ -7,15 +8,18 @@ interface TourSidebarProps {
     reviewCount: number;
     staffScore: number;
     testimonial?: TourTestimonial;
+    lng: string;
 }
 
-export default function TourSidebar({
+export default async function TourSidebar({
     score,
     scoreLabel,
     reviewCount,
     staffScore,
     testimonial,
+    lng,
 }: TourSidebarProps) {
+    const { t } = await useTranslation(lng);
     return (
         <Stack gap={6} w="full">
             {/* Unified Score Board Card */}
@@ -34,7 +38,7 @@ export default function TourSidebar({
                                 {scoreLabel}
                             </Text>
                             <Text fontSize="xs" fontWeight="black" color="main" textTransform="uppercase" letterSpacing="widest">
-                                {reviewCount.toLocaleString()} verified reviews
+                                {t("found_tours", { count: reviewCount })}
                             </Text>
                         </Box>
                         <Box
@@ -54,8 +58,8 @@ export default function TourSidebar({
                         <Stack gap={4}>
                             <Flex justifyContent="space-between" alignItems="center">
                                 <VStack align="start" gap={0}>
-                                    <Text fontWeight="black" color="gray.700" fontSize="sm">Staff</Text>
-                                    <Text fontSize="xs" color="gray.500" fontWeight="bold">Professional & Friendly</Text>
+                                    <Text fontWeight="black" color="gray.700" fontSize="sm">{t("staff")}</Text>
+                                    <Text fontSize="xs" color="gray.500" fontWeight="bold">{t("staff_desc")}</Text>
                                 </VStack>
                                 <Box bg="blue.50" color="main" px={3} py={1} borderRadius="lg" fontWeight="black" fontSize="sm">
                                     {staffScore.toFixed(1)}
@@ -64,8 +68,8 @@ export default function TourSidebar({
 
                             <Flex justifyContent="space-between" alignItems="center">
                                 <VStack align="start" gap={0}>
-                                    <Text fontWeight="black" color="gray.700" fontSize="sm">Value for money</Text>
-                                    <Text fontSize="xs" color="gray.500" fontWeight="bold">Competitive pricing</Text>
+                                    <Text fontWeight="black" color="gray.700" fontSize="sm">{t("value_for_money")}</Text>
+                                    <Text fontSize="xs" color="gray.500" fontWeight="bold">{t("value_for_money_desc")}</Text>
                                 </VStack>
                                 <Box bg="blue.50" color="main" px={3} py={1} borderRadius="lg" fontWeight="black" fontSize="sm">
                                     8.9
@@ -99,7 +103,7 @@ export default function TourSidebar({
                         textTransform="uppercase"
                         boxShadow="md"
                     >
-                        Guest Favorite
+                        {t("guest_favorite")}
                     </Box>
                     <Text fontSize="sm" color="gray.700" mt={2} mb={5} fontStyle="italic" lineHeight="relaxed" fontWeight="medium">
                         &ldquo;{testimonial.text}&rdquo;

@@ -12,6 +12,10 @@ import {
     Portal,
     Badge,
 } from "@chakra-ui/react";
+import { useTranslation } from "@/libs/i18n/client";
+import { cookieName, fallbackLng } from "@/libs/i18n/settings";
+import Cookies from "js-cookie";
+import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
 import notificationApi from "@/apis/notification";
@@ -19,7 +23,11 @@ import { FiBell, FiInfo, FiAlertCircle, FiCheckCircle } from "react-icons/fi";
 import Link from "next/link";
 import { INotification } from "@/types/notification";
 
-export const NotificationBell = () => {
+export const NotificationBell = ({ lng: propLng }: { lng?: string }) => {
+    const searchParams = useSearchParams();
+    const lng = propLng || searchParams?.get('lng') || fallbackLng;
+    const { t } = useTranslation(lng as string);
+
     const { data: session } = useSession();
     const token = session?.user?.accessToken;
 
@@ -78,9 +86,9 @@ export const NotificationBell = () => {
                         <Popover.Arrow />
                         <Popover.Header p={5} borderBottomWidth="1px" borderColor="gray.50">
                             <HStack justify="space-between">
-                                <Text fontWeight="bold" fontSize="md">Notifications</Text>
+                                <Text fontWeight="bold" fontSize="md">{t('notifications', { defaultValue: 'Notifications' })}</Text>
                                 <Badge colorPalette="blue" variant="subtle" size="sm">
-                                    Recent
+                                    {t('recent', { defaultValue: 'Recent' })}
                                 </Badge>
                             </HStack>
                         </Popover.Header>
@@ -88,12 +96,12 @@ export const NotificationBell = () => {
                             {isLoading ? (
                                 <VStack py={10}>
                                     <Spinner size="sm" color="blue.500" />
-                                    <Text fontSize="xs" color="gray.500">Loading...</Text>
+                                    <Text fontSize="xs" color="gray.500">{t('loading', { defaultValue: 'Loading...' })}</Text>
                                 </VStack>
                             ) : notifications.length === 0 ? (
                                 <VStack py={10} gap={2}>
                                     <FiBell size={24} color="#CBD5E0" />
-                                    <Text fontSize="sm" color="gray.500">No new notifications</Text>
+                                    <Text fontSize="sm" color="gray.500">{t('no_new_notifications', { defaultValue: 'No new notifications' })}</Text>
                                 </VStack>
                             ) : (
                                 <VStack align="stretch" gap={0} maxH="400px" overflowY="auto">
@@ -120,7 +128,7 @@ export const NotificationBell = () => {
                                                         {n.description}
                                                     </Text>
                                                     <Text fontSize="9px" color="gray.400" mt={1}>
-                                                        {new Date(n.created_at).toLocaleString('vi-VN')}
+                                                        {new Date(n.created_at).toLocaleString(lng === 'vi' ? 'vi-VN' : 'en-US')}
                                                     </Text>
                                                 </VStack>
                                             </HStack>
@@ -138,7 +146,7 @@ export const NotificationBell = () => {
                                 _hover={{ color: "blue.700" }}
                             >
                                 <Link href="/mypage/notifications">
-                                    View all notifications
+                                    {t('view_all_notifications', { defaultValue: 'View all notifications' })}
                                 </Link>
                             </ChakraLink>
                         </Popover.Footer>

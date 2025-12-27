@@ -13,56 +13,67 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { CalendarIcon, Trash2 } from 'lucide-react';
-
 import { DateRange } from 'react-day-picker';
 
+export interface ScheduleValue {
+    ranges: { start: string; end: string }[];
+    excluded: string[];
+    timeSlots?: string[];
+    durationHours?: number | null;
+}
+
 interface VariantSchedulingEditorProps {
-    value: { from: Date; to: Date }[];
-    onChange: (ranges: { from: Date; to: Date }[]) => void;
-    excludedDates: string[];
-    onExclude: (date: string) => void;
-    onRemoveExcluded: (date: string) => void;
-    startTimeSlots?: string[];
-    onTimeSlotsChange: (slots: string[]) => void;
-    variantDuration?: number | null;
-    onDurationChange?: (duration: number | null) => void;
-    durationDays?: number;
+    value: ScheduleValue;
+    onChange: (value: ScheduleValue) => void;
+    durationDays?: number | null;
 }
 
 export default function VariantSchedulingEditor({
     value,
     onChange,
-    excludedDates,
-    onExclude,
-    onRemoveExcluded,
-    startTimeSlots = [],
-    onTimeSlotsChange,
-    variantDuration,
-    onDurationChange,
     durationDays = 0
 }: VariantSchedulingEditorProps) {
     const [newTimeSlot, setNewTimeSlot] = useState<string>('08:00');
     const [date, setDate] = React.useState<DateRange | undefined>();
 
+    // Helper to update parts of the value
+    const updateValue = (updates: Partial<ScheduleValue>) => {
+        onChange({ ...value, ...updates });
+    };
+
+    const startTimeSlots = value.timeSlots || [];
+    const excludedDates = value.excluded || [];
+    const ranges = value.ranges || [];
+
     const handleAddTimeSlot = () => {
         if (!newTimeSlot) return;
         if (!startTimeSlots.includes(newTimeSlot)) {
             const newSlots = [...startTimeSlots, newTimeSlot].sort();
-            onTimeSlotsChange(newSlots);
+            updateValue({ timeSlots: newSlots });
         }
     };
 
     const handleRemoveTimeSlot = (slot: string) => {
         const newSlots = startTimeSlots.filter(s => s !== slot);
-        onTimeSlotsChange(newSlots);
+        updateValue({ timeSlots: newSlots });
+    };
+
+    const handleExcludeDate = (date: string) => {
+        if (!excludedDates.includes(date)) {
+            updateValue({ excluded: [...excludedDates, date] });
+        }
+    };
+
+    const handleRemoveExcluded = (date: string) => {
+        updateValue({ excluded: excludedDates.filter(d => d !== date) });
     };
 
     const totalOpenDays = useMemo(() => {
         const dates = new Set<string>();
-        value.forEach(range => {
-            if (range.from && range.to) {
-                const curr = new Date(range.from);
-                const end = new Date(range.to);
+        ranges.forEach(range => {
+            if (range.start && range.end) {
+                const curr = new Date(range.start);
+                const end = new Date(range.end);
                 while (curr <= end) {
                     const dStr = curr.toISOString().split('T')[0];
                     if (!excludedDates.includes(dStr)) {
@@ -73,7 +84,7 @@ export default function VariantSchedulingEditor({
             }
         });
         return dates.size * (startTimeSlots.length || 1);
-    }, [value, excludedDates, startTimeSlots]);
+    }, [ranges, excludedDates, startTimeSlots]);
 
     return (
         <div className="space-y-6 p-6 rounded-2xl border border-white/5 bg-white/2">
@@ -82,7 +93,7 @@ export default function VariantSchedulingEditor({
                     {/* Time Slots & Duration Configuration */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-xs font-semibold uppercase text-muted-foreground">Khung giờ khởi hành</Label>
+                            <Label className="text-xs font-semibold uppercase text-muted-foreground">Departure Times</Label>
                             <div className="flex gap-2">
                                 <Input
                                     type="time"
@@ -105,33 +116,31 @@ export default function VariantSchedulingEditor({
                                     </Badge>
                                 ))}
                                 {startTimeSlots.length === 0 && (
-                                    <span className="text-xs text-muted-foreground italic py-1">Chưa có khung giờ (Mặc định cả ngày)</span>
+                                    <span className="text-xs text-muted-foreground italic py-1">No time slots (Default all day)</span>
                                 )}
                             </div>
                         </div>
 
-                        {onDurationChange && (
-                            <div className="space-y-2">
-                                <Label className="text-xs font-semibold uppercase text-muted-foreground">Thời lượng riêng (Giờ)</Label>
-                                <div className="flex flex-col gap-1">
-                                    <Input
-                                        type="number"
-                                        placeholder="Mặc định theo tour"
-                                        value={variantDuration || ''}
-                                        onChange={(e) => onDurationChange(e.target.value ? parseFloat(e.target.value) : null)}
-                                        className="bg-background/50 border-white/10"
-                                    />
-                                    <span className="text-[10px] text-muted-foreground">
-                                        Thay thế số giờ chung. Tổng: (Số ngày chung) + (Số giờ này).
-                                    </span>
-                                </div>
+                        <div className="space-y-2">
+                            <Label className="text-xs font-semibold uppercase text-muted-foreground">Custom Duration (Hours)</Label>
+                            <div className="flex flex-col gap-1">
+                                <Input
+                                    type="number"
+                                    placeholder="Default tour duration"
+                                    value={value.durationHours ?? ''}
+                                    onChange={(e) => updateValue({ durationHours: e.target.value ? parseFloat(e.target.value) : null })}
+                                    className="bg-background/50 border-white/10"
+                                />
+                                <span className="text-[10px] text-muted-foreground">
+                                    Overrides general duration. Total: (General Days) + (This Hours).
+                                </span>
                             </div>
-                        )}
+                        </div>
                     </div>
 
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <Label className="text-sm font-semibold text-primary">Khoảng ngày hoạt động</Label>
+                            <Label className="text-sm font-semibold text-primary">Operating Dates Range</Label>
                             <div className="flex gap-2">
                                 <Popover>
                                     <PopoverTrigger asChild>
@@ -154,7 +163,7 @@ export default function VariantSchedulingEditor({
                                                     format(date.from, "LLL dd, y")
                                                 )
                                             ) : (
-                                                <span>Chọn khoảng ngày</span>
+                                                <span>Pick a date range</span>
                                             )}
                                         </Button>
                                     </PopoverTrigger>
@@ -173,7 +182,11 @@ export default function VariantSchedulingEditor({
                                     type="button"
                                     onClick={() => {
                                         if (date?.from && date.to) {
-                                            onChange([...value, { from: date.from, to: date.to }]);
+                                            const newRange = {
+                                                start: date.from.toISOString().split('T')[0],
+                                                end: date.to.toISOString().split('T')[0]
+                                            };
+                                            updateValue({ ranges: [...ranges, newRange] });
                                             setDate(undefined);
                                         }
                                     }}
@@ -181,31 +194,31 @@ export default function VariantSchedulingEditor({
                                     className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/20"
                                 >
                                     <Plus className="h-4 w-4 mr-2" />
-                                    Thêm
+                                    Add
                                 </Button>
                             </div>
                         </div>
                         <div className="space-y-3">
-                            {value.map((range, rIdx) => (
+                            {ranges.map((range, rIdx) => (
                                 <div key={rIdx} className="flex items-center gap-3 animate-in fade-in slide-in-from-left-2 p-3 rounded-xl bg-white/2 border border-white/5">
                                     <div className="grid grid-cols-2 gap-2 flex-1">
                                         <Input
                                             type="date"
-                                            value={range.from.toISOString().split('T')[0]}
+                                            value={range.start}
                                             onChange={(e) => {
-                                                const newRanges = [...value];
-                                                newRanges[rIdx] = { ...range, from: new Date(e.target.value) };
-                                                onChange(newRanges);
+                                                const newRanges = [...ranges];
+                                                newRanges[rIdx] = { ...range, start: e.target.value };
+                                                updateValue({ ranges: newRanges });
                                             }}
                                             className="h-9 bg-background/50 border-white/10 text-xs"
                                         />
                                         <Input
                                             type="date"
-                                            value={range.to.toISOString().split('T')[0]}
+                                            value={range.end}
                                             onChange={(e) => {
-                                                const newRanges = [...value];
-                                                newRanges[rIdx] = { ...range, to: new Date(e.target.value) };
-                                                onChange(newRanges);
+                                                const newRanges = [...ranges];
+                                                newRanges[rIdx] = { ...range, end: e.target.value };
+                                                updateValue({ ranges: newRanges });
                                             }}
                                             className="h-9 bg-background/50 border-white/10 text-xs"
                                         />
@@ -214,16 +227,16 @@ export default function VariantSchedulingEditor({
                                         type="button"
                                         variant="ghost"
                                         size="icon"
-                                        onClick={() => onChange(value.filter((_, i) => i !== rIdx))}
+                                        onClick={() => updateValue({ ranges: ranges.filter((_, i) => i !== rIdx) })}
                                         className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10 shrink-0 rounded-full"
                                     >
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
                                 </div>
                             ))}
-                            {value.length === 0 && (
+                            {ranges.length === 0 && (
                                 <div className="py-8 text-center border font-medium border-dashed border-white/10 rounded-xl text-xs text-muted-foreground">
-                                    Chưa có khoảng ngày nào được thiết lập.
+                                    No date ranges set.
                                 </div>
                             )}
                         </div>
@@ -232,14 +245,14 @@ export default function VariantSchedulingEditor({
                     <Separator className="bg-white/5" />
 
                     <div className="space-y-3">
-                        <Label className="text-sm font-semibold text-primary">Thống kê Session dự kiến</Label>
+                        <Label className="text-sm font-semibold text-primary">Estimated Sessions Stats</Label>
                         <div className="p-4 rounded-xl bg-white/2 border border-white/5 grid grid-cols-2 gap-4">
                             <div>
-                                <div className="text-[10px] uppercase text-muted-foreground tracking-wider mb-1">Tổng Session</div>
+                                <div className="text-[10px] uppercase text-muted-foreground tracking-wider mb-1">Total Sessions</div>
                                 <div className="text-xl font-bold text-emerald-400">{totalOpenDays}</div>
                             </div>
                             <div>
-                                <div className="text-[10px] uppercase text-muted-foreground tracking-wider mb-1">Ngày loại trừ</div>
+                                <div className="text-[10px] uppercase text-muted-foreground tracking-wider mb-1">Excluded Days</div>
                                 <div className="text-xl font-bold text-red-400">{excludedDates.length}</div>
                             </div>
                         </div>
@@ -248,18 +261,18 @@ export default function VariantSchedulingEditor({
 
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 mb-2">
-                        <Label className="text-sm font-semibold">Lịch trực quan</Label>
-                        <div className="px-2 py-0.5 rounded text-[8px] bg-primary/10 text-primary border border-primary/20">CLICK ĐỂ BẬT/TẮT</div>
+                        <Label className="text-sm font-semibold">Visual Calendar</Label>
+                        <div className="px-2 py-0.5 rounded text-[8px] bg-primary/10 text-primary border border-primary/20">CLICK TO TOGGLE</div>
                     </div>
                     <SchedulingCalendar
-                        ranges={value.map(r => ({ start: r.from.toISOString().split('T')[0], end: r.to.toISOString().split('T')[0] }))}
+                        ranges={ranges}
                         excluded={excludedDates}
-                        durationDays={durationDays}
+                        durationDays={Number(durationDays) || 0}
                         onToggleDate={(date) => {
                             if (excludedDates.includes(date)) {
-                                onRemoveExcluded(date);
+                                handleRemoveExcluded(date);
                             } else {
-                                onExclude(date);
+                                handleExcludeDate(date);
                             }
                         }}
                     />

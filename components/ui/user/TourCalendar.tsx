@@ -6,6 +6,8 @@ import tour, { ITourSession } from "@/apis/tour";
 import { useQuery } from "@tanstack/react-query";
 import { BsChevronLeft, BsChevronRight } from "react-icons/bs";
 import { toaster } from "@/components/chakra/toaster";
+import { useTranslation } from "@/libs/i18n/client";
+import { fallbackLng } from "@/libs/i18n/settings";
 
 interface TourCalendarProps {
     tourSlug: string;
@@ -14,11 +16,17 @@ interface TourCalendarProps {
     onSelectDate: (start: Date, end: Date) => void;
     minDate?: Date;
     initialSelectedDate?: string; // YYYY-MM-DD format
+    lng?: string;
 }
 
-const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAYS_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAYS_VI = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
-export default function TourCalendar({ tourSlug, variantId, durationDays, onSelectDate, initialSelectedDate }: TourCalendarProps) {
+export default function TourCalendar({ tourSlug, variantId, durationDays, onSelectDate, initialSelectedDate, lng: propLng }: TourCalendarProps) {
+    const lng = propLng || fallbackLng;
+    const { t } = useTranslation(lng);
+    const DAYS = lng === 'vi' ? DAYS_VI : DAYS_EN;
+
     const [currentMonth, setCurrentMonth] = useState(() => {
         // If there's an initial date, start on that month
         if (initialSelectedDate) {
@@ -105,8 +113,8 @@ export default function TourCalendar({ tourSlug, variantId, durationDays, onSele
 
                 if (isOff) {
                     toaster.create({
-                        title: "Selected range includes off days",
-                        description: `The tour cannot run on ${checkDate.toLocaleDateString('vi-VN')}. Please choose another start date.`,
+                        title: t('selected_range_includes_off_days', { defaultValue: "Selected range includes off days" }),
+                        description: t('tour_cannot_run_on_date', { date: checkDate.toLocaleDateString(lng === 'vi' ? 'vi-VN' : 'en-US'), defaultValue: `The tour cannot run on ${checkDate.toLocaleDateString(lng === 'vi' ? 'vi-VN' : 'en-US')}. Please choose another start date.` }),
                         type: "error",
                         duration: 5000,
                     });
@@ -129,7 +137,7 @@ export default function TourCalendar({ tourSlug, variantId, durationDays, onSele
         const year = date.getFullYear();
         const month = date.getMonth();
         const days = getDaysArray(year, month);
-        const monthName = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+        const monthName = date.toLocaleString(lng === 'vi' ? 'vi-VN' : 'en-US', { month: 'long', year: 'numeric' });
 
         return (
             <Box flex={1} minW="320px">
@@ -189,10 +197,10 @@ export default function TourCalendar({ tourSlug, variantId, durationDays, onSele
                             >
                                 {/* Day label for start/end */}
                                 {isStartDate && durationDays > 1 && (
-                                    <Text fontSize="2xs" color="whiteAlpha.800" position="absolute" top={-1}>Start</Text>
+                                    <Text fontSize="2xs" color="whiteAlpha.800" position="absolute" top={-1}>{t('start', { defaultValue: 'Start' })}</Text>
                                 )}
                                 {isEndDate && (
-                                    <Text fontSize="2xs" color="whiteAlpha.800" position="absolute" top={-1}>End</Text>
+                                    <Text fontSize="2xs" color="whiteAlpha.800" position="absolute" top={-1}>{t('end', { defaultValue: 'End' })}</Text>
                                 )}
                                 <Text fontSize="md" fontWeight={isPartOfSelection ? "bold" : "medium"}>{d.getDate()}</Text>
                             </Box>
@@ -228,7 +236,7 @@ export default function TourCalendar({ tourSlug, variantId, durationDays, onSele
                 >
                     <BsChevronLeft />
                 </Button>
-                <Text fontWeight="bold" color="gray.600">Select your travel date</Text>
+                <Text fontWeight="bold" color="gray.600">{t('select_travel_date', { defaultValue: 'Select your travel date' })}</Text>
                 <Button
                     aria-label="Next month"
                     onClick={nextMonth}
@@ -253,15 +261,15 @@ export default function TourCalendar({ tourSlug, variantId, durationDays, onSele
             <Flex mt={6} justify="center" align="center" gap={6} flexWrap="wrap">
                 <HStack>
                     <Box w={4} h={4} bg="blue.500" borderRadius="md" />
-                    <Text fontSize="sm" color="gray.600">Selected</Text>
+                    <Text fontSize="sm" color="gray.600">{t('selected', { defaultValue: 'Selected' })}</Text>
                 </HStack>
                 <HStack>
                     <Box w={4} h={4} bg="white" border="1px solid" borderColor="gray.200" borderRadius="md" />
-                    <Text fontSize="sm" color="gray.600">Available</Text>
+                    <Text fontSize="sm" color="gray.600">{t('available', { defaultValue: 'Available' })}</Text>
                 </HStack>
                 <HStack>
                     <Box w={4} h={4} bg="gray.100" borderRadius="md" />
-                    <Text fontSize="sm" color="gray.600">Unavailable</Text>
+                    <Text fontSize="sm" color="gray.600">{t('unavailable', { defaultValue: 'Unavailable' })}</Text>
                 </HStack>
             </Flex>
         </Box>

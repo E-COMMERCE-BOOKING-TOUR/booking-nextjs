@@ -55,14 +55,14 @@ export default function AdminNotificationCreatePage() {
         mutationFn: (data: Partial<INotification>) => adminNotificationApi.create(token!, data),
         onSuccess: (res) => {
             if (res.ok) {
-                toast.success('Tạo thông báo thành công');
+                toast.success('Notification created successfully');
                 router.push('/admin/notification');
             } else {
-                toast.error(res.error || 'Lỗi khi tạo thông báo');
+                toast.error(res.error || 'Error creating notification');
             }
         },
         onError: (error: any) => {
-            toast.error(error.message || 'Lỗi hệ thống');
+            toast.error(error.message || 'System error');
         }
     });
 
@@ -79,7 +79,7 @@ export default function AdminNotificationCreatePage() {
         if (values.target_group === TargetGroup.specific && values.user_ids_str) {
             payload.user_ids = values.user_ids_str.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
             if (payload.user_ids.length === 0) {
-                toast.error('Vui lòng nhập ID người dùng hợp lệ');
+                toast.error('Please enter valid user IDs');
                 return;
             }
         }
@@ -94,9 +94,9 @@ export default function AdminNotificationCreatePage() {
                     <Link href="/admin/notification"><ArrowLeft className="size-4" /></Link>
                 </Button>
                 <div>
-                    <h1 className="text-2xl font-black text-foreground">Tạo Thông Báo Mới</h1>
+                    <h1 className="text-2xl font-black text-foreground">Create New Notification</h1>
                     <p className="text-muted-foreground text-sm font-medium mt-1">
-                        Gửi thông báo mới đến các nhóm đối tượng trong hệ thống.
+                        Send new notifications to target groups in the system.
                     </p>
                 </div>
             </div>
@@ -108,29 +108,29 @@ export default function AdminNotificationCreatePage() {
                             <CardHeader className="border-b border-white/5">
                                 <CardTitle className="text-lg font-bold flex items-center gap-2">
                                     <Bell className="size-5 text-primary" />
-                                    Nội dung thông báo
+                                    Notification Content
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-6 space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="title">Tiêu đề</Label>
+                                    <Label htmlFor="title">Title</Label>
                                     <Input
                                         id="title"
-                                        placeholder="Nhập tiêu đề thông báo..."
+                                        placeholder="Enter notification title..."
                                         className="bg-white/5 border-white/10"
-                                        {...register('title', { required: 'Tiêu đề là bắt buộc' })}
+                                        {...register('title', { required: 'Title is required' })}
                                     />
                                     {errors.title && <span className="text-xs text-rose-500">{errors.title.message}</span>}
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="description">Nội dung</Label>
+                                    <Label htmlFor="description">Description</Label>
                                     <Textarea
                                         id="description"
-                                        placeholder="Nhập nội dung chi tiết..."
+                                        placeholder="Enter detailed description..."
                                         rows={5}
                                         className="bg-white/5 border-white/10"
-                                        {...register('description', { required: 'Nội dung là bắt buộc' })}
+                                        {...register('description', { required: 'Description is required' })}
                                     />
                                     {errors.description && <span className="text-xs text-rose-500">{errors.description.message}</span>}
                                 </div>
@@ -141,21 +141,21 @@ export default function AdminNotificationCreatePage() {
                             <CardHeader className="border-b border-white/5">
                                 <CardTitle className="text-lg font-bold flex items-center gap-2">
                                     <Send className="size-5 text-primary" />
-                                    Cài đặt gửi
+                                    Delivery Settings
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-6 space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <Label>Phân loại</Label>
+                                        <Label>Type</Label>
                                         <Controller
                                             name="type"
                                             control={control}
-                                            rules={{ required: 'Vui lòng chọn loại thông báo' }}
+                                            rules={{ required: 'Please select notification type' }}
                                             render={({ field }) => (
                                                 <Select onValueChange={field.onChange} value={field.value}>
                                                     <SelectTrigger className="bg-white/5 border-white/10">
-                                                        <SelectValue placeholder="Chọn loại thông báo" />
+                                                        <SelectValue placeholder="Select notification type" />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {Object.values(NotificationType).map((type) => (
@@ -169,21 +169,21 @@ export default function AdminNotificationCreatePage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label>Đối tượng nhận</Label>
+                                        <Label>Target Audience</Label>
                                         <Controller
                                             name="target_group"
                                             control={control}
-                                            rules={{ required: 'Vui lòng chọn đối tượng nhận' }}
+                                            rules={{ required: 'Please select target audience' }}
                                             render={({ field }) => (
                                                 <Select onValueChange={field.onChange} value={field.value}>
                                                     <SelectTrigger className="bg-white/5 border-white/10">
-                                                        <SelectValue placeholder="Chọn đối tượng" />
+                                                        <SelectValue placeholder="Select audience" />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value={TargetGroup.all}>Tất cả người dùng</SelectItem>
-                                                        <SelectItem value={TargetGroup.admin}>Chỉ Admin</SelectItem>
-                                                        <SelectItem value={TargetGroup.supplier}>Chỉ Nhà cung cấp (Supplier)</SelectItem>
-                                                        <SelectItem value={TargetGroup.specific}>Người dùng cụ thể</SelectItem>
+                                                        <SelectItem value={TargetGroup.all}>All Users</SelectItem>
+                                                        <SelectItem value={TargetGroup.admin}>Admin Only</SelectItem>
+                                                        <SelectItem value={TargetGroup.supplier}>Supplier Only</SelectItem>
+                                                        <SelectItem value={TargetGroup.specific}>Specific Users</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             )}
@@ -194,14 +194,14 @@ export default function AdminNotificationCreatePage() {
 
                                 {targetGroup === TargetGroup.specific && (
                                     <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                                        <Label htmlFor="user_ids_str">ID người dùng (cách nhau bởi dấu phẩy)</Label>
+                                        <Label htmlFor="user_ids_str">User IDs (comma separated)</Label>
                                         <Input
                                             id="user_ids_str"
-                                            placeholder="VD: 1, 2, 5, 10"
+                                            placeholder="e.g. 1, 2, 5, 10"
                                             className="bg-white/5 border-white/10"
                                             {...register('user_ids_str')}
                                         />
-                                        <p className="text-[10px] text-muted-foreground italic">Nhập danh sách ID các người dùng bạn muốn gửi thông báo này.</p>
+                                        <p className="text-[10px] text-muted-foreground italic">Enter list of user IDs you want to send this notification to.</p>
                                     </div>
                                 )}
 
@@ -217,7 +217,7 @@ export default function AdminNotificationCreatePage() {
                                             />
                                         )}
                                     />
-                                    <Label htmlFor="is_error" className="cursor-pointer">Đây là thông báo lỗi/cảnh báo quan trọng</Label>
+                                    <Label htmlFor="is_error" className="cursor-pointer">This is a critical error/warning notification</Label>
                                 </div>
                             </CardContent>
                         </Card>
@@ -226,7 +226,7 @@ export default function AdminNotificationCreatePage() {
                     <div className="space-y-6">
                         <Card className="border-white/5 bg-primary/5 border-primary/20 backdrop-blur-xl">
                             <CardHeader>
-                                <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80">Hành động</CardTitle>
+                                <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80">Actions</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 <Button
@@ -234,7 +234,7 @@ export default function AdminNotificationCreatePage() {
                                     className="w-full bg-primary hover:bg-primary/90 font-bold"
                                     disabled={createMutation.isPending}
                                 >
-                                    {createMutation.isPending ? 'Đang xử lý...' : 'Gửi thông báo'}
+                                    {createMutation.isPending ? 'Processing...' : 'Send Notification'}
                                 </Button>
                                 <Button
                                     type="button"
@@ -242,19 +242,19 @@ export default function AdminNotificationCreatePage() {
                                     className="w-full border-white/10"
                                     asChild
                                 >
-                                    <Link href="/admin/notification">Hủy bỏ</Link>
+                                    <Link href="/admin/notification">Cancel</Link>
                                 </Button>
                             </CardContent>
                         </Card>
 
                         <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
                             <CardHeader>
-                                <CardTitle className="text-sm font-bold">Lưu ý</CardTitle>
+                                <CardTitle className="text-sm font-bold">Note</CardTitle>
                             </CardHeader>
                             <CardContent className="text-xs text-muted-foreground space-y-2 leading-relaxed">
-                                <p>• Thông báo sẽ được hiển thị ngay lập tức sau khi gửi.</p>
-                                <p>• Nếu chọn <span className="text-primary font-bold">Tất cả người dùng</span>, mọi người trong hệ thống sẽ nhận được thông báo này.</p>
-                                <p>• Sử dụng thông báo lỗi cho các cập nhật quan trọng hoặc bảo trì hệ thống.</p>
+                                <p>• Notifications will be displayed immediately after delivery.</p>
+                                <p>• If selecting <span className="text-primary font-bold">All Users</span>, everyone in the system will receive this notification.</p>
+                                <p>• Use error notifications for critical updates or system maintenance.</p>
                             </CardContent>
                         </Card>
                     </div>

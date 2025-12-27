@@ -1,7 +1,13 @@
+"use client";
+
 import { Badge, Box, HStack, Image, Text, VStack } from "@chakra-ui/react";
 import Link from "next/link";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import { formatPriceValue } from '@/utils/currency';
+import { useTranslation } from "@/libs/i18n/client";
+import { cookieName, fallbackLng } from "@/libs/i18n/settings";
+import Cookies from "js-cookie";
+import { useSearchParams } from "next/navigation";
 
 interface TourItemProps {
   image: string;
@@ -17,16 +23,17 @@ interface TourItemProps {
   slug: string;
   currencySymbol?: string;
   currencyCode?: string;
+  lng?: string;
 }
 
-const TourRating = ({ rating, ratingText, reviews }: { rating: number; ratingText: string; reviews: number }) => (
+const TourRating = ({ rating, ratingText, reviews, t }: { rating: number; ratingText: string; reviews: number; t: any }) => (
   <HStack gap={2}>
     <Box bg="main" color="white" px={2} py={1} borderRadius="10px 10px 10px 0" fontWeight="bold" fontSize="lg">
       {parseFloat(rating.toString()).toFixed(1)}
     </Box>
     <VStack align="start" gap={0}>
       <Text fontSize="sm" fontWeight="medium" color="gray.900">{ratingText}</Text>
-      <Text fontSize="xs" color="gray.500">{reviews} reviews</Text>
+      <Text fontSize="xs" color="gray.500">{reviews} {t('reviews', { count: reviews, defaultValue: 'reviews' })}</Text>
     </VStack>
   </HStack>
 );
@@ -45,7 +52,12 @@ export default function TourItem({
   slug,
   currencySymbol = 'VND', // Default to VND if undefined
   currencyCode,
+  lng: propLng,
 }: TourItemProps) {
+  const searchParams = useSearchParams();
+  const lng = propLng || searchParams?.get('lng') || fallbackLng;
+  const { t } = useTranslation(lng as string);
+
   return (
     <VStack
       borderRadius="15px"
@@ -85,7 +97,7 @@ export default function TourItem({
           <Text fontSize="sm">{location}</Text>
         </HStack>
         <HStack justify="space-between" align="center">
-          <TourRating rating={rating} ratingText={ratingText} reviews={reviews} />
+          <TourRating rating={rating} ratingText={ratingText} reviews={reviews} t={t} />
           <Text fontSize="sm" color="gray.700" fontWeight="medium">{capacity}</Text>
         </HStack>
         <HStack justify="space-between" align="baseline" mt={1}>

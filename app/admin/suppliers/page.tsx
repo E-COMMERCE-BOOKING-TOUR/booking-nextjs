@@ -92,11 +92,11 @@ export default function AdminSupplierPage() {
     mutationFn: (data: ICreateSupplierPayload) => adminSupplierApi.create(data, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-suppliers'] });
-      toast.success('Thêm nhà cung cấp thành công');
+      toast.success('Supplier added successfully');
       handleCloseDialog();
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Lỗi khi thêm nhà cung cấp');
+      toast.error(error.message || 'Failed to add supplier');
     }
   });
 
@@ -105,11 +105,11 @@ export default function AdminSupplierPage() {
       adminSupplierApi.update(id, data, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-suppliers'] });
-      toast.success('Cập nhật thành công');
+      toast.success('Updated successfully');
       handleCloseDialog();
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Lỗi khi cập nhật');
+      toast.error(error.message || 'Failed to update');
     }
   });
 
@@ -117,11 +117,11 @@ export default function AdminSupplierPage() {
     mutationFn: (id: number) => adminSupplierApi.remove(id, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-suppliers'] });
-      toast.success('Xóa thành công');
+      toast.success('Deleted successfully');
       setDeleteId(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Lỗi khi xóa');
+      toast.error(error.message || 'Failed to delete');
     }
   });
 
@@ -176,12 +176,12 @@ export default function AdminSupplierPage() {
     <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Nhà Cung Cấp</h1>
-          <p className="text-muted-foreground mt-1 text-lg">Quản lý các đối tác và nhà cung cấp dịch vụ.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Suppliers</h1>
+          <p className="text-muted-foreground mt-1 text-lg">Manage partners and service providers.</p>
         </div>
         <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90">
           <Plus className="mr-2 size-4" />
-          Thêm nhà cung cấp
+          Add Supplier
         </Button>
       </div>
 
@@ -192,7 +192,7 @@ export default function AdminSupplierPage() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input
-                  placeholder="Tìm kiếm nhà cung cấp..."
+                  placeholder="Search suppliers..."
                   className="pl-10 bg-white/5 border-white/10"
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
@@ -200,7 +200,7 @@ export default function AdminSupplierPage() {
                 />
               </div>
               <Button onClick={handleSearch} variant="secondary">
-                Tìm kiếm
+                Search
               </Button>
             </div>
           </div>
@@ -211,11 +211,11 @@ export default function AdminSupplierPage() {
               <thead>
                 <tr className="bg-white/5 border-b border-white/5">
                   <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 w-[50px]">ID</th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Tên Nhà Cung Cấp</th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Liên Hệ</th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Trạng Thái</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Supplier Name</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Contact</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Status</th>
                   <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Tour/Users</th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Thao Tác</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -251,9 +251,9 @@ export default function AdminSupplierPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {supplier.status === 'active' ? (
-                          <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Hoạt động</Badge>
+                          <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Active</Badge>
                         ) : (
-                          <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20">Ngừng hoạt động</Badge>
+                          <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20">Inactive</Badge>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
@@ -271,16 +271,16 @@ export default function AdminSupplierPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem onClick={() => handleOpenEdit(supplier)} className="cursor-pointer">
-                              <Pencil className="mr-2 size-4" /> Sửa thông tin
+                              <Pencil className="mr-2 size-4" /> Edit Information
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               onClick={() => setDeleteId(supplier.id)}
                               className="text-rose-500 cursor-pointer"
                             >
-                              <Trash2 className="mr-2 size-4" /> Xóa
+                              <Trash2 className="mr-2 size-4" /> Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -290,7 +290,7 @@ export default function AdminSupplierPage() {
                 ) : (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground italic">
-                      Không tìm thấy nhà cung cấp nào.
+                      No suppliers found.
                     </td>
                   </tr>
                 )}
@@ -299,7 +299,7 @@ export default function AdminSupplierPage() {
           </div>
           <div className="p-4 border-t border-white/5 flex items-center justify-between">
             <span className="text-sm text-muted-foreground">
-              Hiển thị {filteredSuppliers.length} / {totalItems} kết quả
+              Showing {filteredSuppliers.length} / {totalItems} results
             </span>
             <CustomPagination
               currentPage={page}
@@ -314,52 +314,52 @@ export default function AdminSupplierPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>{editingSupplier ? 'Sửa nhà cung cấp' : 'Thêm nhà cung cấp mới'}</DialogTitle>
+            <DialogTitle>{editingSupplier ? 'Edit Supplier' : 'Add New Supplier'}</DialogTitle>
             <DialogDescription>
-              Thông tin nhà cung cấp dịch vụ tour và các dịch vụ khác.
+              Information about tour service providers and other services.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Tên nhà cung cấp</Label>
-              <Input {...register('name', { required: true })} placeholder="Công ty du lịch ABC" />
-              {errors.name && <span className="text-xs text-rose-500">Bắt buộc</span>}
+              <Label>Supplier Name</Label>
+              <Input {...register('name', { required: true })} placeholder="ABC Travel Company" />
+              {errors.name && <span className="text-xs text-rose-500">Required</span>}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Email</Label>
                 <Input {...register('email', { required: true, pattern: /^\S+@\S+$/i })} placeholder="contact@abc.com" />
-                {errors.email && <span className="text-xs text-rose-500">Email không hợp lệ</span>}
+                {errors.email && <span className="text-xs text-rose-500">Invalid Email</span>}
               </div>
               <div className="space-y-2">
-                <Label>Số điện thoại</Label>
+                <Label>Phone Number</Label>
                 <Input {...register('phone', { required: true })} placeholder="0123456789" />
-                {errors.phone && <span className="text-xs text-rose-500">Bắt buộc</span>}
+                {errors.phone && <span className="text-xs text-rose-500">Required</span>}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Trạng thái</Label>
+              <Label>Status</Label>
               <Select
                 onValueChange={(val) => setValue('status', val as any)}
                 defaultValue={editingSupplier?.status || 'active'}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Chọn trạng thái" />
+                  <SelectValue placeholder="Select Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Hoạt động</SelectItem>
-                  <SelectItem value="inactive">Ngừng hoạt động</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseDialog}>Hủy</Button>
+              <Button type="button" variant="outline" onClick={handleCloseDialog}>Cancel</Button>
               <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
                 {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="mr-2 size-4 animate-spin" />}
-                {editingSupplier ? 'Lưu thay đổi' : 'Tạo mới'}
+                {editingSupplier ? 'Save Changes' : 'Create'}
               </Button>
             </DialogFooter>
           </form>
@@ -370,18 +370,18 @@ export default function AdminSupplierPage() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận xóa?</AlertDialogTitle>
+            <AlertDialogTitle>Confirm Deletion?</AlertDialogTitle>
             <AlertDialogDescription>
-              Hành động này không thể hoàn tác. Dữ liệu liên quan đến nhà cung cấp này có thể bị ảnh hưởng.
+              This action cannot be undone. Data related to this supplier may be affected.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && deleteMutation.mutate(deleteId)}
               className="bg-rose-500 hover:bg-rose-600"
             >
-              Xóa ngay
+              Delete Immediately
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

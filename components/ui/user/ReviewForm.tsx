@@ -12,6 +12,7 @@ import {
     Image as ChakraImage,
 } from "@chakra-ui/react";
 import { FaStar, FaImage, FaTimes } from "react-icons/fa";
+import { useSearchParams } from "next/navigation";
 import { useState, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,22 +21,35 @@ import { toaster } from "@/components/chakra/toaster";
 import tourApi from "@/apis/tour";
 import { useSession } from "next-auth/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "@/libs/i18n/client";
+import { cookieName, fallbackLng } from "@/libs/i18n/settings";
+import Cookies from "js-cookie";
+import { useMemo } from "react";
 
-const schema = z.object({
-    rating: z.number().min(1, "Vui lòng chọn số sao").max(5),
-    title: z.string().min(2, "Tiêu đề phải có ít nhất 2 ký tự").max(255),
-    content: z.string().min(10, "Nội dung đánh giá phải có ít nhất 10 ký tự"),
+const createSchema = (t: any) => z.object({
+    rating: z.number().min(1, t("rating_required")).max(5),
+    title: z.string().min(2, t("title_min_length")).max(255),
+    content: z.string().min(10, t("content_min_length")),
 });
 
-type FormDataValues = z.infer<typeof schema>;
+type FormDataValues = {
+    rating: number;
+    title: string;
+    content: string;
+}
 
 interface ReviewFormProps {
     tourId: number;
     onSuccess?: () => void;
     onCancel?: () => void;
+    lng?: string;
 }
 
-export default function ReviewForm({ tourId, onSuccess, onCancel }: ReviewFormProps) {
+export default function ReviewForm({ tourId, onSuccess, onCancel, lng: propLng }: ReviewFormProps) {
+    const searchParams = useSearchParams();
+    const lng = propLng || searchParams?.get('lng') || fallbackLng;
+    const { t } = useTranslation(lng);
+    const schema = useMemo(() => createSchema(t), [t]);
     const { data: session } = useSession();
     const token = session?.user?.accessToken;
     const queryClient = useQueryClient();
@@ -62,8 +76,8 @@ export default function ReviewForm({ tourId, onSuccess, onCancel }: ReviewFormPr
         mutationFn: (formData: FormData) => tourApi.createReviewFormData(formData, token),
         onSuccess: () => {
             toaster.create({
-                title: "Thành công",
-                description: "Đánh giá của bạn đã được gửi và đang chờ duyệt!",
+                title: t("confirm"),
+                description: t("review_submit_success"),
                 type: "success",
             });
             reset();
@@ -75,8 +89,8 @@ export default function ReviewForm({ tourId, onSuccess, onCancel }: ReviewFormPr
         },
         onError: (error: any) => {
             toaster.create({
-                title: "Lỗi",
-                description: error?.message || "Không thể gửi đánh giá",
+                title: "Error",
+                description: error?.message || t("review_submit_error"),
                 type: "error",
             });
         },
@@ -87,8 +101,8 @@ export default function ReviewForm({ tourId, onSuccess, onCancel }: ReviewFormPr
 
         if (selectedFiles.length + files.length > 2) {
             toaster.create({
-                title: "Giới hạn ảnh",
-                description: "Bạn chỉ có thể chọn tối đa 2 ảnh cho mỗi đánh giá.",
+                title: t("image_limit_title"),
+                description: t("image_limit_reached"),
                 type: "warning",
             });
             return;
@@ -97,8 +111,8 @@ export default function ReviewForm({ tourId, onSuccess, onCancel }: ReviewFormPr
         const validFiles = files.filter(file => {
             if (file.size > 2 * 1024 * 1024) {
                 toaster.create({
-                    title: "Dung lượng ảnh quá lớn",
-                    description: `${file.name} vượt quá 2MB.`,
+                    title: t("image_too_large_title"),
+                    description: t("image_too_large_desc", { name: file.name }),
                     type: "warning",
                 });
                 return false;
@@ -136,10 +150,10 @@ export default function ReviewForm({ tourId, onSuccess, onCancel }: ReviewFormPr
     return (
         <Box p={6} borderWidth="1px" borderRadius="lg" bg="white" shadow="sm">
             <VStack gap={5} align="stretch" as="form" onSubmit={handleSubmit(onSubmit)}>
-                <Heading size="md">Viết đánh giá của bạn</Heading>
+                <Heading size="md">{t("review_write_title")}</Heading>
 
                 <Box>
-                    <Text mb={2} fontWeight="bold">Số sao đánh giá <Text as="span" color="red.500">*</Text></Text>
+                    <Text mb={2} fontWeight="bold">{t("rating_label")} <Text as="span" color="red.500">*</Text></Text>
                     <Controller
                         name="rating"
                         control={control}
@@ -162,18 +176,18 @@ export default function ReviewForm({ tourId, onSuccess, onCancel }: ReviewFormPr
                 </Box>
 
                 <Box>
-                    <Text mb={2} fontWeight="bold">Tiêu đề <Text as="span" color="red.500">*</Text></Text>
+                    <Text mb={2} fontWeight="bold">{t("title_label")} <Text as="span" color="red.500">*</Text></Text>
                     <Input
-                        placeholder="Tóm tắt trải nghiệm của bạn (ví dụ: Chuyến đi tuyệt vời!)"
+                        placeholder={t("title_placeholder")}
                         {...register("title")}
                     />
                     {errors.title && <Text color="red.500" fontSize="xs" mt={1}>{errors.title.message}</Text>}
                 </Box>
 
                 <Box>
-                    <Text mb={2} fontWeight="bold">Nội dung đánh giá <Text as="span" color="red.500">*</Text></Text>
+                    <Text mb={2} fontWeight="bold">{t("content_label")} <Text as="span" color="red.500">*</Text></Text>
                     <Textarea
-                        placeholder="Chia sẻ thêm về hướng dẫn viên, phương tiện, địa điểm..."
+                        placeholder={t("content_placeholder")}
                         rows={4}
                         {...register("content")}
                     />
@@ -181,7 +195,7 @@ export default function ReviewForm({ tourId, onSuccess, onCancel }: ReviewFormPr
                 </Box>
 
                 <Box>
-                    <Text mb={3} fontWeight="bold">Hình ảnh đính kèm (Tối đa 2 ảnh, mỗi ảnh &lt; 2MB)</Text>
+                    <Text mb={3} fontWeight="bold">{t("images_label")}</Text>
                     <HStack gap={4} wrap="wrap">
                         {previews.map((preview, index) => (
                             <Box key={index} position="relative" w="120px" h="90px" borderRadius="md" overflow="hidden" border="1px solid" borderColor="gray.200">
@@ -221,7 +235,7 @@ export default function ReviewForm({ tourId, onSuccess, onCancel }: ReviewFormPr
                                 transition="all 0.2s"
                             >
                                 <FaImage size={24} />
-                                <Text fontSize="xs" fontWeight="bold">Thêm ảnh</Text>
+                                <Text fontSize="xs" fontWeight="bold">{t("add_image")}</Text>
                                 <input
                                     ref={fileInputRef}
                                     type="file"
@@ -246,11 +260,11 @@ export default function ReviewForm({ tourId, onSuccess, onCancel }: ReviewFormPr
                         fontWeight="bold"
                         _hover={{ bg: "blue.700" }}
                     >
-                        Gửi đánh giá
+                        {t("submit_review")}
                     </Button>
                     {onCancel && (
                         <Button variant="outline" borderColor="gray.200" onClick={onCancel} h={11} px={6}>
-                            Hủy bỏ
+                            {t("cancel")}
                         </Button>
                     )}
                 </HStack>

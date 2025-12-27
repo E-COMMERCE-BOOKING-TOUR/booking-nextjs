@@ -121,12 +121,12 @@ export default function AdminDivisionPage() {
         mutationFn: (data: CreateDivisionDTO) => adminDivisionApi.create(data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-divisions'] });
-            toast.success('Tạo division thành công');
+            toast.success('Division created successfully');
             setIsCreateOpen(false);
             reset();
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Không thể tạo division');
+            toast.error(error.message || 'Failed to create division');
         }
     });
 
@@ -135,12 +135,12 @@ export default function AdminDivisionPage() {
             adminDivisionApi.update(id, data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-divisions'] });
-            toast.success('Cập nhật division thành công');
+            toast.success('Division updated successfully');
             setEditDivision(null);
             reset();
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Không thể cập nhật division');
+            toast.error(error.message || 'Failed to update division');
         }
     });
 
@@ -148,11 +148,11 @@ export default function AdminDivisionPage() {
         mutationFn: (id: number) => adminDivisionApi.remove(id, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-divisions'] });
-            toast.success('Xóa division thành công');
+            toast.success('Division deleted successfully');
             setDeleteId(null);
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Không thể xóa division');
+            toast.error(error.message || 'Failed to delete division');
         }
     });
 
@@ -176,9 +176,9 @@ export default function AdminDivisionPage() {
             const result = await adminDivisionApi.uploadImage(editDivision.id, file, token);
             setImagePreview(result.image_url);
             queryClient.invalidateQueries({ queryKey: ['admin-divisions'] });
-            toast.success('Upload hình ảnh thành công');
+            toast.success('Image uploaded successfully');
         } catch {
-            toast.error('Không thể upload hình ảnh');
+            toast.error('Failed to upload image');
         } finally {
             setUploadingImage(false);
         }
@@ -233,12 +233,12 @@ export default function AdminDivisionPage() {
         <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Quản Lý Division</h1>
-                    <p className="text-muted-foreground mt-1 text-lg">Quản lý các tỉnh/thành phố theo quốc gia.</p>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Division Management</h1>
+                    <p className="text-muted-foreground mt-1 text-lg">Manage provinces/cities by country.</p>
                 </div>
                 <Button onClick={openCreate} className="bg-primary hover:bg-primary/90">
                     <Plus className="mr-2 size-4" />
-                    Thêm Division
+                    Add Division
                 </Button>
             </div>
 
@@ -248,7 +248,7 @@ export default function AdminDivisionPage() {
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                             <Input
-                                placeholder="Tìm kiếm theo tên, tên local hoặc mã..."
+                                placeholder="Search by name, local name or code..."
                                 className="pl-10 bg-white/5 border-white/10"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -259,10 +259,10 @@ export default function AdminDivisionPage() {
                             onValueChange={(val) => setSelectedCountryId(val === 'all' ? null : parseInt(val))}
                         >
                             <SelectTrigger className="w-[200px] bg-white/5 border-white/10">
-                                <SelectValue placeholder="Chọn quốc gia" />
+                                <SelectValue placeholder="Select Country" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Tất cả quốc gia</SelectItem>
+                                <SelectItem value="all">All Countries</SelectItem>
                                 {countries.map((country: ICountry) => (
                                     <SelectItem key={country.id} value={country.id.toString()}>
                                         {country.name}
@@ -278,13 +278,13 @@ export default function AdminDivisionPage() {
                             <thead>
                                 <tr className="bg-white/5 border-b border-white/5">
                                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">ID</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Tên</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Tên Local</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Name</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Local Name</th>
                                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Level</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Mã</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Quốc Gia</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Code</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Country</th>
                                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Parent</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Thao Tác</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -328,10 +328,10 @@ export default function AdminDivisionPage() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-48">
-                                                    <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
+                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                     <DropdownMenuItem onClick={() => openEdit(division)} className="cursor-pointer">
                                                         <Edit className="mr-2 size-4" />
-                                                        Chỉnh sửa
+                                                        Edit
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem
@@ -339,7 +339,7 @@ export default function AdminDivisionPage() {
                                                         className="text-rose-500 cursor-pointer"
                                                     >
                                                         <Trash2 className="mr-2 size-4" />
-                                                        Xóa
+                                                        Delete
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
@@ -349,7 +349,7 @@ export default function AdminDivisionPage() {
                                 {!isLoading && filteredDivisions.length === 0 && (
                                     <tr>
                                         <td colSpan={8} className="px-6 py-12 text-center text-muted-foreground italic">
-                                            Không có division nào được tìm thấy.
+                                            No divisions found.
                                         </td>
                                     </tr>
                                 )}
@@ -363,19 +363,19 @@ export default function AdminDivisionPage() {
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
-                        <DialogTitle>Thêm Division Mới</DialogTitle>
+                        <DialogTitle>Add New Division</DialogTitle>
                         <DialogDescription>
-                            Điền thông tin để tạo division mới.
+                            Enter details to create a new division.
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit(onSubmitCreate)}>
                         <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="name" className="text-right">Tên</Label>
+                                <Label htmlFor="name" className="text-right">Name</Label>
                                 <Input id="name" className="col-span-3" {...register('name', { required: true })} />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="name_local" className="text-right">Tên Local</Label>
+                                <Label htmlFor="name_local" className="text-right">Local Name</Label>
                                 <Input id="name_local" className="col-span-3" {...register('name_local', { required: true })} />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
@@ -383,17 +383,17 @@ export default function AdminDivisionPage() {
                                 <Input id="level" type="number" className="col-span-3" {...register('level', { valueAsNumber: true })} />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="code" className="text-right">Mã</Label>
+                                <Label htmlFor="code" className="text-right">Code</Label>
                                 <Input id="code" className="col-span-3" {...register('code')} />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label className="text-right">Quốc gia</Label>
+                                <Label className="text-right">Country</Label>
                                 <Select
                                     value={formCountryId?.toString() || ''}
                                     onValueChange={(val) => setValue('country_id', parseInt(val))}
                                 >
                                     <SelectTrigger className="col-span-3">
-                                        <SelectValue placeholder="Chọn quốc gia" />
+                                        <SelectValue placeholder="Select Country" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {countries.map((country: ICountry) => (
@@ -411,10 +411,10 @@ export default function AdminDivisionPage() {
                                     onValueChange={(val) => setValue('parent_id', val === 'none' ? null : parseInt(val))}
                                 >
                                     <SelectTrigger className="col-span-3">
-                                        <SelectValue placeholder="Không có" />
+                                        <SelectValue placeholder="None" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="none">Không có</SelectItem>
+                                        <SelectItem value="none">None</SelectItem>
                                         {parentDivisions.map((d: IDivision) => (
                                             <SelectItem key={d.id} value={d.id.toString()}>
                                                 {d.name}
@@ -426,10 +426,10 @@ export default function AdminDivisionPage() {
                         </div>
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
-                                Hủy
+                                Cancel
                             </Button>
                             <Button type="submit" disabled={createMutation.isPending}>
-                                {createMutation.isPending ? 'Đang tạo...' : 'Tạo'}
+                                {createMutation.isPending ? 'Creating...' : 'Create'}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -440,19 +440,19 @@ export default function AdminDivisionPage() {
             <Dialog open={!!editDivision} onOpenChange={() => setEditDivision(null)}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
-                        <DialogTitle>Chỉnh Sửa Division</DialogTitle>
+                        <DialogTitle>Edit Division</DialogTitle>
                         <DialogDescription>
-                            Cập nhật thông tin division.
+                            Update division details.
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit(onSubmitEdit)}>
                         <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="edit-name" className="text-right">Tên</Label>
+                                <Label htmlFor="edit-name" className="text-right">Name</Label>
                                 <Input id="edit-name" className="col-span-3" {...register('name', { required: true })} />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="edit-name_local" className="text-right">Tên Local</Label>
+                                <Label htmlFor="edit-name_local" className="text-right">Local Name</Label>
                                 <Input id="edit-name_local" className="col-span-3" {...register('name_local', { required: true })} />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
@@ -460,17 +460,17 @@ export default function AdminDivisionPage() {
                                 <Input id="edit-level" type="number" className="col-span-3" {...register('level', { valueAsNumber: true })} />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="edit-code" className="text-right">Mã</Label>
+                                <Label htmlFor="edit-code" className="text-right">Code</Label>
                                 <Input id="edit-code" className="col-span-3" {...register('code')} />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label className="text-right">Quốc gia</Label>
+                                <Label className="text-right">Country</Label>
                                 <Select
                                     value={formCountryId?.toString() || ''}
                                     onValueChange={(val) => setValue('country_id', parseInt(val))}
                                 >
                                     <SelectTrigger className="col-span-3">
-                                        <SelectValue placeholder="Chọn quốc gia" />
+                                        <SelectValue placeholder="Select Country" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {countries.map((country: ICountry) => (
@@ -488,10 +488,10 @@ export default function AdminDivisionPage() {
                                     onValueChange={(val) => setValue('parent_id', val === 'none' ? null : parseInt(val))}
                                 >
                                     <SelectTrigger className="col-span-3">
-                                        <SelectValue placeholder="Không có" />
+                                        <SelectValue placeholder="None" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="none">Không có</SelectItem>
+                                        <SelectItem value="none">None</SelectItem>
                                         {parentDivisions.filter((d: IDivision) => d.id !== editDivision?.id).map((d: IDivision) => (
                                             <SelectItem key={d.id} value={d.id.toString()}>
                                                 {d.name}
@@ -502,7 +502,7 @@ export default function AdminDivisionPage() {
                             </div>
                             {/* Image Upload Section */}
                             <div className="grid grid-cols-4 items-start gap-4">
-                                <Label className="text-right pt-2">Hình ảnh</Label>
+                                <Label className="text-right pt-2">Image</Label>
                                 <div className="col-span-3 space-y-3">
                                     {imagePreview && (
                                         <div className="relative w-full h-32 rounded-lg overflow-hidden border">
@@ -530,17 +530,17 @@ export default function AdminDivisionPage() {
                                         className="w-full"
                                     >
                                         <ImageUp className="mr-2 size-4" />
-                                        {uploadingImage ? 'Đang upload...' : 'Upload hình ảnh'}
+                                        {uploadingImage ? 'Uploading...' : 'Upload Image'}
                                     </Button>
                                 </div>
                             </div>
                         </div>
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setEditDivision(null)}>
-                                Hủy
+                                Cancel
                             </Button>
                             <Button type="submit" disabled={updateMutation.isPending}>
-                                {updateMutation.isPending ? 'Đang lưu...' : 'Lưu'}
+                                {updateMutation.isPending ? 'Saving...' : 'Save'}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -551,18 +551,18 @@ export default function AdminDivisionPage() {
             <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Xác nhận xóa?</AlertDialogTitle>
+                        <AlertDialogTitle>Confirm Deletion?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Hành động này không thể hoàn tác. Division sẽ bị xóa vĩnh viễn khỏi hệ thống.
+                            This action cannot be undone. The division will be permanently deleted from the system.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => deleteId && deleteMutation.mutate(deleteId)}
                             className="bg-rose-500 hover:bg-rose-600"
                         >
-                            Xóa ngay
+                            Delete Immediately
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

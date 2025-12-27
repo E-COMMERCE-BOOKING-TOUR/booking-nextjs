@@ -79,12 +79,12 @@ export default function AdminCurrencyPage() {
         mutationFn: (data: CreateCurrencyDTO) => adminCurrencyApi.create(data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-currencies'] });
-            toast.success('Tạo currency thành công');
+            toast.success('Currency created successfully');
             setIsCreateOpen(false);
             reset();
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Không thể tạo currency');
+            toast.error(error.message || 'Failed to create currency');
         }
     });
 
@@ -93,12 +93,12 @@ export default function AdminCurrencyPage() {
             adminCurrencyApi.update(id, data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-currencies'] });
-            toast.success('Cập nhật currency thành công');
+            toast.success('Currency updated successfully');
             setEditCurrency(null);
             reset();
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Không thể cập nhật currency');
+            toast.error(error.message || 'Failed to update currency');
         }
     });
 
@@ -106,11 +106,11 @@ export default function AdminCurrencyPage() {
         mutationFn: (id: number) => adminCurrencyApi.remove(id, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-currencies'] });
-            toast.success('Xóa currency thành công');
+            toast.success('Currency deleted successfully');
             setDeleteId(null);
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Không thể xóa currency');
+            toast.error(error.message || 'Failed to delete currency');
         }
     });
 
@@ -156,12 +156,12 @@ export default function AdminCurrencyPage() {
         <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Quản Lý Tiền Tệ</h1>
-                    <p className="text-muted-foreground mt-1 text-lg">Quản lý các loại tiền tệ trong hệ thống.</p>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Currency Management</h1>
+                    <p className="text-muted-foreground mt-1 text-lg">Manage system currencies.</p>
                 </div>
                 <Button onClick={openCreate} className="bg-primary hover:bg-primary/90">
                     <Plus className="mr-2 size-4" />
-                    Thêm Tiền Tệ
+                    Add Currency
                 </Button>
             </div>
 
@@ -171,7 +171,7 @@ export default function AdminCurrencyPage() {
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                             <Input
-                                placeholder="Tìm kiếm theo tên hoặc ký hiệu..."
+                                placeholder="Search by name or symbol..."
                                 className="pl-10 bg-white/5 border-white/10"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -185,9 +185,9 @@ export default function AdminCurrencyPage() {
                             <thead>
                                 <tr className="bg-white/5 border-b border-white/5">
                                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">ID</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Tên</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Ký Hiệu</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Thao Tác</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Name</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Symbol</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -219,10 +219,10 @@ export default function AdminCurrencyPage() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-48">
-                                                    <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
+                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                     <DropdownMenuItem onClick={() => openEdit(currency)} className="cursor-pointer">
                                                         <Edit className="mr-2 size-4" />
-                                                        Chỉnh sửa
+                                                        Edit
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem
@@ -230,7 +230,7 @@ export default function AdminCurrencyPage() {
                                                         className="text-rose-500 cursor-pointer"
                                                     >
                                                         <Trash2 className="mr-2 size-4" />
-                                                        Xóa
+                                                        Delete
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
@@ -240,7 +240,7 @@ export default function AdminCurrencyPage() {
                                 {!isLoading && filteredCurrencies.length === 0 && (
                                     <tr>
                                         <td colSpan={4} className="px-6 py-12 text-center text-muted-foreground italic">
-                                            Không có tiền tệ nào được tìm thấy.
+                                            No currencies found.
                                         </td>
                                     </tr>
                                 )}
@@ -254,38 +254,38 @@ export default function AdminCurrencyPage() {
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                 <DialogContent className="sm:max-w-[400px]">
                     <DialogHeader>
-                        <DialogTitle>Thêm Tiền Tệ Mới</DialogTitle>
+                        <DialogTitle>Add New Currency</DialogTitle>
                         <DialogDescription>
-                            Điền thông tin để tạo tiền tệ mới.
+                            Enter details to create a new currency.
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit(onSubmitCreate)}>
                         <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="name" className="text-right">Tên</Label>
+                                <Label htmlFor="name" className="text-right">Name</Label>
                                 <Input
                                     id="name"
                                     className="col-span-3"
-                                    placeholder="VD: Việt Nam Đồng"
+                                    placeholder="e.g. Vietnam Dong"
                                     {...register('name', { required: true })}
                                 />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="symbol" className="text-right">Ký hiệu</Label>
+                                <Label htmlFor="symbol" className="text-right">Symbol</Label>
                                 <Input
                                     id="symbol"
                                     className="col-span-3"
-                                    placeholder="VD: ₫"
+                                    placeholder="e.g. ₫"
                                     {...register('symbol', { required: true })}
                                 />
                             </div>
                         </div>
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
-                                Hủy
+                                Cancel
                             </Button>
                             <Button type="submit" disabled={createMutation.isPending}>
-                                {createMutation.isPending ? 'Đang tạo...' : 'Tạo'}
+                                {createMutation.isPending ? 'Creating...' : 'Create'}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -296,15 +296,15 @@ export default function AdminCurrencyPage() {
             <Dialog open={!!editCurrency} onOpenChange={() => setEditCurrency(null)}>
                 <DialogContent className="sm:max-w-[400px]">
                     <DialogHeader>
-                        <DialogTitle>Chỉnh Sửa Tiền Tệ</DialogTitle>
+                        <DialogTitle>Edit Currency</DialogTitle>
                         <DialogDescription>
-                            Cập nhật thông tin tiền tệ.
+                            Update currency details.
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit(onSubmitEdit)}>
                         <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="edit-name" className="text-right">Tên</Label>
+                                <Label htmlFor="edit-name" className="text-right">Name</Label>
                                 <Input
                                     id="edit-name"
                                     className="col-span-3"
@@ -312,7 +312,7 @@ export default function AdminCurrencyPage() {
                                 />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="edit-symbol" className="text-right">Ký hiệu</Label>
+                                <Label htmlFor="edit-symbol" className="text-right">Symbol</Label>
                                 <Input
                                     id="edit-symbol"
                                     className="col-span-3"
@@ -322,10 +322,10 @@ export default function AdminCurrencyPage() {
                         </div>
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setEditCurrency(null)}>
-                                Hủy
+                                Cancel
                             </Button>
                             <Button type="submit" disabled={updateMutation.isPending}>
-                                {updateMutation.isPending ? 'Đang lưu...' : 'Lưu'}
+                                {updateMutation.isPending ? 'Saving...' : 'Save'}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -336,18 +336,18 @@ export default function AdminCurrencyPage() {
             <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Xác nhận xóa?</AlertDialogTitle>
+                        <AlertDialogTitle>Confirm Deletion?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Hành động này không thể hoàn tác. Tiền tệ sẽ bị xóa vĩnh viễn khỏi hệ thống.
+                            This action cannot be undone. The currency will be permanently deleted from the system.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => deleteId && deleteMutation.mutate(deleteId)}
                             className="bg-rose-500 hover:bg-rose-600"
                         >
-                            Xóa ngay
+                            Delete Immediately
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

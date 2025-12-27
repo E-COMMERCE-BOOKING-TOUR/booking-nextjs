@@ -10,35 +10,55 @@ import { IBookingDetail } from "@/types/booking";
 import { BookingSummaryCard } from "@/components/ui/user/BookingSummaryCard";
 import { useBookingExpiry } from "@/hooks/useBookingExpiry";
 import { BookingExpiryManager } from "@/components/ui/user/BookingExpiryManager";
+import { useTranslation } from "@/libs/i18n/client";
+import { cookieName, fallbackLng } from "@/libs/i18n/settings";
+import Cookies from "js-cookie";
+import { useSearchParams } from "next/navigation";
 
 interface Props {
     initialBooking: IBookingDetail;
+    lng?: string;
 }
 
-const steps = [
-    { label: "Input information", description: "Please provide your contact and traveler information" },
-    { label: "Payment method", description: "Select your payment method" },
-    { label: "Confirmation", description: "Review your booking information" },
-    { label: "Complete", description: "Your booking is complete" },
-];
-
-export default function CheckoutConfirmClient({ initialBooking }: Props) {
+export default function CheckoutConfirmClient({ initialBooking, lng: propLng }: Props) {
     const router = useRouter();
     const { data: session } = useSession();
+    const searchParams = useSearchParams();
+    const lng = propLng || searchParams?.get('lng') || fallbackLng;
+    const { t } = useTranslation(lng as string);
+
+    const steps = [
+        {
+            label: t('checkout_step_info', { defaultValue: "Input information" }),
+            description: t('checkout_step_info_desc', { defaultValue: "Please provide your contact and traveler information" })
+        },
+        {
+            label: t('checkout_step_payment', { defaultValue: "Payment method" }),
+            description: t('checkout_step_payment_desc', { defaultValue: "Select your payment method" })
+        },
+        {
+            label: t('checkout_step_confirm', { defaultValue: "Confirmation" }),
+            description: t('checkout_step_confirm_desc', { defaultValue: "Review your booking information" })
+        },
+        {
+            label: t('checkout_step_complete', { defaultValue: "Complete" }),
+            description: t('checkout_step_complete_desc', { defaultValue: "Your booking is complete" })
+        },
+    ];
     const { isExpired, handleExpire } = useBookingExpiry(initialBooking.hold_expires_at);
 
     const confirmMutation = useMutation({
         mutationFn: () => bookingApi.confirmCurrent(session?.user?.accessToken),
         onSuccess: () => {
             toaster.create({
-                title: "Booking confirmed successfully!",
+                title: t('booking_confirmed_success', { defaultValue: "Booking confirmed successfully!" }),
                 type: "success",
             });
             router.push("/checkout/complete");
         },
         onError: (error: Error) => {
             toaster.create({
-                title: "Failed to confirm booking",
+                title: t('failed_confirm_booking', { defaultValue: "Failed to confirm booking" }),
                 description: error.message,
                 type: "error",
             });
@@ -48,8 +68,8 @@ export default function CheckoutConfirmClient({ initialBooking }: Props) {
     const handleConfirm = () => {
         if (isExpired) {
             toaster.create({
-                title: "Booking expired",
-                description: "Your booking hold has expired. Please start a new booking.",
+                title: t('booking_expired_title', { defaultValue: "Booking expired" }),
+                description: t('booking_expired_desc', { defaultValue: "Your booking hold has expired. Please start a new booking." }),
                 type: "error",
             });
             return;
@@ -59,7 +79,7 @@ export default function CheckoutConfirmClient({ initialBooking }: Props) {
 
     return (
         <Container maxW="xl" position="relative" py={10}>
-            <BookingExpiryManager isExpired={isExpired} onExpire={handleExpire} expiresAt={initialBooking.hold_expires_at} />
+            <BookingExpiryManager isExpired={isExpired} onExpire={handleExpire} expiresAt={initialBooking.hold_expires_at} lng={lng as string} />
             <Steps.Root defaultStep={2} count={steps.length} colorPalette="blue" my="2rem" paddingX="3rem" width="100%">
                 <Steps.List>
                     {steps.map((step, index) => (
@@ -76,47 +96,47 @@ export default function CheckoutConfirmClient({ initialBooking }: Props) {
                 <Stack gridColumn={{ base: "1 / -1", md: "1 / 9" }} boxShadow="sm" rounded="2xl" marginBottom="2rem" bg="white">
                     <Stack gap={6}>
                         <Box p={5} borderRadius="15px">
-                            <Heading as="h2" fontSize="2xl" fontWeight="bold" mb={4}>Contact Information</Heading>
+                            <Heading as="h2" fontSize="2xl" fontWeight="bold" mb={4}>{t('contact_info_title', { defaultValue: "Contact Information" })}</Heading>
                             <DataList.Root>
                                 <DataList.Item>
-                                    <DataList.ItemLabel>Name</DataList.ItemLabel>
+                                    <DataList.ItemLabel>{t('full_name_label', { defaultValue: "Name" })}</DataList.ItemLabel>
                                     <DataList.ItemValue>{initialBooking.contact_name}</DataList.ItemValue>
                                 </DataList.Item>
                                 <DataList.Item>
-                                    <DataList.ItemLabel>Email</DataList.ItemLabel>
+                                    <DataList.ItemLabel>{t('email_label', { defaultValue: "Email" })}</DataList.ItemLabel>
                                     <DataList.ItemValue>{initialBooking.contact_email}</DataList.ItemValue>
                                 </DataList.Item>
                                 <DataList.Item>
-                                    <DataList.ItemLabel>Phone</DataList.ItemLabel>
+                                    <DataList.ItemLabel>{t('phone_label', { defaultValue: "Phone" })}</DataList.ItemLabel>
                                     <DataList.ItemValue>{initialBooking.contact_phone}</DataList.ItemValue>
                                 </DataList.Item>
                             </DataList.Root>
                         </Box>
 
                         <Box p={5} pt={0} borderRadius="15px" borderTopWidth="1px" borderColor="gray.100">
-                            <Heading as="h2" fontSize="2xl" fontWeight="bold" mb={4} mt={4}>Passenger Information</Heading>
+                            <Heading as="h2" fontSize="2xl" fontWeight="bold" mb={4} mt={4}>{t('passenger_info_title', { defaultValue: "Passenger Information" })}</Heading>
                             <Stack gap={4}>
                                 {initialBooking.passengers?.map((p, idx) => (
                                     <Box key={idx} p={3} bg="gray.50" borderRadius="md">
                                         <Text fontWeight="bold">{p.full_name} ({p.pax_type_name})</Text>
-                                        {p.phone_number && <Text fontSize="sm" color="fg.muted">Phone: {p.phone_number}</Text>}
+                                        {p.phone_number && <Text fontSize="sm" color="fg.muted">{t('phone_label', { defaultValue: 'Phone' })}: {p.phone_number}</Text>}
                                     </Box>
                                 ))}
                             </Stack>
                         </Box>
 
                         <Box p={5} pt={0} borderRadius="15px" borderTopWidth="1px" borderColor="gray.100">
-                            <Heading as="h2" fontSize="2xl" fontWeight="bold" mb={4} mt={4}>Payment Information</Heading>
+                            <Heading as="h2" fontSize="2xl" fontWeight="bold" mb={4} mt={4}>{t('payment_info_title', { defaultValue: "Payment Information" })}</Heading>
                             <DataList.Root>
                                 <DataList.Item>
-                                    <DataList.ItemLabel>Payment Method</DataList.ItemLabel>
+                                    <DataList.ItemLabel>{t('payment_method_label', { defaultValue: "Payment Method" })}</DataList.ItemLabel>
                                     <DataList.ItemValue>
-                                        {initialBooking.booking_payment?.payment_method_name || initialBooking.payment_method || "Not selected"}
+                                        {initialBooking.booking_payment?.payment_method_name || initialBooking.payment_method || t('not_selected', { defaultValue: "Not selected" })}
                                     </DataList.ItemValue>
                                 </DataList.Item>
                                 {initialBooking.payment_information?.last4 && (
                                     <DataList.Item>
-                                        <DataList.ItemLabel>Card</DataList.ItemLabel>
+                                        <DataList.ItemLabel>{t('card_label', { defaultValue: "Card" })}</DataList.ItemLabel>
                                         <DataList.ItemValue>
                                             {initialBooking.payment_information.brand} **** {initialBooking.payment_information.last4}
                                             {initialBooking.payment_information.expiry_date && ` (Exp: ${initialBooking.payment_information.expiry_date})`}
@@ -124,7 +144,7 @@ export default function CheckoutConfirmClient({ initialBooking }: Props) {
                                     </DataList.Item>
                                 )}
                                 <DataList.Item>
-                                    <DataList.ItemLabel>Payment Status</DataList.ItemLabel>
+                                    <DataList.ItemLabel>{t('payment_status_label', { defaultValue: "Payment Status" })}</DataList.ItemLabel>
                                     <DataList.ItemValue textTransform="capitalize">
                                         {initialBooking.payment_status}
                                     </DataList.ItemValue>
@@ -133,7 +153,7 @@ export default function CheckoutConfirmClient({ initialBooking }: Props) {
                             {initialBooking.payment_information?.last4 && (
                                 <Box mt={3} p={3} bg="orange.50" borderRadius="md">
                                     <Text fontSize="sm" color="orange.700">
-                                        Your card will be charged upon confirmation.
+                                        {t('card_charge_notice', { defaultValue: "Your card will be charged upon confirmation." })}
                                     </Text>
                                 </Box>
                             )}
@@ -145,21 +165,21 @@ export default function CheckoutConfirmClient({ initialBooking }: Props) {
                                 size="lg"
                                 onClick={() => router.push("/checkout/payment")}
                             >
-                                Back to Payment
+                                {t('back_to_payment', { defaultValue: "Back to Payment" })}
                             </Button>
                             <Button
                                 size="lg"
                                 onClick={handleConfirm}
                                 loading={confirmMutation.isPending}
                             >
-                                Confirm Booking
+                                {t('confirm_booking', { defaultValue: "Confirm Booking" })}
                             </Button>
                         </Flex>
                     </Stack>
                 </Stack>
 
                 <Stack gridColumn={{ base: "1 / -1", md: "9 / -1" }}>
-                    <BookingSummaryCard booking={initialBooking} />
+                    <BookingSummaryCard booking={initialBooking} lng={lng as string} />
                 </Stack>
             </SimpleGrid>
         </Container>

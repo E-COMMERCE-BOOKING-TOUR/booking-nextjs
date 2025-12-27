@@ -51,11 +51,11 @@ export default function StaticPagesListPage() {
         mutationFn: (id: number) => adminStaticPagesApi.remove(id, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-static-pages'] });
-            toast.success('Xóa trang tĩnh thành công');
+            toast.success('Static page deleted successfully');
             setDeleteId(null);
         },
         onError: (error: any) => {
-            toast.error(error.message || 'Không thể xóa trang tĩnh');
+            toast.error(error.message || 'Failed to delete static page');
         }
     });
 
@@ -71,7 +71,7 @@ export default function StaticPagesListPage() {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] text-destructive">
                 <AlertCircle className="size-12 mb-4" />
-                <p className="text-lg font-semibold">Đã xảy ra lỗi khi tải dữ liệu</p>
+                <p className="text-lg font-semibold">An error occurred while loading data</p>
             </div>
         );
     }
@@ -80,13 +80,13 @@ export default function StaticPagesListPage() {
         <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Quản Lý Trang Tĩnh</h1>
-                    <p className="text-muted-foreground mt-1 text-lg">Quản lý nội dung các trang Thông tin, Điều khoản, Chính sách...</p>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Static Pages Management</h1>
+                    <p className="text-muted-foreground mt-1 text-lg">Manage content for Information, Terms, Policies pages...</p>
                 </div>
                 <Button asChild className="bg-primary hover:bg-primary/90">
                     <Link href="/admin/static-pages/create">
                         <Plus className="mr-2 size-4" />
-                        Tạo Trang Mới
+                        Create New Page
                     </Link>
                 </Button>
             </div>
@@ -97,17 +97,17 @@ export default function StaticPagesListPage() {
                         <thead>
                             <tr className="bg-white/5 border-b border-white/5">
                                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 w-[80px]">ID</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 w-[400px]">Tiêu đề / Slug</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Trạng thái</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Ngày cập nhật</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Thao tác</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 w-[400px]">Title / Slug</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Status</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Last Updated</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
                             {pages?.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground italic">
-                                        Chưa có trang tĩnh nào được tạo
+                                        No static pages created yet
                                     </td>
                                 </tr>
                             ) : (
@@ -125,11 +125,11 @@ export default function StaticPagesListPage() {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             {page.is_active ? (
                                                 <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-emerald-500/20">
-                                                    Đang hoạt động
+                                                    Active
                                                 </Badge>
                                             ) : (
                                                 <Badge variant="secondary" className="bg-slate-500/10 text-slate-500 border-slate-500/20">
-                                                    Nháp
+                                                    Draft
                                                 </Badge>
                                             )}
                                         </td>
@@ -146,17 +146,17 @@ export default function StaticPagesListPage() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-48 bg-background/95 backdrop-blur-md border-white/10">
-                                                    <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
+                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                     <DropdownMenuItem asChild className="cursor-pointer">
                                                         <Link href={`/admin/static-pages/${page.id}`}>
                                                             <Pencil className="mr-2 size-4" />
-                                                            Chỉnh sửa
+                                                            Edit
                                                         </Link>
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem asChild className="cursor-pointer">
                                                         <Link href={`/page/${page.slug}`} target="_blank">
                                                             <ExternalLink className="mr-2 size-4" />
-                                                            Xem trang chủ
+                                                            View Page
                                                         </Link>
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
@@ -164,7 +164,7 @@ export default function StaticPagesListPage() {
                                                         onClick={() => setDeleteId(page.id)}
                                                     >
                                                         <Trash2 className="mr-2 size-4" />
-                                                        Xóa trang
+                                                        Delete Page
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
@@ -181,19 +181,19 @@ export default function StaticPagesListPage() {
             <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
                 <AlertDialogContent className="bg-background/95 backdrop-blur-md border-white/10">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Xác nhận xóa trang tĩnh?</AlertDialogTitle>
+                        <AlertDialogTitle>Confirm Static Page Deletion?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Hành động này không thể hoàn tác. Trang này sẽ bị xóa vĩnh viễn khỏi hệ thống.
+                            This action cannot be undone. This page will be permanently deleted from the system.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => deleteId && deleteMutation.mutate(deleteId)}
                             className="bg-rose-500 hover:bg-rose-600 text-white"
                         >
                             {deleteMutation.isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
-                            Xóa ngay
+                            Delete Immediately
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

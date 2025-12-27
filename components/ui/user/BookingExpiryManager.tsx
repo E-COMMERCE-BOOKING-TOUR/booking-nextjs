@@ -8,9 +8,10 @@ interface Props {
     isExpired: boolean;
     onExpire: () => void;
     expiresAt?: string;
+    lng?: string;
 }
 
-export const BookingExpiryManager = ({ isExpired, onExpire, expiresAt }: Props) => {
+export const BookingExpiryManager = ({ isExpired, onExpire, expiresAt, lng }: Props) => {
     const router = useRouter();
 
     if (!expiresAt) return null;
@@ -48,6 +49,7 @@ export const BookingExpiryManager = ({ isExpired, onExpire, expiresAt }: Props) 
             <CountdownTimer
                 expiresAt={expiresAt}
                 onExpire={onExpire}
+                lng={lng}
             />
         </>
     );

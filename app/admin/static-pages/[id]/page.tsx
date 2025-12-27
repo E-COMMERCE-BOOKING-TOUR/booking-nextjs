@@ -91,11 +91,11 @@ export default function StaticPageEditPage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-static-pages'] });
-            toast.success(isEdit ? 'Cập nhật trang thành công' : 'Tạo trang mới thành công');
+            toast.success(isEdit ? 'Page updated successfully' : 'Page created successfully');
             router.push('/admin/static-pages');
         },
         onError: (error: any) => {
-            toast.error(error.message || 'Có lỗi xảy ra');
+            toast.error(error.message || 'An error occurred');
         }
     });
 
@@ -115,9 +115,9 @@ export default function StaticPageEditPage() {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] text-destructive">
                 <AlertCircle className="size-12 mb-4" />
-                <p className="text-lg font-semibold">Không tìm thấy trang hoặc đã xảy ra lỗi</p>
+                <p className="text-lg font-semibold">Page not found or an error occurred</p>
                 <Button variant="link" asChild>
-                    <Link href="/admin/static-pages">Quay lại danh sách</Link>
+                    <Link href="/admin/static-pages">Back to List</Link>
                 </Button>
             </div>
         );
@@ -134,10 +134,10 @@ export default function StaticPageEditPage() {
                     </Button>
                     <div>
                         <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-                            {isEdit ? 'Chỉnh Sửa Trang' : 'Tạo Trang Mới'}
+                            {isEdit ? 'Edit Page' : 'Create New Page'}
                         </h1>
                         <p className="text-muted-foreground mt-1">
-                            {isEdit ? `Đang chỉnh sửa: ${page?.title}` : 'Thêm một trang nội dung mới cho website'}
+                            {isEdit ? `Editing: ${page?.title}` : 'Add a new content page for the website'}
                         </p>
                     </div>
                 </div>
@@ -151,7 +151,7 @@ export default function StaticPageEditPage() {
                     ) : (
                         <Save className="mr-2 size-4" />
                     )}
-                    {isEdit ? 'Lưu Thay Đổi' : 'Tạo Trang'}
+                    {isEdit ? 'Save Changes' : 'Create Page'}
                 </Button>
             </div>
 
@@ -165,29 +165,29 @@ export default function StaticPageEditPage() {
                                     <div className="p-2 bg-blue-500/10 rounded-lg">
                                         <FileText className="size-5 text-blue-500" />
                                     </div>
-                                    <CardTitle>Nội dung trang</CardTitle>
+                                    <CardTitle>Page Content</CardTitle>
                                 </div>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="title">Tiêu đề trang</Label>
+                                    <Label htmlFor="title">Page Title</Label>
                                     <Input
                                         id="title"
-                                        placeholder="VD: Điều khoản sử dụng"
+                                        placeholder="e.g. Terms of Use"
                                         {...register('title', { required: true })}
                                         className="bg-white/5 border-white/10 text-lg font-semibold"
                                     />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="content">Nội dung (HTML/Markdown)</Label>
+                                    <Label htmlFor="content">Content (HTML/Markdown)</Label>
                                     <Textarea
                                         id="content"
-                                        placeholder="Nhập nội dung hiển thị của trang..."
+                                        placeholder="Enter page content..."
                                         className="min-h-[400px] bg-white/5 border-white/10 font-mono text-sm leading-relaxed"
                                         {...register('content')}
                                     />
                                     <p className="text-[11px] text-muted-foreground italic">
-                                        Hỗ trợ định dạng HTML để hiển thị nội dung phong phú.
+                                        Supports HTML format for rich content display.
                                     </p>
                                 </div>
                             </CardContent>
@@ -202,7 +202,7 @@ export default function StaticPageEditPage() {
                                     <div className="p-2 bg-amber-500/10 rounded-lg">
                                         <SettingsIcon className="size-5 text-amber-500" />
                                     </div>
-                                    <CardTitle>Cấu hình</CardTitle>
+                                    <CardTitle>Configuration</CardTitle>
                                 </div>
                             </CardHeader>
                             <CardContent className="space-y-6">
@@ -214,14 +214,14 @@ export default function StaticPageEditPage() {
                                         {...register('slug', { required: true })}
                                         className="bg-white/5 border-white/10 font-mono text-sm"
                                     />
-                                    <p className="text-[10px] text-muted-foreground">Slug duy nhất dùng để định danh trang trên URL.</p>
+                                    <p className="text-[10px] text-muted-foreground">Unique slug used to identify the page in the URL.</p>
                                 </div>
 
                                 <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10">
                                     <div className="space-y-0.5">
-                                        <Label htmlFor="is_active" className="text-sm font-semibold">Trạng thái</Label>
+                                        <Label htmlFor="is_active" className="text-sm font-semibold">Status</Label>
                                         <p className="text-[11px] text-muted-foreground">
-                                            {isActive ? 'Công khai trên web' : 'Ẩn (Chỉ Admin xem được)'}
+                                            {isActive ? 'Public on web' : 'Hidden (Admin only)'}
                                         </p>
                                     </div>
                                     <Controller
@@ -253,7 +253,7 @@ export default function StaticPageEditPage() {
                                     <Label htmlFor="meta_title">SEO Title</Label>
                                     <Input
                                         id="meta_title"
-                                        placeholder="Tiêu đề hiển thị trên Google"
+                                        placeholder="Title displayed on Google"
                                         {...register('meta_title')}
                                         className="bg-white/5 border-white/10"
                                     />
@@ -262,7 +262,7 @@ export default function StaticPageEditPage() {
                                     <Label htmlFor="meta_description">SEO Description</Label>
                                     <Textarea
                                         id="meta_description"
-                                        placeholder="Mô tả tóm tắt nội dung khi tìm kiếm..."
+                                        placeholder="Short description of content for search results..."
                                         rows={4}
                                         {...register('meta_description')}
                                         className="bg-white/5 border-white/10 resize-none text-sm"

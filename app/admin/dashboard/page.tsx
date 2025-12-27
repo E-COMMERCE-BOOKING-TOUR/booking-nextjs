@@ -21,13 +21,13 @@ import { IDashboardStats } from "@/types/admin/dashboard";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 
-const dataSelect = ['6 Tháng qua', '1 năm qua']
+const dataSelect = ['Last 6 Months', 'Last Year']
 
 const AdminDashboard = () => {
     const { data: session } = useSession();
     const token = session?.user?.accessToken;
 
-    const [valueSelect, setValueSelect] = useState('6 Tháng qua');
+    const [valueSelect, setValueSelect] = useState('Last 6 Months');
     const [stats, setStats] = useState<IDashboardStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -54,36 +54,36 @@ const AdminDashboard = () => {
         const { kpis: k } = stats;
         return [
             {
-                label: "Doanh thu hôm nay",
-                value: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(k.todayRevenue),
-                delta: "Từ 00:00",
+                label: "Today's Revenue",
+                value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND' }).format(k.todayRevenue),
+                delta: "Since 00:00",
                 icon: DollarSign,
                 color: "text-emerald-400",
                 bg: "bg-emerald-400/10",
                 trend: "up"
             },
             {
-                label: "Doanh thu tháng này",
-                value: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(k.monthlyRevenue),
-                delta: "Trong " + new Date().toLocaleString('vi-VN', { month: 'long' }),
+                label: "Monthly Revenue",
+                value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND' }).format(k.monthlyRevenue),
+                delta: "In " + new Date().toLocaleString('en-US', { month: 'long' }),
                 icon: TrendingUp,
                 color: "text-blue-400",
                 bg: "bg-blue-400/10",
                 trend: "up"
             },
             {
-                label: "Tour đang chạy",
+                label: "Active Tours",
                 value: k.activeToursCount.toString(),
-                delta: k.activeToursCount.toString() + " tổng cộng",
+                delta: k.activeToursCount.toString() + " total",
                 icon: Package,
                 color: "text-amber-400",
                 bg: "bg-amber-400/10",
                 trend: "neutral"
             },
             {
-                label: "Người dùng",
+                label: "Users",
                 value: k.totalUsers.toString(),
-                delta: "Tổng thành viên",
+                delta: "Total Members",
                 icon: UsersIcon,
                 color: "text-purple-400",
                 bg: "bg-purple-400/10",
@@ -120,18 +120,18 @@ const AdminDashboard = () => {
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Bảng Điều Khiển</h1>
-                    <p className="text-muted-foreground mt-1 text-lg">Chào mừng trở lại! Đây là tóm tắt hoạt động kinh doanh của bạn.</p>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Dashboard</h1>
+                    <p className="text-muted-foreground mt-1 text-lg">Welcome back! Here is your business summary.</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <Button variant="outline" className="gap-2 border-white/10 bg-white/5 hover:bg-white/10 transition-all">
                         <Download className="size-4" />
-                        Xuất báo cáo
+                        Export Report
                     </Button>
                     <Button asChild className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/20">
                         <Link href="/admin/tour/create">
                             <Plus className="size-4" />
-                            Thêm Tour mới
+                            Add New Tour
                         </Link>
                     </Button>
                 </div>
@@ -166,12 +166,12 @@ const AdminDashboard = () => {
                 <Card className="lg:col-span-2 border-white/5 bg-card/20 backdrop-blur-xl">
                     <CardHeader className="flex flex-row items-center justify-between border-b border-white/5 pb-6 px-8">
                         <div>
-                            <CardTitle className="text-xl font-black text-foreground">Phân tích doanh thu</CardTitle>
-                            <p className="text-sm text-muted-foreground mt-1">Biểu đồ tăng trưởng doanh thu gần đây</p>
+                            <CardTitle className="text-xl font-black text-foreground">Revenue Analysis</CardTitle>
+                            <p className="text-sm text-muted-foreground mt-1">Recent revenue growth chart</p>
                         </div>
                         <AppSelect
                             className="w-[160px] bg-white/5 border-white/10"
-                            placeholder="Thời gian"
+                            placeholder="Time Range"
                             data={dataSelect}
                             valueSelect={valueSelect}
                             onChange={(value) => setValueSelect(value)}
@@ -192,8 +192,8 @@ const AdminDashboard = () => {
                                 <Flame className="size-5 text-orange-500 animate-pulse" />
                             </div>
                             <div>
-                                <CardTitle className="text-xl font-bold text-foreground">Tour Xu Hướng</CardTitle>
-                                <p className="text-sm text-muted-foreground mt-1">Top 5 tour bán chạy nhất</p>
+                                <CardTitle className="text-xl font-bold text-foreground">Trending Tours</CardTitle>
+                                <p className="text-sm text-muted-foreground mt-1">Top 5 best-selling tours</p>
                             </div>
                         </div>
                     </CardHeader>
@@ -208,25 +208,25 @@ const AdminDashboard = () => {
                                     <div className="flex items-center gap-3 mt-1">
                                         <div className="text-[10px] text-muted-foreground flex items-center gap-1 font-bold">
                                             <Navigation className="size-3" />
-                                            {tour.count} lượt đặt
+                                            {tour.count} bookings
                                         </div>
                                         <div className="text-[10px] text-emerald-400 font-bold">
-                                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tour.revenue)}
+                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND' }).format(tour.revenue)}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         )) : (
                             <div className="py-10 text-center text-muted-foreground">
-                                Chưa có dữ liệu xu hướng.
+                                No trending data available.
                             </div>
                         )}
                         <div className="pt-6 border-t border-white/5">
                             <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-between">
                                 <div>
-                                    <p className="text-[10px] text-primary font-black uppercase tracking-[0.2em] mb-1">Dữ liệu tổng quát</p>
+                                    <p className="text-[10px] text-primary font-black uppercase tracking-[0.2em] mb-1">General Data</p>
                                     <p className="text-3xl font-black text-primary">
-                                        {stats.kpis.totalBookings} Đơn
+                                        {stats.kpis.totalBookings} Orders
                                     </p>
                                 </div>
                                 <TrendingUp className="size-10 text-primary opacity-20" />
@@ -240,11 +240,11 @@ const AdminDashboard = () => {
             <Card className="border-white/5 bg-card/20 backdrop-blur-xl overflow-hidden shadow-2xl">
                 <CardHeader className="border-b border-white/5 pb-6 px-8 flex flex-row items-center justify-between">
                     <div>
-                        <CardTitle className="text-xl font-black text-foreground">Giao dịch gần đây</CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">Lịch sử giao dịch mới nhất trên hệ thống</p>
+                        <CardTitle className="text-xl font-black text-foreground">Recent Transactions</CardTitle>
+                        <p className="text-sm text-muted-foreground mt-1">Latest transaction history</p>
                     </div>
                     <Button asChild variant="ghost" className="text-primary hover:bg-primary/10 font-bold">
-                        <Link href="/admin/booking">Xem tất cả</Link>
+                        <Link href="/admin/booking">View All</Link>
                     </Button>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -253,10 +253,10 @@ const AdminDashboard = () => {
                             <thead>
                                 <tr className="bg-white/5 border-b border-white/5">
                                     <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">ID</th>
-                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Khách hàng</th>
-                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Trạng thái</th>
-                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Doanh thu</th>
-                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-right">Ngày đặt</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Customer</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Status</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Revenue</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-right">Booking Date</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -286,10 +286,10 @@ const AdminDashboard = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-5 whitespace-nowrap font-mono text-sm font-black text-foreground">
-                                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(booking.total_amount))}
+                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND' }).format(Number(booking.total_amount))}
                                         </td>
                                         <td className="px-8 py-5 whitespace-nowrap text-right text-xs text-muted-foreground font-bold">
-                                            {booking.created_at ? new Date(booking.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A'}
+                                            {booking.created_at ? new Date(booking.created_at).toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A'}
                                         </td>
                                     </tr>
                                 ))}
@@ -297,7 +297,7 @@ const AdminDashboard = () => {
                                     <tr>
                                         <td colSpan={5} className="px-8 py-20 text-center text-muted-foreground bg-white/5">
                                             <History className="size-12 mx-auto mb-4 opacity-10" />
-                                            Chưa có dữ liệu giao dịch nào được ghi nhận.
+                                            No booking transactions recorded.
                                         </td>
                                     </tr>
                                 )}

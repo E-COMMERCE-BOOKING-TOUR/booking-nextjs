@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslation } from "@/libs/i18n/client";
+
 import { useState, useEffect, memo } from "react";
 import { Box, Text } from "@chakra-ui/react";
 
@@ -8,7 +10,8 @@ interface CountdownTimerProps {
     onExpire?: () => void;
 }
 
-const CountdownTimer = memo(function CountdownTimer({ expiresAt, onExpire }: CountdownTimerProps) {
+const CountdownTimer = memo(function CountdownTimer({ expiresAt, onExpire, lng }: CountdownTimerProps & { lng?: string }) {
+    const { t } = useTranslation(lng as string);
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
     // Single robust effect to handle countdown
@@ -68,12 +71,12 @@ const CountdownTimer = memo(function CountdownTimer({ expiresAt, onExpire }: Cou
                 fontWeight="medium"
             >
                 {timeLeft === null ? (
-                    "Loading..."
+                    t('loading', { defaultValue: "Loading..." })
                 ) : isExpired ? (
-                    "Your booking hold has expired. Please start again."
+                    t('booking_expired_desc', { defaultValue: "Your booking hold has expired. Please start again." })
                 ) : (
                     <>
-                        Your booking is held for{" "}
+                        {t('booking_held_for', { defaultValue: "Your booking is held for" })}{" "}
                         <Text as="span" fontWeight="bold" fontSize="md">
                             {formatTime(timeLeft)}
                         </Text>

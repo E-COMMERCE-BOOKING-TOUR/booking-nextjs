@@ -5,9 +5,17 @@ import { usePathname } from 'next/navigation';
 import NextLink from 'next/link';
 import { IBookingDetail } from '@/types/booking';
 import { useEffect, useState } from 'react';
+import { useTranslation } from "@/libs/i18n/client";
+import { cookieName, fallbackLng } from "@/libs/i18n/settings";
+import Cookies from "js-cookie";
+import { useSearchParams } from "next/navigation";
 
-export const ResumeBookingButton = ({ booking, ...props }: { booking: IBookingDetail | null } & ButtonProps) => {
+export const ResumeBookingButton = ({ booking, lng: propLng, ...props }: { booking: IBookingDetail | null, lng?: string } & ButtonProps) => {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const lng = propLng || searchParams?.get('lng') || fallbackLng;
+    const { t } = useTranslation(lng as string);
+
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
     useEffect(() => {
@@ -77,7 +85,7 @@ export const ResumeBookingButton = ({ booking, ...props }: { booking: IBookingDe
             {...props}
         >
             <NextLink href="/checkout">
-                Resume Booking ({formatTime(timeLeft)})
+                {t('resume_booking', { defaultValue: 'Resume Booking' })} ({formatTime(timeLeft)})
             </NextLink>
         </Button>
     );

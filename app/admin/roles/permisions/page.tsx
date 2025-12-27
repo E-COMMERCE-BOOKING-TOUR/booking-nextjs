@@ -69,11 +69,11 @@ export default function AdminPermissionPage() {
         mutationFn: (data: ICreatePermissionPayload) => adminPermissionApi.create(data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-permissions'] });
-            toast.success('Tạo quyền thành công');
+            toast.success('Permission created successfully');
             handleCloseDialog();
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Lỗi khi tạo quyền');
+            toast.error(error.message || 'Failed to create permission');
         }
     });
 
@@ -82,11 +82,11 @@ export default function AdminPermissionPage() {
             adminPermissionApi.update(id, data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-permissions'] });
-            toast.success('Cập nhật quyền thành công');
+            toast.success('Permission updated successfully');
             handleCloseDialog();
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Lỗi khi cập nhật quyền');
+            toast.error(error.message || 'Failed to update permission');
         }
     });
 
@@ -94,11 +94,11 @@ export default function AdminPermissionPage() {
         mutationFn: (id: number) => adminPermissionApi.remove(id, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-permissions'] });
-            toast.success('Xóa quyền thành công');
+            toast.success('Permission deleted successfully');
             setDeleteId(null);
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Lỗi khi xóa quyền');
+            toast.error(error.message || 'Failed to delete permission');
         }
     });
 
@@ -147,13 +147,13 @@ export default function AdminPermissionPage() {
                         </Button>
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Danh Sách Quyền</h1>
-                        <p className="text-muted-foreground mt-1 text-lg">Quản lý các quyền hạn chi tiết trong hệ thống.</p>
+                        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Permission List</h1>
+                        <p className="text-muted-foreground mt-1 text-lg">Manage detailed system permissions.</p>
                     </div>
                 </div>
                 <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90">
                     <Plus className="mr-2 size-4" />
-                    Thêm quyền mới
+                    Add New Permission
                 </Button>
             </div>
 
@@ -161,7 +161,7 @@ export default function AdminPermissionPage() {
                 <div className="p-4 border-b border-white/5">
                     <div className="relative max-w-sm">
                         <Input
-                            placeholder="Tìm kiếm quyền..."
+                            placeholder="Search permissions..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="pl-10 bg-white/5 border-white/10"
@@ -175,9 +175,9 @@ export default function AdminPermissionPage() {
                             <thead>
                                 <tr className="bg-white/5 border-b border-white/5">
                                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 w-[50px]">ID</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Tên Quyền</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Mô Tả</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Thao Tác</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Permission Name</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Description</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -207,14 +207,14 @@ export default function AdminPermissionPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem onClick={() => handleOpenEdit(p)} className="cursor-pointer">
-                                                        <Pencil className="mr-2 size-4" /> Chỉnh sửa
+                                                        <Pencil className="mr-2 size-4" /> Edit
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem
                                                         onClick={() => setDeleteId(p.id)}
                                                         className="text-rose-500 cursor-pointer"
                                                     >
-                                                        <Trash2 className="mr-2 size-4" /> Xóa
+                                                        <Trash2 className="mr-2 size-4" /> Delete
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
@@ -230,30 +230,30 @@ export default function AdminPermissionPage() {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
-                        <DialogTitle>{editingPermission ? 'Cập nhật quyền' : 'Tạo quyền mới'}</DialogTitle>
+                        <DialogTitle>{editingPermission ? 'Update Permission' : 'Create New Permission'}</DialogTitle>
                         <DialogDescription>
-                            Định nghĩa mã quyền (vd: user.create) và mô tả.
+                            Define permission code (e.g. user.create) and description.
                         </DialogDescription>
                     </DialogHeader>
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label>Mã Quyền (Permission Name)</Label>
-                            <Input {...register('permission_name', { required: true })} placeholder="vd: product.view" />
-                            {errors.permission_name && <span className="text-xs text-rose-500">Bắt buộc</span>}
+                            <Label>Permission Name (Code)</Label>
+                            <Input {...register('permission_name', { required: true })} placeholder="e.g. product.view" />
+                            {errors.permission_name && <span className="text-xs text-rose-500">Required</span>}
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Mô Tả</Label>
-                            <Input {...register('description', { required: true })} placeholder="Mô tả chức năng của quyền này" />
-                            {errors.description && <span className="text-xs text-rose-500">Bắt buộc</span>}
+                            <Label>Description</Label>
+                            <Input {...register('description', { required: true })} placeholder="Describe the function of this permission" />
+                            {errors.description && <span className="text-xs text-rose-500">Required</span>}
                         </div>
 
                         <DialogFooter>
-                            <Button type="button" variant="outline" onClick={handleCloseDialog}>Hủy</Button>
+                            <Button type="button" variant="outline" onClick={handleCloseDialog}>Cancel</Button>
                             <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
                                 {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="mr-2 size-4 animate-spin" />}
-                                {editingPermission ? 'Lưu thay đổi' : 'Tạo mới'}
+                                {editingPermission ? 'Save Changes' : 'Create'}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -263,18 +263,18 @@ export default function AdminPermissionPage() {
             <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Xác nhận xóa?</AlertDialogTitle>
+                        <AlertDialogTitle>Confirm Deletion?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Hành động này không thể hoàn tác. Các vai trò đang sử dụng quyền này sẽ bị mất quyền tương ứng.
+                            This action cannot be undone. Roles using this permission will lose the corresponding access.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => deleteId && deleteMutation.mutate(deleteId)}
                             className="bg-rose-500 hover:bg-rose-600"
                         >
-                            Xóa ngay
+                            Delete Immediately
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

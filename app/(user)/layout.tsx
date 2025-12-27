@@ -3,6 +3,8 @@ import { Toaster } from '@/components/chakra/toaster';
 import { UserFooter, UserNavbar } from '@/components/layout/user';
 import { settingsApi } from '@/apis/settings';
 import { Metadata } from 'next';
+import { cookies } from 'next/headers';
+import { cookieName, fallbackLng } from '@/libs/i18n/settings';
 import '../globals.css';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -19,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
   } catch (error) {
     return {
       title: 'TripConnect',
-      description: 'TripConnect - Du Lịch & Khám Phá',
+      description: 'TripConnect',
     };
   }
 }
@@ -36,12 +38,15 @@ export default async function TopPageLayout({
     console.error("Failed to fetch site settings:", error);
   }
 
+  const cookieStore = await cookies();
+  const lng = cookieStore.get(cookieName)?.value || fallbackLng;
+
   return (
     <Provider>
       <UserNavbar settings={settings} />
       {children}
       <Toaster />
-      <UserFooter settings={settings} />
+      <UserFooter settings={settings} lng={lng} />
     </Provider>
   );
 }

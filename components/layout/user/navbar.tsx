@@ -11,32 +11,36 @@ import { IUserAuth } from '@/types/response/auth.type';
 import { MobileDrawer } from './navMobileDrawer';
 import { LogoutButton } from './logoutButton';
 import { SiteSettings } from '@/apis/admin/settings';
-
-type NavItem = {
-  name: string;
-  link: string;
-};
-
-const navItems: NavItem[] = [
-  {
-    name: 'Home',
-    link: '/',
-  },
-  {
-    name: 'About us',
-    link: '/page/about-us',
-  },
-  {
-    name: 'Popular Articles',
-    link: '/social',
-  },
-];
+import { cookies } from 'next/headers';
+import { cookieName, fallbackLng } from '@/libs/i18n/settings';
+import { useTranslation } from '@/libs/i18n';
+import { LanguageSwitcher } from '@/components/ui/user/LanguageSwitcher';
+import { Logo, MenuLinks } from './navCommon';
 
 interface NavbarProps {
   settings?: SiteSettings | null;
 }
 
 export default async function UserNavbar({ settings }: NavbarProps) {
+  const cookieStore = await cookies();
+  const lng = cookieStore.get(cookieName)?.value || fallbackLng;
+  const { t } = await useTranslation(lng);
+
+  const navItems = [
+    {
+      name: t('home', { defaultValue: 'Home' }),
+      link: '/',
+    },
+    {
+      name: t('about_us', { defaultValue: 'About us' }),
+      link: '/page/about-us',
+    },
+    {
+      name: t('popular_articles', { defaultValue: 'Popular Articles' }),
+      link: '/social',
+    },
+  ];
+
   const session = await auth();
   const user = session?.user as (IUserAuth & { accessToken?: string }) | undefined;
   const isLoggedIn = !!user;
@@ -63,35 +67,36 @@ export default async function UserNavbar({ settings }: NavbarProps) {
         {/* Desktop Menu - Centered */}
         <Box display={{ base: "none", md: "block" }} flex={1} paddingX={8}>
           <Flex justify="center">
-            <MenuLinks />
+            <MenuLinks items={navItems} />
           </Flex>
         </Box>
 
         <HStack gap={3}>
+          <LanguageSwitcher lng={lng} />
           {/* Authentication Buttons */}
           <Flex gap={2} alignItems="center">
             {isLoggedIn ? (
               <>
-                <NotificationBell />
-                <ResumeBookingButton booking={activeBooking} mr={2} />
-                <UserMenu user={user} />
+                <NotificationBell lng={lng} />
+                <ResumeBookingButton booking={activeBooking} mr={2} lng={lng} />
+                <UserMenu user={user} t={t} lng={lng} />
               </>
             ) : (
               <>
                 <Box display={{ base: "none", sm: "block" }}>
                   <Button asChild variant="ghost" fontWeight="medium">
-                    <NextLink href="/user-login">Sign in</NextLink>
+                    <NextLink href="/user-login">{t('sign_in', { defaultValue: 'Sign in' })}</NextLink>
                   </Button>
                 </Box>
                 <Button asChild rounded="full" paddingX={{ base: 4, md: 6 }} bg="main" color="white" _hover={{ bg: "main.dark", transform: "translateY(-1px)" }} transition="all 0.2s">
-                  <NextLink href="/user-register">Sign up</NextLink>
+                  <NextLink href="/user-register">{t('sign_up', { defaultValue: 'Sign up' })}</NextLink>
                 </Button>
               </>
             )}
           </Flex>
           {/* Mobile Drawer */}
           <Box display={{ base: "block", md: "none" }}>
-            <MobileDrawer activeBooking={activeBooking} />
+            <MobileDrawer activeBooking={activeBooking} navItems={navItems} />
           </Box>
         </HStack>
       </Header>
@@ -100,7 +105,7 @@ export default async function UserNavbar({ settings }: NavbarProps) {
 }
 
 // UserMenu needs to be a client component due to Menu's auto-generated IDs
-const UserMenu = ({ user }: { user: IUserAuth }) => {
+const UserMenu = ({ user, t, lng }: { user: IUserAuth, t: any, lng: string }) => {
   return (
     <Menu.Root lazyMount unmountOnExit id="user-menu">
       <Menu.Trigger asChild>
@@ -111,39 +116,11 @@ const UserMenu = ({ user }: { user: IUserAuth }) => {
       <Menu.Positioner>
         <Menu.Content>
           <Menu.Item value="profile">
-            <NextLink href="/mypage">Profile</NextLink>
+            <NextLink href="/mypage">{t('profile', { defaultValue: 'Profile' })}</NextLink>
           </Menu.Item>
-          <LogoutButton />
+          <LogoutButton lng={lng} />
         </Menu.Content>
       </Menu.Positioner>
     </Menu.Root>
   );
 }
-
-export const MenuLinks = ({ isMobile = false }) => {
-  const LinkComponent = isMobile ? VStack : HStack;
-
-  return (
-    <LinkComponent
-      gap={isMobile ? 4 : 8}
-      align={isMobile ? "stretch" : "center"}
-      justifyContent="center"
-    >
-      {navItems.map((link) => (
-        <NavItem key={link.name} item={link} />
-      ))}
-    </LinkComponent>
-  );
-};
-
-export const Logo = ({ logoUrl }: { logoUrl?: string | null }) => {
-  return (
-    <Image
-      src={logoUrl || "/assets/images/logo.png"}
-      objectFit="contain"
-      alt="logo"
-      width={200}
-      height={30}
-    />
-  );
-};

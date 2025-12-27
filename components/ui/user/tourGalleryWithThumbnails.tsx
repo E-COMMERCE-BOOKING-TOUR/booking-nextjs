@@ -5,6 +5,10 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Autoplay, Thumbs } from "swiper/modules";
 import { useState } from "react";
 import type { Swiper as SwiperType } from "swiper";
+import { useTranslation } from "@/libs/i18n/client";
+import { cookieName, fallbackLng } from "@/libs/i18n/settings";
+import Cookies from "js-cookie";
+import { useSearchParams } from "next/navigation";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -13,9 +17,13 @@ import "swiper/css/thumbs";
 
 interface TourGalleryWithThumbnailsProps {
     images: string[];
+    lng?: string;
 }
 
-export default function TourGalleryWithThumbnails({ images }: TourGalleryWithThumbnailsProps) {
+export default function TourGalleryWithThumbnails({ images, lng: propLng }: TourGalleryWithThumbnailsProps) {
+    const searchParams = useSearchParams();
+    const lng = propLng || searchParams?.get('lng') || fallbackLng;
+    const { t } = useTranslation(lng);
     const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
     const [activeIndex, setActiveIndex] = useState(0);
 
@@ -36,7 +44,7 @@ export default function TourGalleryWithThumbnails({ images }: TourGalleryWithThu
                         <SwiperSlide key={idx}>
                             <Image
                                 src={img}
-                                alt={`Tour image ${idx + 1}`}
+                                alt={`${t("tours")} ${idx + 1}`}
                                 width="100%"
                                 height="100%"
                                 objectFit="cover"

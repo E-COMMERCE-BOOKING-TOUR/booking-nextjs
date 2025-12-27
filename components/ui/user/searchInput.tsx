@@ -4,36 +4,174 @@ import { useState, useCallback, useEffect } from "react";
 import {
   Box,
   Button,
+  Dialog,
   HStack,
   Input,
+  Portal,
+  Separator,
+  Stack,
   Text,
   VStack,
-  Popover,
-  Portal,
 } from "@chakra-ui/react";
-import { FaSearch, FaMapMarkerAlt, FaCalendarAlt, FaUsers } from "react-icons/fa";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import SearchCalendar from "./SearchCalendar";
+import { useTranslation } from "@/libs/i18n/client";
+import { cookieName, fallbackLng } from "@/libs/i18n/settings";
+import Cookies from "js-cookie";
+import { FaCalendarAlt, FaMapMarkerAlt, FaMinus, FaPlus, FaSearch, FaUsers } from "react-icons/fa";
+
+interface ChildrenData {
+  youth: number; // 12-17
+  children: number; // 3-11
+  infants: number; // 0-2
+}
+
+interface GuestData {
+  adults: number; // 18-59
+  seniors: number; // 60+
+  children: ChildrenData;
+}
 
 interface SearchData {
   destination: string;
   startDate: Date | null;
   endDate: Date | null;
-  travelers: number;
+  guests: GuestData;
 }
 
 interface SearchInputProps {
   defaultDestination?: string;
+  lng?: string;
 }
 
-export default function SearchInput({ defaultDestination = "" }: SearchInputProps = {}) {
+// Counter Component
+const Counter = ({
+  value,
+  onDecrement,
+  onIncrement,
+  min = 0,
+  max = 10,
+  suffix = "",
+}: {
+  value: number;
+  onDecrement: () => void;
+  onIncrement: () => void;
+  min?: number;
+  max?: number;
+  suffix?: string;
+}) => (
+  <HStack gap={2}>
+    <Button
+      size="sm"
+      variant="outline"
+      colorPalette="blue"
+      borderRadius="full"
+      w="32px"
+      h="32px"
+      p={0}
+      onClick={onDecrement}
+      disabled={value <= min}
+      _disabled={{ opacity: 0.5, cursor: "not-allowed" }}
+    >
+      <FaMinus size={10} />
+    </Button>
+    <Text w="50px" textAlign="center" fontWeight="semibold" color="main">
+      {value}{suffix}
+    </Text>
+    <Button
+      size="sm"
+      variant="outline"
+      colorPalette="blue"
+      borderRadius="full"
+      w="32px"
+      h="32px"
+      p={0}
+      onClick={onIncrement}
+      disabled={value >= max}
+      _disabled={{ opacity: 0.5, cursor: "not-allowed" }}
+    >
+      <FaPlus size={10} />
+    </Button>
+  </HStack>
+);
+
+// Guest Row Component  
+const GuestRow = ({
+  label,
+  ageRange,
+  icon: Icon,
+  value,
+  onChange,
+  min = 0,
+  suffix = "",
+  indented = false,
+}: {
+  label: string;
+  ageRange?: string;
+  icon?: React.ElementType;
+  value: number;
+  onChange: (val: number) => void;
+  min?: number;
+  suffix?: string;
+  indented?: boolean;
+}) => (
+  <HStack justifyContent="space-between" w="full" py={3} pl={indented ? 6 : 0}>
+    <HStack gap={3}>
+      {Icon && (
+        <Box color="main" fontSize="lg">
+          <Icon />
+        </Box>
+      )}
+      <VStack align="start" gap={0}>
+        <Text fontSize="md" color={indented ? "gray.700" : "gray.900"} fontWeight={indented ? "medium" : "semibold"}>
+          {label}
+        </Text>
+        {ageRange && (
+          <Text fontSize="xs" color="gray.500" fontWeight="normal">
+            {ageRange}
+          </Text>
+        )}
+      </VStack>
+    </HStack>
+    <Counter
+      value={value}
+      onDecrement={() => onChange(Math.max(min, value - 1))}
+      onIncrement={() => onChange(value + 1)}
+      min={min}
+      suffix={suffix}
+    />
+  </HStack>
+);
+
+export default function SearchInput({ defaultDestination = "", lng: propLng }: SearchInputProps = {}) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // On the server, we can only rely on props or searchParams.
+  // Cookies.get is client-side only and would cause hydration mismatch.
+  const lng = propLng || searchParams.get('lng') || fallbackLng;
+  const { t } = useTranslation(lng as string);
 
   const [searchData, setSearchData] = useState<SearchData>({
     destination: defaultDestination,
     startDate: null,
     endDate: null,
-    travelers: 2,
+    guests: {
+      adults: 2,
+      seniors: 0,
+      children: {
+        youth: 0,
+        children: 0,
+        infants: 0,
+      },
+    },
   });
+
+  // Dialog states
+  const [isDateDialogOpen, setIsDateDialogOpen] = useState(false);
+  const [isGuestDialogOpen, setIsGuestDialogOpen] = useState(false);
+
+  // Temp guests state for dialog editing
+  const [tempGuests, setTempGuests] = useState<GuestData>(searchData.guests);
 
   // Initialize dates on client side only to avoid hydration mismatch
   useEffect(() => {
@@ -54,24 +192,34 @@ export default function SearchInput({ defaultDestination = "" }: SearchInputProp
 
   const formatDate = (date: Date | null) => {
     if (!date) return "";
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString(lng === 'vi' ? 'vi-VN' : 'en-US', {
       month: "short",
       day: "numeric",
     });
   };
 
   const formatDateRange = () => {
-    if (!searchData.startDate && !searchData.endDate) return "Select dates";
+    if (!searchData.startDate && !searchData.endDate) return t('select_dates', { defaultValue: 'Select dates' });
     const start = formatDate(searchData.startDate);
     const end = formatDate(searchData.endDate);
     if (start && end) return `${start} - ${end}`;
-    return start || end || "Select dates";
+    return start || end || t('select_dates', { defaultValue: 'Select dates' });
   };
 
   const getNightCount = () => {
     if (!searchData.startDate || !searchData.endDate) return 0;
     const diff = searchData.endDate.getTime() - searchData.startDate.getTime();
     return Math.max(0, Math.round(diff / 86400000));
+  };
+
+  const getTotalTravelers = () => {
+    const { adults, seniors, children } = searchData.guests;
+    const totalChildren = Object.values(children).reduce((a, b) => a + b, 0);
+    return adults + seniors + totalChildren;
+  };
+
+  const getTotalChildren = (childrenData: ChildrenData) => {
+    return Object.values(childrenData).reduce((a, b) => a + b, 0);
   };
 
   const toDateParam = (date: Date | null) => date ? date.toISOString().split("T")[0] : "";
@@ -90,16 +238,52 @@ export default function SearchInput({ defaultDestination = "" }: SearchInputProp
     if (searchData.endDate) {
       params.set("endDate", toDateParam(searchData.endDate));
     }
-    if (searchData.travelers > 0) {
-      params.set("travelers", String(searchData.travelers));
+
+    const { adults, seniors, children } = searchData.guests;
+    const totalChildren = Object.values(children).reduce((a, b) => a + b, 0);
+    const totalTravelers = adults + seniors + totalChildren;
+
+    if (totalTravelers > 0) {
+      params.set("travelers", String(totalTravelers));
+      params.set("adults", String(adults));
+      params.set("seniors", String(seniors));
+      params.set("youth", String(children.youth));
+      params.set("children", String(children.children));
+      params.set("infants", String(children.infants));
     }
 
     const queryString = params.toString();
     router.push(queryString ? `/tour/list?${queryString}` : "/tour/list");
   }, [router, searchData]);
 
+  // Open guest dialog and sync temp state
+  const openGuestDialog = () => {
+    setTempGuests({ ...searchData.guests });
+    setIsGuestDialogOpen(true);
+  };
+
+  // Confirm guest selection
+  const confirmGuests = () => {
+    setSearchData(prev => ({ ...prev, guests: tempGuests }));
+    setIsGuestDialogOpen(false);
+  };
+
+  // Cancel guest selection
+  const cancelGuests = () => {
+    setTempGuests(searchData.guests);
+    setIsGuestDialogOpen(false);
+  };
+
+  const updateTempChildren = (key: keyof ChildrenData, value: number) => {
+    setTempGuests(prev => ({
+      ...prev,
+      children: { ...prev.children, [key]: value }
+    }));
+  };
+
   return (
-    <HStack
+    <Stack
+      direction={{ base: "column", lg: "row" }}
       bg="white"
       borderRadius="25px"
       boxShadow="lg"
@@ -112,7 +296,8 @@ export default function SearchInput({ defaultDestination = "" }: SearchInputProp
       {/* Destination Field */}
       <VStack
         alignItems="flex-start"
-        flex={2}
+        w={{ base: "100%", lg: "auto" }}
+        flex={{ base: "none", lg: 2 }}
         px={5}
         py={4}
         gap={1}
@@ -127,11 +312,11 @@ export default function SearchInput({ defaultDestination = "" }: SearchInputProp
             <FaMapMarkerAlt />
           </Box>
           <Text fontSize="xs" fontWeight="bold" color="gray.600" textTransform="uppercase" letterSpacing="wide">
-            Destination
+            {t('destination_label', { defaultValue: 'Destination' })}
           </Text>
         </HStack>
         <Input
-          placeholder="Where are you going?"
+          placeholder={t('destination_placeholder', { defaultValue: 'Where are you going?' })}
           border="none"
           p={0}
           bg="transparent"
@@ -152,12 +337,21 @@ export default function SearchInput({ defaultDestination = "" }: SearchInputProp
         />
       </VStack>
 
-      {/* Date Range Field */}
-      <Popover.Root>
-        <Popover.Trigger asChild>
+      {/* Date Range Field - Dialog Modal */}
+      <Dialog.Root
+        size="xl"
+        lazyMount
+        unmountOnExit
+        placement="center"
+        motionPreset="slide-in-bottom"
+        open={isDateDialogOpen}
+        onOpenChange={(e) => setIsDateDialogOpen(e.open)}
+      >
+        <Dialog.Trigger asChild>
           <VStack
             alignItems="flex-start"
-            flex={1.5}
+            w={{ base: "100%", lg: "auto" }}
+            flex={{ base: "none", lg: 1.5 }}
             px={5}
             py={4}
             gap={1}
@@ -172,7 +366,7 @@ export default function SearchInput({ defaultDestination = "" }: SearchInputProp
                 <FaCalendarAlt />
               </Box>
               <Text fontSize="xs" fontWeight="bold" color="gray.600" textTransform="uppercase" letterSpacing="wide">
-                Dates
+                {t('dates_label', { defaultValue: 'Dates' })}
               </Text>
             </HStack>
             <VStack alignItems="flex-start" gap={0}>
@@ -180,56 +374,60 @@ export default function SearchInput({ defaultDestination = "" }: SearchInputProp
                 {formatDateRange()}
               </Text>
               <Text fontSize="xs" color="main" fontWeight="medium">
-                {getNightCount()} night{getNightCount() !== 1 ? "s" : ""}
+                {getNightCount()} {t('night', { count: getNightCount(), defaultValue: 'night' })}
               </Text>
             </VStack>
           </VStack>
-        </Popover.Trigger>
+        </Dialog.Trigger>
         <Portal>
-          <Popover.Positioner>
-            <Popover.Content p={4} minW="280px">
-              <Popover.Body>
-                <VStack gap={4} align="stretch">
-                  <Box>
-                    <Text fontSize="sm" fontWeight="medium" mb={2}>Start Date</Text>
-                    <Input
-                      type="date"
-                      value={searchData.startDate ? searchData.startDate.toISOString().split("T")[0] : ""}
-                      onChange={(e) =>
-                        setSearchData({
-                          ...searchData,
-                          startDate: e.target.value ? new Date(e.target.value) : null,
-                        })
-                      }
-                    />
-                  </Box>
-                  <Box>
-                    <Text fontSize="sm" fontWeight="medium" mb={2}>End Date</Text>
-                    <Input
-                      type="date"
-                      value={searchData.endDate ? searchData.endDate.toISOString().split("T")[0] : ""}
-                      min={searchData.startDate ? searchData.startDate.toISOString().split("T")[0] : ""}
-                      onChange={(e) =>
-                        setSearchData({
-                          ...searchData,
-                          endDate: e.target.value ? new Date(e.target.value) : null,
-                        })
-                      }
-                    />
-                  </Box>
-                </VStack>
-              </Popover.Body>
-            </Popover.Content>
-          </Popover.Positioner>
+          <Dialog.Backdrop bg="blackAlpha.600" backdropFilter="blur(4px)" />
+          <Dialog.Positioner>
+            <Dialog.Content borderRadius="xl" boxShadow="2xl" maxW="700px">
+              <Dialog.Header>
+                <Dialog.Title>{t('select_travel_dates', { defaultValue: 'Select Travel Dates' })}</Dialog.Title>
+              </Dialog.Header>
+              <Dialog.Body>
+                <SearchCalendar
+                  initialStartDate={searchData.startDate}
+                  initialEndDate={searchData.endDate}
+                  onSelectDate={(start, end) => {
+                    setSearchData(prev => ({
+                      ...prev,
+                      startDate: start,
+                      endDate: end,
+                    }));
+                    setIsDateDialogOpen(false);
+                  }}
+                />
+              </Dialog.Body>
+              <Dialog.Footer>
+                <Dialog.ActionTrigger asChild>
+                  <Button variant="outline">{t('cancel', { defaultValue: 'Cancel' })}</Button>
+                </Dialog.ActionTrigger>
+              </Dialog.Footer>
+              <Dialog.CloseTrigger />
+            </Dialog.Content>
+          </Dialog.Positioner>
         </Portal>
-      </Popover.Root>
+      </Dialog.Root>
 
-      {/* Travelers Field */}
-      <Popover.Root>
-        <Popover.Trigger asChild>
+      {/* Travelers Field - Dialog Modal */}
+      <Dialog.Root
+        size="md"
+        lazyMount
+        unmountOnExit
+        placement="center"
+        motionPreset="slide-in-bottom"
+        open={isGuestDialogOpen}
+        onOpenChange={(e) => {
+          if (!e.open) cancelGuests();
+        }}
+      >
+        <Dialog.Trigger asChild>
           <VStack
             alignItems="flex-start"
-            flex={1}
+            w={{ base: "100%", lg: "auto" }}
+            flex={{ base: "none", lg: 1 }}
             px={5}
             py={4}
             gap={1}
@@ -238,72 +436,111 @@ export default function SearchInput({ defaultDestination = "" }: SearchInputProp
             _hover={{ bg: "gray.200" }}
             borderRadius="15px"
             transition="all 0.2s"
+            onClick={openGuestDialog}
           >
             <HStack gap={2} mb={1}>
               <Box color="main" fontSize="lg">
                 <FaUsers />
               </Box>
               <Text fontSize="xs" fontWeight="bold" color="gray.600" textTransform="uppercase" letterSpacing="wide">
-                Travelers
+                {t('travelers', { defaultValue: 'Travelers' })}
               </Text>
             </HStack>
             <Text fontSize="md" fontWeight="semibold" color="gray.800">
-              {searchData.travelers} traveler{searchData.travelers !== 1 ? "s" : ""}
+              {getTotalTravelers()} {t('travelers', { defaultValue: 'Travelers' })}
             </Text>
           </VStack>
-        </Popover.Trigger>
+        </Dialog.Trigger>
         <Portal>
-          <Popover.Positioner>
-            <Popover.Content p={4} minW="200px">
-              <Popover.Body>
-                <HStack justifyContent="space-between">
-                  <Text fontSize="sm" fontWeight="medium">Travelers</Text>
-                  <HStack gap={3}>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      colorScheme="blue"
-                      onClick={() =>
-                        setSearchData({
-                          ...searchData,
-                          travelers: Math.max(1, searchData.travelers - 1),
-                        })
-                      }
-                      disabled={searchData.travelers <= 1}
-                    >
-                      -
-                    </Button>
-                    <Text w="40px" textAlign="center" fontWeight="semibold">
-                      {searchData.travelers}
-                    </Text>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      colorScheme="blue"
-                      onClick={() =>
-                        setSearchData({
-                          ...searchData,
-                          travelers: searchData.travelers + 1,
-                        })
-                      }
-                    >
-                      +
-                    </Button>
-                  </HStack>
-                </HStack>
-              </Popover.Body>
-            </Popover.Content>
-          </Popover.Positioner>
+          <Dialog.Backdrop bg="blackAlpha.600" backdropFilter="blur(4px)" />
+          <Dialog.Positioner>
+            <Dialog.Content borderRadius="2xl" boxShadow="2xl" maxW="500px" p={2}>
+              <Dialog.Header pb={4}>
+                <Dialog.Title fontSize="xl">{t('select_travelers', { defaultValue: 'Select Travelers' })}</Dialog.Title>
+              </Dialog.Header>
+              <Dialog.Body>
+                <VStack gap={5} align="stretch">
+                  {/* Adults/Seniors Section */}
+                  <VStack gap={3} align="stretch">
+                    <GuestRow
+                      label={t('adults', { defaultValue: 'Adults' })}
+                      ageRange={t('age_18_59', { defaultValue: 'Ages 18-59' })}
+                      icon={FaUsers}
+                      value={tempGuests.adults}
+                      onChange={(val) => setTempGuests(prev => ({ ...prev, adults: val }))}
+                      min={1}
+                    />
+                    <GuestRow
+                      label={t('seniors', { defaultValue: 'Seniors' })}
+                      ageRange={t('age_60', { defaultValue: 'Ages 60+' })}
+                      icon={FaUsers}
+                      value={tempGuests.seniors}
+                      onChange={(val) => setTempGuests(prev => ({ ...prev, seniors: val }))}
+                    />
+                  </VStack>
+
+                  <Separator />
+
+                  {/* Children Section */}
+                  <Box>
+                    <HStack justifyContent="space-between" mb={2}>
+                      <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                        {t('children', { defaultValue: 'Children' })} & {t('infants', { defaultValue: 'Infants' })}
+                      </Text>
+                      <Text fontSize="sm" color="gray.500">
+                        {t('total', { defaultValue: 'Total' })}: {getTotalChildren(tempGuests.children)}
+                      </Text>
+                    </HStack>
+
+                    <VStack gap={1} align="stretch" bg="gray.50" borderRadius="xl" p={4} border="1px solid" borderColor="gray.100">
+                      <GuestRow
+                        label={t('youth', { defaultValue: 'Youth' })}
+                        ageRange={t('age_12_17', { defaultValue: 'Ages 12-17' })}
+                        value={tempGuests.children.youth}
+                        onChange={(val) => updateTempChildren('youth', val)}
+                        indented
+                      />
+                      <GuestRow
+                        label={t('children', { defaultValue: 'Children' })}
+                        ageRange={t('age_3_11', { defaultValue: 'Ages 3-11' })}
+                        value={tempGuests.children.children}
+                        onChange={(val) => updateTempChildren('children', val)}
+                        indented
+                      />
+                      <GuestRow
+                        label={t('infants', { defaultValue: 'Infants' })}
+                        ageRange={t('age_0_2', { defaultValue: 'Ages 0-2' })}
+                        value={tempGuests.children.infants}
+                        onChange={(val) => updateTempChildren('infants', val)}
+                        indented
+                      />
+                    </VStack>
+                  </Box>
+                </VStack>
+              </Dialog.Body>
+              <Dialog.Footer pt={4}>
+                <Button variant="ghost" color="gray.500" onClick={cancelGuests}>
+                  {t('cancel', { defaultValue: 'Cancel' })}
+                </Button>
+                <Button bg="main" color="white" borderRadius="full" px={10} size="lg" onClick={confirmGuests}>
+                  {t('confirm', { defaultValue: 'Confirm' })}
+                </Button>
+              </Dialog.Footer>
+              <Dialog.CloseTrigger />
+            </Dialog.Content>
+          </Dialog.Positioner>
         </Portal>
-      </Popover.Root>
+      </Dialog.Root>
 
       {/* Search Button */}
       <Button
         bg="main"
         color="white"
         size="lg"
-        flex={1}
+        w={{ base: "100%", lg: "auto" }}
+        flex={{ base: "none", lg: 1 }}
         px={8}
+        minHeight="50px"
         onClick={handleSearch}
         fontSize="md"
         fontWeight="bold"
@@ -321,9 +558,9 @@ export default function SearchInput({ defaultDestination = "" }: SearchInputProp
       >
         <HStack gap={2}>
           <FaSearch />
-          <Text>Search</Text>
+          <Text>{t('search', { defaultValue: 'Search' })}</Text>
         </HStack>
       </Button>
-    </HStack>
+    </Stack>
   );
 }

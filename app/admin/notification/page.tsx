@@ -57,7 +57,7 @@ const TargetBadge = ({ group }: { group: TargetGroup }) => {
         case TargetGroup.all:
             return (
                 <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20">
-                    <Users className="mr-1 size-3" /> Tất cả
+                    <Users className="mr-1 size-3" /> All
                 </Badge>
             );
         case TargetGroup.admin:
@@ -155,11 +155,11 @@ export default function AdminNotificationListPage() {
         mutationFn: (id: number) => adminNotificationApi.delete(token!, id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
-            toast.success('Xóa thông báo thành công');
+            toast.success('Notification deleted successfully');
             setDeleteId(null);
         },
         onError: (error: any) => {
-            toast.error(error.message || 'Không thể xóa thông báo');
+            toast.error(error.message || 'Failed to delete notification');
         }
     });
 
@@ -167,13 +167,13 @@ export default function AdminNotificationListPage() {
         <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Quản Lý Thông Báo</h1>
-                    <p className="text-muted-foreground mt-1 text-lg">Gửi và quản lý thông báo hệ thống đến người dùng.</p>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Notification Management</h1>
+                    <p className="text-muted-foreground mt-1 text-lg">Send and manage system notifications to users.</p>
                 </div>
                 <Button asChild className="bg-primary hover:bg-primary/90">
                     <Link href="/admin/notification/create">
                         <Plus className="mr-2 size-4" />
-                        Tạo thông báo
+                        Create Notification
                     </Link>
                 </Button>
             </div>
@@ -189,7 +189,7 @@ export default function AdminNotificationListPage() {
                                 render={({ field }) => (
                                     <Input
                                         {...field}
-                                        placeholder="Tìm kiếm tiêu đề hoặc nội dung..."
+                                        placeholder="Search title or content..."
                                         className="pl-10 bg-white/5 border-white/10"
                                     />
                                 )}
@@ -203,10 +203,10 @@ export default function AdminNotificationListPage() {
                                 render={({ field }) => (
                                     <Select value={field.value} onValueChange={field.onChange}>
                                         <SelectTrigger className="w-[160px] bg-white/5 border-white/10">
-                                            <SelectValue placeholder="Loại thông báo" />
+                                            <SelectValue placeholder="Notification Type" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="all_types">Tất cả loại</SelectItem>
+                                            <SelectItem value="all_types">All Types</SelectItem>
                                             {Object.values(NotificationType).map((type) => (
                                                 <SelectItem key={type} value={type} className="capitalize">{type}</SelectItem>
                                             ))}
@@ -221,11 +221,11 @@ export default function AdminNotificationListPage() {
                                 render={({ field }) => (
                                     <Select value={field.value} onValueChange={field.onChange}>
                                         <SelectTrigger className="w-[180px] bg-white/5 border-white/10">
-                                            <SelectValue placeholder="Đối tượng" />
+                                            <SelectValue placeholder="Audience" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="all_groups">Tất cả đối tượng</SelectItem>
-                                            <SelectItem value={TargetGroup.all}>Tất cả người dùng</SelectItem>
+                                            <SelectItem value="all_groups">All Audiences</SelectItem>
+                                            <SelectItem value={TargetGroup.all}>All Users</SelectItem>
                                             <SelectItem value={TargetGroup.admin}>Admin</SelectItem>
                                             <SelectItem value={TargetGroup.supplier}>Supplier</SelectItem>
                                             <SelectItem value={TargetGroup.specific}>Specific</SelectItem>
@@ -237,7 +237,7 @@ export default function AdminNotificationListPage() {
                             <div className="flex items-center gap-2">
                                 <Button type="submit" className="bg-primary hover:bg-primary/90">
                                     <Search className="mr-2 size-4" />
-                                    Tìm kiếm
+                                    Search
                                 </Button>
 
                                 {isFiltered && (
@@ -247,7 +247,7 @@ export default function AdminNotificationListPage() {
                                         onClick={clearFilters}
                                         className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
                                     >
-                                        Xóa lọc
+                                        Clear Filter
                                     </Button>
                                 )}
                             </div>
@@ -260,11 +260,11 @@ export default function AdminNotificationListPage() {
                             <thead>
                                 <tr className="bg-white/5 border-b border-white/5">
                                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">ID</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Thông Báo</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Loại</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Đối Tượng</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Ngày Tạo</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Thao Tác</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Notification</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Type</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Audience</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Created At</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -309,11 +309,11 @@ export default function AdminNotificationListPage() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-48">
-                                                    <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
+                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                     <DropdownMenuItem asChild>
                                                         <Link href={`/admin/notification/edit/${notification.id}`} className="cursor-pointer">
                                                             <Eye className="mr-2 size-4" />
-                                                            Chỉnh sửa
+                                                            Edit
                                                         </Link>
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
@@ -322,7 +322,7 @@ export default function AdminNotificationListPage() {
                                                         className="text-rose-500 cursor-pointer"
                                                     >
                                                         <Trash2 className="mr-2 size-4" />
-                                                        Xóa
+                                                        Delete
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
@@ -332,7 +332,7 @@ export default function AdminNotificationListPage() {
                                 {!isLoading && notifications.length === 0 && (
                                     <tr>
                                         <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground italic">
-                                            Không có thông báo nào được tìm thấy.
+                                            No notifications found.
                                         </td>
                                     </tr>
                                 )}
@@ -346,7 +346,7 @@ export default function AdminNotificationListPage() {
             {totalPages > 1 && (
                 <div className="flex items-center justify-between px-2">
                     <p className="text-sm text-muted-foreground">
-                        Hiển thị <span className="font-bold text-foreground">{notifications.length}</span> trên <span className="font-bold text-foreground">{total}</span> thông báo
+                        Showing <span className="font-bold text-foreground">{notifications.length}</span> of <span className="font-bold text-foreground">{total}</span> notifications
                     </p>
                     <div className="flex items-center gap-2">
                         <Button
@@ -389,18 +389,18 @@ export default function AdminNotificationListPage() {
             <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Xác nhận xóa?</AlertDialogTitle>
+                        <AlertDialogTitle>Confirm Deletion?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Hành động này không thể hoàn tác. Thông báo sẽ bị xóa khỏi hệ thống.
+                            This action cannot be undone. The notification will be deleted from the system.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => deleteId && deleteMutation.mutate(deleteId)}
                             className="bg-rose-500 hover:bg-rose-600"
                         >
-                            Xóa ngay
+                            Delete Immediately
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

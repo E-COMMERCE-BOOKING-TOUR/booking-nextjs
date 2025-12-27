@@ -89,11 +89,11 @@ export default function AdminTourListPage() {
     mutationFn: (id: number) => adminTourApi.remove(id, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-tours'] });
-      toast.success('Đã xóa tour thành công');
+      toast.success('Tour deleted successfully');
       setDeleteId(null);
     },
     onError: (err: Error) => {
-      toast.error('Lỗi khi xóa tour: ' + err.message);
+      toast.error('Error deleting tour: ' + err.message);
     }
   });
 
@@ -102,15 +102,15 @@ export default function AdminTourListPage() {
       adminTourApi.updateStatus(id, status, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-tours'] });
-      toast.success('Cập nhật trạng thái thành công');
+      toast.success('Status updated successfully');
     },
   });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'active': return <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/20">Hoạt động</Badge>;
-      case 'inactive': return <Badge variant="secondary" className="bg-slate-500/15 text-slate-600 border-slate-500/20">Tạm ngưng</Badge>;
-      case 'draft': return <Badge variant="outline" className="bg-amber-500/15 text-amber-600 border-amber-500/20">Bản nháp</Badge>;
+      case 'active': return <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/20">Active</Badge>;
+      case 'inactive': return <Badge variant="secondary" className="bg-slate-500/15 text-slate-600 border-slate-500/20">Inactive</Badge>;
+      case 'draft': return <Badge variant="outline" className="bg-amber-500/15 text-amber-600 border-amber-500/20">Draft</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
@@ -119,14 +119,14 @@ export default function AdminTourListPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Quản lý Tour</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Tour Management</h1>
           <p className="text-muted-foreground mt-1">
-            Xem và quản lý danh sách các tour du lịch hiện có.
+            View and manage the list of available tours.
           </p>
         </div>
         <Link href="/admin/tour/create">
           <Button className="bg-primary hover:bg-primary/90 shadow-sm gap-2">
-            <Plus className="size-4" /> Thêm tour mới
+            <Plus className="size-4" /> Add New Tour
           </Button>
         </Link>
       </div>
@@ -138,14 +138,14 @@ export default function AdminTourListPage() {
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input
-                  placeholder="Tìm theo tên hoặc địa chỉ..."
+                  placeholder="Search by name or address..."
                   className="pl-9 bg-background/50 border-muted-foreground/20 focus-visible:ring-primary/30"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={handleKeyDown}
                 />
               </div>
-              <Button onClick={handleSearch} className="w-full sm:w-auto">Tìm kiếm</Button>
+              <Button onClick={handleSearch} className="w-full sm:w-auto">Search</Button>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
               <select
@@ -156,10 +156,10 @@ export default function AdminTourListPage() {
                   setCurrentPage(1);
                 }}
               >
-                <option value="">Tất cả trạng thái</option>
-                <option value="active">Hoạt động</option>
-                <option value="inactive">Tạm ngưng</option>
-                <option value="draft">Bản nháp</option>
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="draft">Draft</option>
               </select>
               <select
                 className="bg-background border border-muted-foreground/20 rounded-md px-3 py-1 text-sm focus:ring-1 focus:ring-primary h-9 outline-none min-w-[140px]"
@@ -171,10 +171,10 @@ export default function AdminTourListPage() {
                   setCurrentPage(1);
                 }}
               >
-                <option value="created_at-DESC">Mới nhất</option>
-                <option value="created_at-ASC">Cũ nhất</option>
-                <option value="title-ASC">Tên A-Z</option>
-                <option value="title-DESC">Tên Z-A</option>
+                <option value="created_at-DESC">Newest</option>
+                <option value="created_at-ASC">Oldest</option>
+                <option value="title-ASC">Name A-Z</option>
+                <option value="title-DESC">Name Z-A</option>
               </select>
             </div>
           </div>
@@ -184,11 +184,11 @@ export default function AdminTourListPage() {
             <table className="w-full text-sm text-left border-collapse">
               <thead>
                 <tr className="border-b bg-muted/30 text-muted-foreground font-medium uppercase text-[10px] tracking-wider">
-                  <th className="px-6 py-4">Tour / Thông tin</th>
-                  <th className="px-6 py-4 hidden md:table-cell">Địa điểm</th>
-                  <th className="px-6 py-4">Thời gian</th>
-                  <th className="px-6 py-4">Trạng thái</th>
-                  <th className="px-6 py-4 text-right">Thao tác</th>
+                  <th className="px-6 py-4">Tour / Info</th>
+                  <th className="px-6 py-4 hidden md:table-cell">Location</th>
+                  <th className="px-6 py-4">Duration</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-muted-foreground/10">
@@ -205,7 +205,7 @@ export default function AdminTourListPage() {
                 ) : tours.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
-                      Không tìm thấy tour nào phù hợp.
+                      No matching tours found.
                     </td>
                   </tr>
                 ) : tours.map((tour) => (
@@ -246,7 +246,7 @@ export default function AdminTourListPage() {
                       <div className="flex items-center gap-1.5 text-muted-foreground whitespace-nowrap">
                         <Clock className="size-3.5" />
                         <span className="text-xs">
-                          {tour.duration_days}N{tour.duration_hours}H
+                          {tour.duration_days}D{tour.duration_hours}H
                         </span>
                       </div>
                     </td>
@@ -267,32 +267,32 @@ export default function AdminTourListPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48 shadow-lg">
-                            <DropdownMenuLabel>Hành động</DropdownMenuLabel>
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem onClick={() => window.open(`/tour/${tour.slug}`, '_blank')}>
-                              <Eye className="size-4 mr-2" /> Xem trên Web
+                              <Eye className="size-4 mr-2" /> View on Web
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase pb-1">Trạng thái</DropdownMenuLabel>
+                            <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase pb-1">Status</DropdownMenuLabel>
                             <DropdownMenuItem
                               onClick={() => statusMutation.mutate({ id: tour.id, status: 'active' })}
                               disabled={tour.status === 'active'}
                               className="text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50"
                             >
-                              Kích hoạt hoạt động
+                              Activate
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => statusMutation.mutate({ id: tour.id, status: 'inactive' })}
                               disabled={tour.status === 'inactive'}
                               className="text-amber-600 focus:text-amber-600 focus:bg-amber-50"
                             >
-                              Tạm ngưng tour
+                              Deactivate
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive focus:bg-destructive/5"
                               onClick={() => setDeleteId(tour.id)}
                             >
-                              <Trash2 className="size-4 mr-2" /> Xóa tour
+                              <Trash2 className="size-4 mr-2" /> Delete Tour
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -306,7 +306,7 @@ export default function AdminTourListPage() {
           {pagination.totalPages > 1 && (
             <div className="flex items-center justify-between px-6 py-4 border-t bg-muted/10">
               <div className="text-xs text-muted-foreground">
-                Hiển thị <strong>{(pagination.page - 1) * pagination.limit + 1}-{Math.min(pagination.page * pagination.limit, pagination.total)}</strong> trong tổng số <strong>{pagination.total}</strong> tour
+                Showing <strong>{(pagination.page - 1) * pagination.limit + 1}-{Math.min(pagination.page * pagination.limit, pagination.total)}</strong> of <strong>{pagination.total}</strong> tours
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -316,7 +316,7 @@ export default function AdminTourListPage() {
                   onClick={() => setCurrentPage(prev => prev - 1)}
                   className="h-8 border-muted-foreground/20"
                 >
-                  Trước
+                  Previous
                 </Button>
                 <div className="flex items-center gap-1 mx-2">
                   {[...Array(pagination.totalPages)].map((_, i) => {
@@ -346,7 +346,7 @@ export default function AdminTourListPage() {
                   onClick={() => setCurrentPage(prev => prev + 1)}
                   className="h-8 border-muted-foreground/20"
                 >
-                  Sau
+                  Next
                 </Button>
               </div>
             </div>
@@ -357,18 +357,18 @@ export default function AdminTourListPage() {
       <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận xóa tour?</AlertDialogTitle>
+            <AlertDialogTitle>Confirm Delete?</AlertDialogTitle>
             <AlertDialogDescription>
-              Hành động này không thể hoàn tác. Tour sẽ bị gỡ bỏ khỏi hệ thống và không thể đặt bởi khách hàng.
+              This action cannot be undone. The tour will be removed from the system and cannot be booked by customers.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && deleteMutation.mutate(deleteId)}
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-semibold"
             >
-              Xác nhận xóa
+              Confirm Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

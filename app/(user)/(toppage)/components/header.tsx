@@ -1,12 +1,19 @@
 import { Heading, Text, VStack } from "@chakra-ui/react";
+import { cookies } from "next/headers";
+import { cookieName, fallbackLng } from "@/libs/i18n/settings";
+import { useTranslation } from "@/libs/i18n";
 
-export default function Header() {
+export default async function Header() {
+  const cookieStore = await cookies();
+  const lng = cookieStore.get(cookieName)?.value || fallbackLng;
+  const { t } = await useTranslation(lng);
+
   return <VStack marginY="15rem">
     <Heading as="h1" size="4xl" fontWeight="bold">
-      Welcome to <Text as="span">TripConnect&apos;s</Text> Travel Platform
+      {t('hero_title', { defaultValue: "Welcome to TripConnect's Travel Platform" })}
     </Heading>
     <Text>
-      Discover the best destinations for your next trip with TripConnect&apos;s Travel Platform
+      {t('hero_description', { defaultValue: "Discover the best destinations for your next trip with TripConnect's Travel Platform" })}
     </Text>
   </VStack >
 }

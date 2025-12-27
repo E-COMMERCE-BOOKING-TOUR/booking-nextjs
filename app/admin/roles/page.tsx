@@ -93,11 +93,11 @@ export default function AdminRolePage() {
         mutationFn: (data: ICreateRolePayload) => adminRoleApi.create(data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
-            toast.success('Tạo vai trò thành công');
+            toast.success('Role created successfully');
             handleCloseDialog();
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Lỗi khi tạo vai trò');
+            toast.error(error.message || 'Failed to create role');
         }
     });
 
@@ -106,11 +106,11 @@ export default function AdminRolePage() {
             adminRoleApi.update(id, data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
-            toast.success('Cập nhật vai trò thành công');
+            toast.success('Role updated successfully');
             handleCloseDialog();
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Lỗi khi cập nhật');
+            toast.error(error.message || 'Failed to update');
         }
     });
 
@@ -118,11 +118,11 @@ export default function AdminRolePage() {
         mutationFn: (id: number) => adminRoleApi.remove(id, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
-            toast.success('Xóa vai trò thành công');
+            toast.success('Role deleted successfully');
             setDeleteId(null);
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Lỗi khi xóa vai trò');
+            toast.error(error.message || 'Failed to delete role');
         }
     });
 
@@ -183,16 +183,16 @@ export default function AdminRolePage() {
             {/* ... Header ... */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Vai Trò & Quyền Hạn</h1>
-                    <p className="text-muted-foreground mt-1 text-lg">Định nghĩa vai trò và gán quyền truy cập cho người dùng.</p>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Roles & Permissions</h1>
+                    <p className="text-muted-foreground mt-1 text-lg">Define roles and assign access permissions to users.</p>
                 </div>
                 <div className="flex gap-2">
                     <Link href="/admin/roles/permisions">
-                        <Button variant="outline">Quản lý Permisions</Button>
+                        <Button variant="outline">Manage Permissions</Button>
                     </Link>
                     <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90">
                         <Plus className="mr-2 size-4" />
-                        Thêm vai trò
+                        Add Role
                     </Button>
                 </div>
             </div>
@@ -204,7 +204,7 @@ export default function AdminRolePage() {
                             <div className="relative flex-1">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                                 <Input
-                                    placeholder="Tìm kiếm vai trò..."
+                                    placeholder="Search roles..."
                                     className="pl-10 bg-white/5 border-white/10"
                                     value={keyword}
                                     onChange={(e) => setKeyword(e.target.value)}
@@ -212,7 +212,7 @@ export default function AdminRolePage() {
                                 />
                             </div>
                             <Button onClick={handleSearch} variant="secondary">
-                                Tìm kiếm
+                                Search
                             </Button>
                         </div>
                     </div>
@@ -223,10 +223,10 @@ export default function AdminRolePage() {
                             <thead>
                                 <tr className="bg-white/5 border-b border-white/5">
                                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 w-[50px]">ID</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Tên Vai Trò</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Mô Tả</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Quyền Hạn</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Thao Tác</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Role Name</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Description</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Permissions</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -272,14 +272,14 @@ export default function AdminRolePage() {
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuItem onClick={() => handleOpenEdit(role)} className="cursor-pointer">
-                                                            <Pencil className="mr-2 size-4" /> Chỉnh sửa
+                                                            <Pencil className="mr-2 size-4" /> Edit
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem
                                                             onClick={() => setDeleteId(role.id)}
                                                             className="text-rose-500 cursor-pointer"
                                                         >
-                                                            <Trash2 className="mr-2 size-4" /> Xóa
+                                                            <Trash2 className="mr-2 size-4" /> Delete
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
@@ -289,7 +289,7 @@ export default function AdminRolePage() {
                                 ) : (
                                     <tr>
                                         <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground italic">
-                                            Không tìm thấy vai trò nào.
+                                            No roles found.
                                         </td>
                                     </tr>
                                 )}
@@ -298,7 +298,7 @@ export default function AdminRolePage() {
                     </div>
                     <div className="p-4 border-t border-white/5 flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">
-                            Hiển thị {roles.length} / {totalItems} kết quả
+                            Showing {roles.length} / {totalItems} results
                         </span>
                         <CustomPagination
                             currentPage={page}
@@ -313,28 +313,28 @@ export default function AdminRolePage() {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-[700px]">
                     <DialogHeader>
-                        <DialogTitle>{editingRole ? 'Cập nhật vai trò' : 'Tạo vai trò mới'}</DialogTitle>
+                        <DialogTitle>{editingRole ? 'Update Role' : 'Create New Role'}</DialogTitle>
                         <DialogDescription>
-                            Thiết lập tên, mô tả và gán các quyền cho vai trò này.
+                            Set name, description and assign permissions for this role.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="flex gap-6 py-4">
                         <div className="w-1/2 space-y-4">
                             <div className="space-y-2">
-                                <Label>Tên vai trò (Mã)</Label>
-                                <Input {...register('name', { required: true })} placeholder="vd: admin, staff..." />
-                                {errors.name && <span className="text-xs text-rose-500">Bắt buộc</span>}
+                                <Label>Role Name (Code)</Label>
+                                <Input {...register('name', { required: true })} placeholder="e.g.: admin, staff..." />
+                                {errors.name && <span className="text-xs text-rose-500">Required</span>}
                             </div>
                             <div className="space-y-2">
-                                <Label>Mô tả chi tiết</Label>
-                                <Input {...register('desciption', { required: true })} placeholder="Mô tả vai trò này làm gì..." />
-                                {errors.desciption && <span className="text-xs text-rose-500">Bắt buộc</span>}
+                                <Label>Description</Label>
+                                <Input {...register('desciption', { required: true })} placeholder="What does this role do..." />
+                                {errors.desciption && <span className="text-xs text-rose-500">Required</span>}
                             </div>
                         </div>
 
                         <div className="w-1/2 flex flex-col gap-2">
-                            <Label className="mb-1">Phân quyền</Label>
+                            <Label className="mb-1">Permissions</Label>
                             <ScrollArea className="h-[250px] w-full rounded-md border border-white/10 bg-white/5 p-4">
                                 <div className="space-y-3">
                                     {permissions.map((p: IAdminPermission) => (
@@ -358,7 +358,7 @@ export default function AdminRolePage() {
                                         </div>
                                     ))}
                                     {permissions.length === 0 && (
-                                        <p className="text-sm text-muted-foreground text-center">Chưa có quyền nào được tạo.</p>
+                                        <p className="text-sm text-muted-foreground text-center">No permissions created yet.</p>
                                     )}
                                 </div>
                             </ScrollArea>
@@ -366,10 +366,10 @@ export default function AdminRolePage() {
                     </div>
 
                     <DialogFooter>
-                        <Button type="button" variant="outline" onClick={handleCloseDialog}>Hủy</Button>
+                        <Button type="button" variant="outline" onClick={handleCloseDialog}>Cancel</Button>
                         <Button type="button" onClick={handleSubmit(onSubmit)} disabled={createMutation.isPending || updateMutation.isPending}>
                             {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="mr-2 size-4 animate-spin" />}
-                            {editingRole ? 'Lưu thay đổi' : 'Tạo vai trò'}
+                            {editingRole ? 'Save Changes' : 'Create Role'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -378,18 +378,18 @@ export default function AdminRolePage() {
             <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Xác nhận xóa?</AlertDialogTitle>
+                        <AlertDialogTitle>Confirm Deletion?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Hành động này không thể hoàn tác. Nếu vai trò đang được sử dụng bởi người dùng, bạn cần gỡ vai trò khỏi họ trước.
+                            This action cannot be undone. If this role is being used by users, you need to remove the role from them first.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => deleteId && deleteMutation.mutate(deleteId)}
                             className="bg-rose-500 hover:bg-rose-600"
                         >
-                            Xóa ngay
+                            Delete Immediately
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

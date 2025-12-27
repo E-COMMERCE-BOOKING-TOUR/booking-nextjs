@@ -9,6 +9,9 @@ import TourDescription from "@/components/ui/user/tourDescription";
 import RelatedToursSwiper from "@/components/ui/user/relatedToursSwiper";
 import tourApi, { ITourSession } from "@/apis/tour";
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
+import { cookieName, fallbackLng } from "@/libs/i18n/settings";
+import { useTranslation } from "@/libs/i18n";
 
 type TourData = {
     id: number;
@@ -155,6 +158,10 @@ const getTourData = async (slug: string): Promise<TourData> => {
 
 export default async function TourDetailPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
+    const cookieStore = await cookies();
+    const lng = cookieStore.get(cookieName)?.value || fallbackLng;
+    const { t } = await useTranslation(lng);
+
     const [tour, relatedTours, reviewCategories] = await Promise.all([
         getTourData(slug),
         safeGet(() => tourApi.related(slug), [] as RelatedTour[]),
@@ -169,13 +176,13 @@ export default async function TourDetailPage({ params }: { params: Promise<{ slu
         <>
             <VStack borderBottomRadius="calc(100vw / 16)" backgroundColor="white" paddingBottom="calc(100vw / 24)" position="relative" zIndex={2}>
                 <Container maxW="xl" mx="auto" px={4}>
-                    <SearchInput defaultDestination={tour.location} />
+                    <SearchInput defaultDestination={tour.location} lng={lng} />
 
                     <Box mt={4}>
                         <TourHeader
                             breadcrumbItems={[
-                                { label: "Home", href: "/" },
-                                { label: "Tours", href: "/tours" },
+                                { label: t("home"), href: "/" },
+                                { label: t("tours"), href: "/tour/list" },
                                 { label: tour.location, href: "#" },
                             ]}
                             title={tour.title}
@@ -187,11 +194,12 @@ export default async function TourDetailPage({ params }: { params: Promise<{ slu
                             slug={slug}
                             variants={tour.variants}
                             durationDays={tour.details.duration ? parseInt(tour.details.duration) : 1}
+                            lng={lng}
                         />
 
                         <Grid templateColumns={{ base: "1fr", md: "repeat(8, 1fr)" }} gap={5} mt={8}>
                             <GridItem colSpan={6}>
-                                <TourGalleryWithThumbnails images={tour.images} />
+                                <TourGalleryWithThumbnails images={tour.images} lng={lng} />
                             </GridItem>
 
                             <GridItem as={VStack} colSpan={2} gap={4}>
@@ -201,13 +209,14 @@ export default async function TourDetailPage({ params }: { params: Promise<{ slu
                                     reviewCount={tour.reviewCount}
                                     staffScore={tour.staffScore}
                                     testimonial={tour.testimonial}
+                                    lng={lng}
                                 />
-                                <TourMapSection mapUrl={tour.mapUrl} previewImage={tour.mapPreview} />
+                                <TourMapSection mapUrl={tour.mapUrl} previewImage={tour.mapPreview} lng={lng} />
                             </GridItem>
                         </Grid>
                     </Box>
                 </Container>
-            </VStack>
+            </VStack >
 
             <Container maxW="xl" mx="auto" px={4} py={12}>
                 <Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={12}>
@@ -219,6 +228,7 @@ export default async function TourDetailPage({ params }: { params: Promise<{ slu
                             notIncluded={tour.notIncluded}
                             details={tour.details}
                             meetingPoint={tour.meetingPoint}
+                            lng={lng}
                         />
                     </GridItem>
 
@@ -232,9 +242,9 @@ export default async function TourDetailPage({ params }: { params: Promise<{ slu
                 <VStack align="stretch" gap={10}>
                     <Box>
                         <Heading as="h2" size="2xl" fontWeight="black" mb={8} letterSpacing="tight">
-                            Related tours
+                            {t("related_tours")}
                         </Heading>
-                        <RelatedToursSwiper tours={relatedTours} />
+                        <RelatedToursSwiper tours={relatedTours} lng={lng} />
                     </Box>
 
                     <Box id="reviews" pt={10} borderTop="1px solid" borderColor="gray.100">
@@ -243,6 +253,7 @@ export default async function TourDetailPage({ params }: { params: Promise<{ slu
                             averageRating={tour.rating}
                             totalReviews={tour.reviewCount}
                             categories={reviewCategories}
+                            lng={lng}
                         />
                     </Box>
                 </VStack>

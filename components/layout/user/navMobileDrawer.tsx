@@ -1,15 +1,16 @@
 'use client';
 import { Box, Button, CloseButton, Drawer, Icon, Portal, useDisclosure } from "@chakra-ui/react";
 import { FiMenu } from "react-icons/fi";
-import { Logo, MenuLinks } from "./navbar";
+import { Logo, MenuLinks } from "./navCommon";
 import { IBookingDetail } from "@/types/booking";
 import { ResumeBookingButton } from "./resumeBookingButton";
 
 interface MobileDrawerProps {
     activeBooking?: IBookingDetail | null;
+    navItems?: any[];
 }
 
-export const MobileDrawer = ({ activeBooking }: MobileDrawerProps) => {
+export const MobileDrawer = ({ activeBooking, navItems }: MobileDrawerProps) => {
     const { open, onToggle } = useDisclosure();
 
     return (
@@ -29,7 +30,7 @@ export const MobileDrawer = ({ activeBooking }: MobileDrawerProps) => {
                             </Drawer.Title>
                         </Drawer.Header>
                         <Drawer.Body py={8}>
-                            <MenuLinks isMobile />
+                            <MenuLinks items={navItems} isMobile />
                             <Box mt={8} pt={8} borderTopWidth="1px" borderColor="gray.100">
                                 <ResumeBookingButton
                                     booking={activeBooking || null}

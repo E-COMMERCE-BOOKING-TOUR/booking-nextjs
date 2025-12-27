@@ -24,6 +24,15 @@ export type ITourSearchParams = {
     minPrice?: number;
     maxPrice?: number;
     minRating?: number;
+    startDate?: string;
+    endDate?: string;
+    travelers?: number;
+    adults?: number;
+    seniors?: number;
+    youth?: number;
+    children?: number;
+    infants?: number;
+    rooms?: number;
     limit?: number;
     offset?: number;
     sort?: 'popular' | 'price_asc' | 'price_desc' | 'rating_desc' | 'newest';
@@ -74,6 +83,42 @@ const toQueryRecord = (params?: ITourSearchParams): Record<string, string> | und
 
     if (params.sort) {
         query.sort = params.sort;
+    }
+
+    if (params.startDate) {
+        query.startDate = params.startDate;
+    }
+
+    if (params.endDate) {
+        query.endDate = params.endDate;
+    }
+
+    if (typeof params.travelers === 'number') {
+        query.travelers = params.travelers.toString();
+    }
+
+    if (typeof params.adults === 'number') {
+        query.adults = params.adults.toString();
+    }
+
+    if (typeof params.seniors === 'number') {
+        query.seniors = params.seniors.toString();
+    }
+
+    if (typeof params.youth === 'number') {
+        query.youth = params.youth.toString();
+    }
+
+    if (typeof params.children === 'number') {
+        query.children = params.children.toString();
+    }
+
+    if (typeof params.infants === 'number') {
+        query.infants = params.infants.toString();
+    }
+
+    if (typeof params.rooms === 'number') {
+        query.rooms = params.rooms.toString();
     }
 
     return Object.keys(query).length ? query : undefined;

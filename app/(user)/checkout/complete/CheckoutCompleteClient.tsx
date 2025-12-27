@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Box, Button, Container, Heading, Stack, Text, Flex, Icon, Badge, SimpleGrid, Steps, DownloadTrigger } from "@chakra-ui/react";
 import { FaCheckCircle } from "react-icons/fa";
@@ -9,21 +9,47 @@ import { BookingSummaryCard } from "@/components/ui/user/BookingSummaryCard";
 import bookingApi from "@/apis/booking";
 import { toaster } from "@/components/chakra/toaster";
 import { useSession } from "next-auth/react";
+import { useTranslation } from "@/libs/i18n/client";
+import { cookieName, fallbackLng } from "@/libs/i18n/settings";
+import Cookies from "js-cookie";
+import { useSearchParams } from "next/navigation";
 
 interface Props {
     initialBooking: IBookingDetail;
+    lng?: string;
 }
 
-const steps = [
-    { label: "Input information", description: "Please provide your contact and traveler information" },
-    { label: "Payment method", description: "Select your payment method" },
-    { label: "Confirmation", description: "Review your booking information" },
-    { label: "Complete", description: "Your booking is complete" },
-];
-
-export default function CheckoutCompleteClient({ initialBooking }: Props) {
+export default function CheckoutCompleteClient({ initialBooking, lng: propLng }: Props) {
     const router = useRouter();
     const { data: session } = useSession();
+    const searchParams = useSearchParams();
+    const lng = propLng || searchParams?.get('lng') || fallbackLng;
+    const { t } = useTranslation(lng as string);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('booking_expiry');
+        }
+    }, []);
+
+    const steps = [
+        {
+            label: t('checkout_step_info', { defaultValue: "Input information" }),
+            description: t('checkout_step_info_desc', { defaultValue: "Please provide your contact and traveler information" })
+        },
+        {
+            label: t('checkout_step_payment', { defaultValue: "Payment method" }),
+            description: t('checkout_step_payment_desc', { defaultValue: "Select your payment method" })
+        },
+        {
+            label: t('checkout_step_confirm', { defaultValue: "Confirmation" }),
+            description: t('checkout_step_confirm_desc', { defaultValue: "Review your booking information" })
+        },
+        {
+            label: t('checkout_step_complete', { defaultValue: "Complete" }),
+            description: t('checkout_step_complete_desc', { defaultValue: "Your booking is complete" })
+        },
+    ];
 
     const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false);
     const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
@@ -39,8 +65,8 @@ export default function CheckoutCompleteClient({ initialBooking }: Props) {
         } catch (error) {
             console.error(error);
             toaster.create({
-                title: "Error",
-                description: `Failed to download ${type}. Please try again later.`,
+                title: t('error', { defaultValue: "Error" }),
+                description: t('failed_download', { type, defaultValue: `Failed to download ${type}. Please try again later.` }),
                 type: "error",
             });
             throw error;
@@ -70,23 +96,24 @@ export default function CheckoutCompleteClient({ initialBooking }: Props) {
                         {/* Success Message */}
                         <Box p={8} borderRadius="15px" textAlign="center">
                             <Badge colorPalette="green" variant="solid" px={4} py={2} borderRadius="full" mb={4}>
-                                Paid and confirmed
+                                {t('paid_and_confirmed', { defaultValue: "Paid and confirmed" })}
                             </Badge>
                             <Flex justify="center" align="center" gap={4} mb={4}>
                                 <Icon as={FaCheckCircle} boxSize={16} color="green.500" />
                             </Flex>
-                            <Heading as="h1" size="2xl" mb={2}>You&apos;re all set!</Heading>
+                            <Heading as="h1" size="2xl" mb={2}>{t('all_set_title', { defaultValue: "You're all set!" })}</Heading>
                             <Text color="fg.muted" fontSize="lg" mb={4}>
-                                Confirmation #{initialBooking.id}
+                                {t('confirmation_number', { id: initialBooking.id, defaultValue: `Confirmation #${initialBooking.id}` })}
                             </Text>
                             <Text color="fg.muted" mb={6}>
-                                We&apos;ve sent the receipt and voucher to <Text as="span" fontWeight="semibold" color="fg.emphasized">{initialBooking.contact_email}</Text>.
-                                Present the QR code on arrival with a valid ID.
+                                {t('confirmation_email_sent', { email: initialBooking.contact_email, defaultValue: `We've sent the receipt and voucher to ${initialBooking.contact_email}.` })}
+                                <br />
+                                {t('present_qr_notice', { defaultValue: "Present the QR code on arrival with a valid ID." })}
                             </Text>
 
                             <Stack direction={{ base: "column", md: "row" }} gap={3} justify="center">
-                                <Button colorPalette="blue" size="lg" onClick={() => router.push("/user-order")}>
-                                    View My Bookings
+                                <Button colorPalette="blue" size="lg" onClick={() => router.push("/mypage/bookings")}>
+                                    {t('view_my_bookings', { defaultValue: "View My Bookings" })}
                                 </Button>
                                 <DownloadTrigger
                                     data={() => fetchDownloadData('receipt')}
@@ -99,7 +126,7 @@ export default function CheckoutCompleteClient({ initialBooking }: Props) {
                                         size="lg"
                                         loading={isDownloadingReceipt}
                                     >
-                                        Download Receipt
+                                        {t('download_receipt', { defaultValue: "Download Receipt" })}
                                     </Button>
                                 </DownloadTrigger>
                             </Stack>
@@ -107,10 +134,10 @@ export default function CheckoutCompleteClient({ initialBooking }: Props) {
 
                         {/* What's next */}
                         <Box p={8} pt={0} borderRadius="15px">
-                            <Heading as="h3" fontSize="xl" mb={4}>What&apos;s next?</Heading>
+                            <Heading as="h3" fontSize="xl" mb={4}>{t('whats_next_title', { defaultValue: "What's next?" })}</Heading>
                             <Stack gap={3}>
                                 <Button variant="outline" onClick={() => router.push("/")}>
-                                    Plan Another Trip
+                                    {t('plan_another_trip', { defaultValue: "Plan Another Trip" })}
                                 </Button>
                                 <DownloadTrigger
                                     data={() => fetchDownloadData('invoice')}
@@ -122,7 +149,7 @@ export default function CheckoutCompleteClient({ initialBooking }: Props) {
                                         variant="outline"
                                         loading={isDownloadingInvoice}
                                     >
-                                        Download Invoice (PDF)
+                                        {t('download_invoice_pdf', { defaultValue: "Download Invoice (PDF)" })}
                                     </Button>
                                 </DownloadTrigger>
                             </Stack>
@@ -131,7 +158,7 @@ export default function CheckoutCompleteClient({ initialBooking }: Props) {
                 </Stack>
 
                 <Stack gridColumn={{ base: "1 / -1", md: "9 / -1" }}>
-                    <BookingSummaryCard booking={initialBooking} />
+                    <BookingSummaryCard booking={initialBooking} lng={lng as string} />
                 </Stack>
             </SimpleGrid>
         </Container>

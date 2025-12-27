@@ -20,9 +20,14 @@ import { useState, useCallback, memo } from "react";
 import { FaSearch, FaFilter, FaChevronDown, FaChevronUp, FaStar, FaCheck, FaSlidersH } from "react-icons/fa";
 import { ITourSearchParams } from "@/apis/tour";
 import { useFormContext } from "react-hook-form";
+import { useTranslation } from "@/libs/i18n/client";
+import { cookieName, fallbackLng } from "@/libs/i18n/settings";
+import Cookies from "js-cookie";
+import { useSearchParams } from "next/navigation";
 
 interface FilterSidebarProps {
     onApply: (data: ITourSearchParams) => void;
+    lng?: string;
 }
 
 // Memoized Rating Item component
@@ -30,12 +35,14 @@ const RatingItem = memo(({
     star,
     isSelected,
     isOther,
-    onClick
+    onClick,
+    t
 }: {
     star: number;
     isSelected: boolean;
     isOther: boolean;
     onClick: () => void;
+    t: any;
 }) => (
     <HStack
         cursor="pointer"
@@ -43,7 +50,7 @@ const RatingItem = memo(({
         opacity={isOther ? 0.5 : 1}
         _hover={{ opacity: 1 }}
         bg={isSelected ? "gray.50" : "transparent"}
-        p={1}
+        p={2}
         borderRadius="md"
     >
         <Box
@@ -63,7 +70,7 @@ const RatingItem = memo(({
                 <Icon key={i} as={FaStar} color={i < star ? "yellow.400" : "gray.200"} />
             ))}
         </HStack>
-        <Text fontSize="sm" color="gray.600">& Up</Text>
+        <Text fontSize="sm" color="gray.600">{t("and_up")}</Text>
     </HStack>
 ));
 RatingItem.displayName = "RatingItem";
@@ -85,7 +92,7 @@ const CheckboxItem = memo(({
         onClick={onClick}
         gap={3}
         ml={ml}
-        py={0.5}
+        py={2}
     >
         <Box
             w={4} h={4}
@@ -109,12 +116,16 @@ CheckboxItem.displayName = "CheckboxItem";
 interface FilterContentProps {
     onApply: (data: ITourSearchParams) => void;
     onClose?: () => void; // Optional - only for mobile drawer
+    lng?: string;
 }
 
 import { masterApi } from "@/apis/master";
 import { useQuery } from "@tanstack/react-query";
 
-const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
+const FilterContent = memo(({ onApply, onClose, lng: propLng }: FilterContentProps) => {
+    const searchParams = useSearchParams();
+    const lng = propLng || searchParams?.get('lng') || fallbackLng;
+    const { t } = useTranslation(lng as string);
     const { register, setValue, getValues, reset, handleSubmit, watch } = useFormContext<ITourSearchParams>();
 
     // Fetch countries and divisions
@@ -198,13 +209,13 @@ const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
         <VStack gap={6} align="stretch">
             {/* Keyword Search */}
             <Box>
-                <Text fontWeight="bold" mb={3} fontSize="sm" textTransform="uppercase" color="gray.500">Search</Text>
+                <Text fontWeight="bold" mb={3} fontSize="sm" textTransform="uppercase" color="gray.500">{t('search', { defaultValue: 'Search' })}</Text>
                 <Box position="relative">
                     <Box position="absolute" left={3} top="50%" transform="translateY(-50%)" color="gray.300" zIndex={1}>
                         <FaSearch />
                     </Box>
                     <Input
-                        placeholder="Destination, tour name..."
+                        placeholder={t('destination_placeholder', { defaultValue: 'Destination, tour name...' })}
                         {...register("keyword")}
                         onKeyDown={(e) => {
                             if (e.key === "Enter") {
@@ -225,7 +236,7 @@ const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
                 {/* Price Range */}
                 <Accordion.Item value="price">
                     <Accordion.ItemTrigger py={2} px={0}>
-                        <Span flex="1" fontWeight="bold" fontSize="sm" textTransform="uppercase" color="gray.500">Price Range</Span>
+                        <Span flex="1" fontWeight="bold" fontSize="sm" textTransform="uppercase" color="gray.500">{t('price_range', { defaultValue: 'Price Range' })}</Span>
                         <Accordion.ItemIndicator />
                     </Accordion.ItemTrigger>
                     <Accordion.ItemContent>
@@ -233,14 +244,14 @@ const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
                             <HStack gap={2} mb={2}>
                                 <Input
                                     type="number"
-                                    placeholder="Min"
+                                    placeholder={t('min', { defaultValue: 'Min' })}
                                     {...register("minPrice")}
                                     size="sm"
                                 />
                                 <Text>-</Text>
                                 <Input
                                     type="number"
-                                    placeholder="Max"
+                                    placeholder={t('max', { defaultValue: 'Max' })}
                                     {...register("maxPrice")}
                                     size="sm"
                                 />
@@ -256,7 +267,7 @@ const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
                 {/* Rating */}
                 <Accordion.Item value="rating">
                     <Accordion.ItemTrigger py={2} px={0}>
-                        <Span flex="1" fontWeight="bold" fontSize="sm" textTransform="uppercase" color="gray.500">Rating</Span>
+                        <Span flex="1" fontWeight="bold" fontSize="sm" textTransform="uppercase" color="gray.500">{t('rating', { defaultValue: 'Rating' })}</Span>
                         <Accordion.ItemIndicator />
                     </Accordion.ItemTrigger>
                     <Accordion.ItemContent>
@@ -269,6 +280,7 @@ const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
                                         isSelected={selectedRating === star}
                                         isOther={selectedRating !== undefined && selectedRating !== star}
                                         onClick={() => handleRatingChange(star)}
+                                        t={t}
                                     />
                                 ))}
                             </Stack>
@@ -279,7 +291,7 @@ const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
                 {/* Locations */}
                 <Accordion.Item value="locations">
                     <Accordion.ItemTrigger py={2} px={0}>
-                        <Span flex="1" fontWeight="bold" fontSize="sm" textTransform="uppercase" color="gray.500">Locations</Span>
+                        <Span flex="1" fontWeight="bold" fontSize="sm" textTransform="uppercase" color="gray.500">{t('locations', { defaultValue: 'Locations' })}</Span>
                         <Accordion.ItemIndicator />
                     </Accordion.ItemTrigger>
                     <Accordion.ItemContent>
@@ -340,7 +352,7 @@ const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
                     width="full"
                     onClick={handleApplyAndClose}
                 >
-                    Search / Apply Filters
+                    {t('apply_filters', { defaultValue: 'Search / Apply Filters' })}
                 </Button>
                 <Button
                     variant="outline"
@@ -348,7 +360,7 @@ const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
                     width="full"
                     onClick={handleReset}
                 >
-                    Reset Filters
+                    {t('reset_filters', { defaultValue: 'Reset Filters' })}
                 </Button>
             </VStack>
         </VStack>
@@ -357,7 +369,10 @@ const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
 FilterContent.displayName = "FilterContent";
 
 // Desktop Sidebar Component
-export const FilterSidebar = memo(({ onApply }: FilterSidebarProps) => {
+export const FilterSidebar = memo(({ onApply, lng: propLng }: FilterSidebarProps) => {
+    const searchParams = useSearchParams();
+    const lng = propLng || searchParams?.get('lng') || fallbackLng;
+    const { t } = useTranslation(lng as string);
     return (
         <Box
             bg="white"
@@ -371,9 +386,9 @@ export const FilterSidebar = memo(({ onApply }: FilterSidebarProps) => {
         >
             <Heading size="md" mb={6} display="flex" alignItems="center" gap={2}>
                 <Icon as={FaFilter} color="main" />
-                Filters
+                {t('filters', { defaultValue: 'Filters' })}
             </Heading>
-            <FilterContent onApply={onApply} />
+            <FilterContent onApply={onApply} lng={lng} />
         </Box>
     );
 });
@@ -384,7 +399,10 @@ interface MobileFilterDrawerProps {
     onApply: (data: ITourSearchParams) => void;
 }
 
-export const MobileFilterDrawer = memo(({ onApply }: MobileFilterDrawerProps) => {
+export const MobileFilterDrawer = memo(({ onApply, lng: propLng }: MobileFilterDrawerProps & { lng?: string }) => {
+    const searchParams = useSearchParams();
+    const lng = propLng || searchParams?.get('lng') || fallbackLng;
+    const { t } = useTranslation(lng as string);
     const [isOpen, setIsOpen] = useState(false);
 
     return (
@@ -398,7 +416,7 @@ export const MobileFilterDrawer = memo(({ onApply }: MobileFilterDrawerProps) =>
             >
                 <HStack gap={2}>
                     <Icon as={FaSlidersH} />
-                    <Text>Filters</Text>
+                    <Text>{t('filters', { defaultValue: 'Filters' })}</Text>
                 </HStack>
             </Button>
 
@@ -412,7 +430,7 @@ export const MobileFilterDrawer = memo(({ onApply }: MobileFilterDrawerProps) =>
                                 <HStack justify="space-between" width="full">
                                     <Drawer.Title display="flex" alignItems="center" gap={2}>
                                         <Icon as={FaFilter} color="main" />
-                                        Filters
+                                        {t('filters', { defaultValue: 'Filters' })}
                                     </Drawer.Title>
                                     <Drawer.CloseTrigger asChild>
                                         <CloseButton size="sm" />
@@ -420,7 +438,7 @@ export const MobileFilterDrawer = memo(({ onApply }: MobileFilterDrawerProps) =>
                                 </HStack>
                             </Drawer.Header>
                             <Drawer.Body py={6} overflowY="auto">
-                                <FilterContent onApply={onApply} onClose={() => setIsOpen(false)} />
+                                <FilterContent onApply={onApply} onClose={() => setIsOpen(false)} lng={lng} />
                             </Drawer.Body>
                         </Drawer.Content>
                     </Drawer.Positioner>

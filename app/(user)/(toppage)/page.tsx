@@ -8,7 +8,15 @@ import tour from '@/apis/tour';
 import division from '@/apis/division';
 import { settingsApi } from '@/apis/settings';
 
+import { cookies } from 'next/headers';
+import { cookieName, fallbackLng } from '@/libs/i18n/settings';
+import { useTranslation } from '@/libs/i18n';
+
 export default async function TopPage() {
+  const cookieStore = await cookies();
+  const lng = cookieStore.get(cookieName)?.value || fallbackLng;
+  const { t } = await useTranslation(lng);
+
   const popularTours = await tour.popular(8);
   const trendingDestinations = await division.trending(6);
   const settings = await settingsApi.get();
@@ -17,7 +25,7 @@ export default async function TopPage() {
     <>
       <Container maxW="xl" mx="auto">
         <Header />
-        <SearchInput />
+        <SearchInput lng={lng} />
         {/* <RecentSearch /> */}
         <BannerHeader
           banners_square={settings?.banners_square}
@@ -25,8 +33,8 @@ export default async function TopPage() {
         />
         <div>
           <HeaderList
-            title="Explore Popular Cities"
-            description="Discover the best destinations for your next trip"
+            title={t('popular_cities_title', { defaultValue: 'Explore Popular Cities' })}
+            description={t('popular_cities_description', { defaultValue: 'Discover the best destinations for your next trip' })}
           />
           <Grid templateColumns={{ sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }} gap={4} paddingBottom="1rem">
             {Array.isArray(popularTours) && popularTours.length > 0 ? (
@@ -46,11 +54,12 @@ export default async function TopPage() {
                   slug={tourItem.slug}
                   currencySymbol={tourItem.currencySymbol}
                   currencyCode={tourItem.currencyCode}
+                  lng={lng}
                 />
               ))
             ) : (
               <Text gridColumn="1 / -1" textAlign="center" py={8} color="gray.500">
-                No popular tours available at the moment
+                {t('no_popular_tours', { defaultValue: 'No popular tours available at the moment' })}
               </Text>
             )}
           </Grid>
@@ -110,14 +119,14 @@ export default async function TopPage() {
       <VStack backgroundColor="white" position="relative" zIndex={2} overflow="visible" pb={20}>
         <Container maxW="xl" mx="auto">
           <HeaderList
-            title="Trending destinations"
-            description="Travellers searching for Vietnam also booked these"
+            title={t('trending_destinations_title', { defaultValue: 'Trending destinations' })}
+            description={t('trending_destinations_description', { defaultValue: 'Travellers searching for Vietnam also booked these' })}
           />
           {Array.isArray(trendingDestinations) && trendingDestinations.length > 0 ? (
-            <TravelList destinations={trendingDestinations} />
+            <TravelList destinations={trendingDestinations} lng={lng} />
           ) : (
             <Text textAlign="center" py={8} color="gray.500">
-              No trending destinations available at the moment
+              {t('no_trending_destinations', { defaultValue: 'No trending destinations available at the moment' })}
             </Text>
           )}
         </Container>

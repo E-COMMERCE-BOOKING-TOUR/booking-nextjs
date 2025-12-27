@@ -26,15 +26,15 @@ import Link from 'next/link';
 const StatusBadge = ({ status }: { status: string }) => {
   switch (status) {
     case 'confirmed':
-      return <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 px-3 py-1">Đã xác nhận</Badge>;
+      return <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 px-3 py-1">Confirmed</Badge>;
     case 'pending_confirm':
-      return <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 px-3 py-1">Chờ xác nhận</Badge>;
+      return <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 px-3 py-1">Pending Confirm</Badge>;
     case 'pending_payment':
-      return <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20 px-3 py-1">Chờ thanh toán</Badge>;
+      return <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20 px-3 py-1">Pending Payment</Badge>;
     case 'cancelled':
-      return <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20 px-3 py-1">Đã hủy</Badge>;
+      return <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20 px-3 py-1">Cancelled</Badge>;
     case 'expired':
-      return <Badge className="bg-slate-500/10 text-slate-500 border-slate-500/20 px-3 py-1">Hết hạn</Badge>;
+      return <Badge className="bg-slate-500/10 text-slate-500 border-slate-500/20 px-3 py-1">Expired</Badge>;
     default:
       return <Badge className="bg-slate-500/10 text-slate-500 border-slate-500/20 px-3 py-1">{status}</Badge>;
   }
@@ -58,9 +58,9 @@ export default function AdminBookingDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-booking-detail', id] });
       queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
-      toast.success('Xác nhận đặt phòng thành công');
+      toast.success('Confirmed booking successfully');
     },
-    onError: (error: Error) => toast.error(error.message || 'Lỗi xác nhận')
+    onError: (error: Error) => toast.error(error.message || 'Confirmation failed')
   });
 
   const cancelMutation = useMutation({
@@ -68,15 +68,15 @@ export default function AdminBookingDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-booking-detail', id] });
       queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
-      toast.success('Đã hủy đơn hàng');
+      toast.success('Booking cancelled successfully');
     },
-    onError: (error: Error) => toast.error(error.message || 'Lỗi khi hủy')
+    onError: (error: Error) => toast.error(error.message || 'Cancellation failed')
   });
 
-  // Hiển thị loading khi:
-  // 1. Session đang load
-  // 2. Query đang load (khi enabled=true)
-  // 3. Có token nhưng booking chưa về (đang chờ fetch)
+  // Display loading when:
+  // 1. Session is loading
+  // 2. Query is loading (when enabled=true)
+  // 3. Token exists but booking is not yet fetched (waiting for fetch)
   if (sessionStatus === 'loading' || isLoading || (!!token && !booking)) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -88,9 +88,9 @@ export default function AdminBookingDetailPage() {
   if (!booking) {
     return (
       <div className="text-center py-20">
-        <h2 className="text-2xl font-bold">Không tìm thấy đơn hàng</h2>
+        <h2 className="text-2xl font-bold">Booking not found</h2>
         <Button asChild className="mt-4" variant="outline">
-          <Link href="/admin/booking">Quay lại danh sách</Link>
+          <Link href="/admin/booking">Back to list</Link>
         </Button>
       </div>
     );
@@ -109,11 +109,11 @@ export default function AdminBookingDetailPage() {
           </Button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-black text-foreground">Chi Tiết Đơn Hàng #{id}</h1>
+              <h1 className="text-2xl font-black text-foreground">Booking Details #{id}</h1>
               <StatusBadge status={b.status} />
             </div>
             <p className="text-muted-foreground text-sm font-medium mt-1">
-              Đặt lúc: {new Date(b.created_at).toLocaleString('vi-VN')}
+              Booked at: {new Date(b.created_at).toLocaleString('en-US')}
             </p>
           </div>
         </div>
@@ -125,7 +125,7 @@ export default function AdminBookingDetailPage() {
               className="bg-emerald-500 hover:bg-emerald-600 font-bold"
             >
               <CheckCircle2 className="mr-2 size-4" />
-              Xác nhận đặt phòng
+              Confirm Booking
             </Button>
           )}
           {['pending_confirm', 'pending_payment'].includes(b.status) && (
@@ -136,7 +136,7 @@ export default function AdminBookingDetailPage() {
               className="text-rose-500 border-rose-500/20 hover:bg-rose-500/10 font-bold"
             >
               <XCircle className="mr-2 size-4" />
-              Hủy đơn
+              Cancel Booking
             </Button>
           )}
         </div>
@@ -150,12 +150,12 @@ export default function AdminBookingDetailPage() {
             <CardHeader className="border-b border-white/5 pb-4">
               <CardTitle className="text-lg font-bold flex items-center gap-2">
                 <User className="size-5 text-primary" />
-                Thông tin người liên hệ
+                Contact Information
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-1">
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">Họ tên</p>
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">Full Name</p>
                 <p className="text-sm font-bold flex items-center gap-2">
                   {b.contact_name}
                 </p>
@@ -168,7 +168,7 @@ export default function AdminBookingDetailPage() {
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">Số điện thoại</p>
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">Phone Number</p>
                 <p className="text-sm font-bold flex items-center gap-2">
                   <Phone className="size-3 text-muted-foreground" />
                   {b.contact_phone}
@@ -182,17 +182,17 @@ export default function AdminBookingDetailPage() {
             <CardHeader className="border-b border-white/5 pb-4">
               <CardTitle className="text-lg font-bold flex items-center gap-2">
                 <Package className="size-5 text-primary" />
-                Danh sách Tour đặt
+                Booking Items
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-white/5 border-b border-white/5">
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Dịch vụ</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-center">Số lượng</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Đơn giá</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Thành tiền</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Service</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-center">Quantity</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Unit Price</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -202,12 +202,12 @@ export default function AdminBookingDetailPage() {
                         <div className="flex flex-col">
                           <span className="text-sm font-bold">{item.tour_title || 'Tour'}</span>
                           <span className="text-xs text-muted-foreground">
-                            {item.variant_name || item.variant?.name} - {item.pax_type_name || 'Khách'}
+                            {item.variant_name || item.variant?.name} - {item.pax_type_name || 'Guest'}
                           </span>
                           {item.session_date && (
                             <span className="text-[10px] text-primary font-bold mt-1 flex items-center gap-1">
                               <Calendar className="size-3" />
-                              {new Date(item.session_date).toLocaleDateString('vi-VN')}
+                              {new Date(item.session_date).toLocaleDateString('en-US')}
                               {item.start_time && ` | ${item.start_time.substring(0, 5)}`}
                               {item.end_time && ` - ${item.end_time.substring(0, 5)}`}
                             </span>
@@ -218,19 +218,19 @@ export default function AdminBookingDetailPage() {
                         <Badge variant="outline">{item.quantity}</Badge>
                       </td>
                       <td className="px-6 py-4 text-right text-xs font-medium">
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.unit_price)}
+                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND' }).format(item.unit_price)}
                       </td>
                       <td className="px-6 py-4 text-right text-sm font-black text-foreground">
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.total_amount)}
+                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND' }).format(item.total_amount)}
                       </td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
                   <tr className="bg-white/5">
-                    <td colSpan={3} className="px-6 py-4 text-right font-bold text-sm">Tổng cộng:</td>
+                    <td colSpan={3} className="px-6 py-4 text-right font-bold text-sm">Total:</td>
                     <td className="px-6 py-4 text-right font-black text-lg text-primary">
-                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(b.total_amount)}
+                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND' }).format(b.total_amount)}
                     </td>
                   </tr>
                 </tfoot>
@@ -244,17 +244,17 @@ export default function AdminBookingDetailPage() {
               <CardHeader className="border-b border-white/5 pb-4">
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
                   <Users className="size-5 text-primary" />
-                  Danh sách hành khách
+                  Passenger List
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 <table className="w-full text-left">
                   <thead>
                     <tr className="bg-white/5 border-b border-white/5">
-                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Họ tên</th>
-                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Ngày sinh</th>
-                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">SĐT</th>
-                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Dịch vụ liên quan</th>
+                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Full Name</th>
+                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Birthdate</th>
+                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Phone</th>
+                      <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Related Service</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -263,7 +263,7 @@ export default function AdminBookingDetailPage() {
                         <tr key={`${item.id}-${idx}`}>
                           <td className="px-6 py-4 text-sm font-bold">{p.full_name}</td>
                           <td className="px-6 py-4 text-xs font-medium">
-                            {p.birthdate ? new Date(p.birthdate).toLocaleDateString('vi-VN') : 'N/A'}
+                            {p.birthdate ? new Date(p.birthdate).toLocaleDateString('en-US') : 'N/A'}
                           </td>
                           <td className="px-6 py-4 text-sm font-medium">{p.phone_number || 'N/A'}</td>
                           <td className="px-6 py-4 text-right">
@@ -293,24 +293,24 @@ export default function AdminBookingDetailPage() {
             <CardHeader className="border-b border-white/5 pb-4">
               <CardTitle className="text-lg font-bold flex items-center gap-2">
                 <CreditCard className="size-5 text-primary" />
-                Thanh toán
+                Payment
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Phương thức:</span>
+                <span className="text-sm text-muted-foreground">Method:</span>
                 <span className="text-sm font-bold uppercase">{b.booking_payment?.payment_method_name || 'N/A'}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Trạng thái:</span>
+                <span className="text-sm text-muted-foreground">Status:</span>
                 <Badge className={b.payment_status === 'paid' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}>
-                  {b.payment_status === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                  {b.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
                 </Badge>
               </div>
               <div className="pt-4 border-t border-white/10 flex justify-between items-end">
-                <span className="text-xs text-muted-foreground uppercase font-black tracking-widest">Số tiền quyết toán:</span>
+                <span className="text-xs text-muted-foreground uppercase font-black tracking-widest">Settlement Amount:</span>
                 <span className="text-2xl font-black text-primary">
-                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(b.total_amount)}
+                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND' }).format(b.total_amount)}
                 </span>
               </div>
             </CardContent>
@@ -319,13 +319,13 @@ export default function AdminBookingDetailPage() {
           {/* Quick Logs / Navigation */}
           <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
             <CardHeader>
-              <CardTitle className="text-sm font-bold">Thao tác nhanh</CardTitle>
+              <CardTitle className="text-sm font-bold">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <Button asChild variant="outline" className="w-full justify-start text-xs border-white/5 bg-white/5 hover:bg-white/10">
                 <Link href="/admin/booking">
                   <Clock className="mr-2 size-3 text-muted-foreground" />
-                  Xem lịch sử thay đổi
+                  View Change Log
                 </Link>
               </Button>
             </CardContent>

@@ -49,15 +49,15 @@ import { useForm, useWatch } from 'react-hook-form';
 const StatusBadge = ({ status }: { status: string }) => {
   switch (status) {
     case 'confirmed':
-      return <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Đã xác nhận</Badge>;
+      return <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Confirmed</Badge>;
     case 'pending_confirm':
-      return <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">Chờ xác nhận</Badge>;
+      return <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">Pending Confirm</Badge>;
     case 'pending_payment':
-      return <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20">Chờ thanh toán</Badge>;
+      return <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20">Pending Payment</Badge>;
     case 'cancelled':
-      return <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20">Đã hủy</Badge>;
+      return <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20">Cancelled</Badge>;
     case 'expired':
-      return <Badge className="bg-slate-500/10 text-slate-500 border-slate-500/20">Hết hạn</Badge>;
+      return <Badge className="bg-slate-500/10 text-slate-500 border-slate-500/20">Expired</Badge>;
     default:
       return <Badge className="bg-slate-500/10 text-slate-500 border-slate-500/20">{status}</Badge>;
   }
@@ -66,11 +66,11 @@ const StatusBadge = ({ status }: { status: string }) => {
 const PaymentBadge = ({ status }: { status: string }) => {
   switch (status) {
     case 'paid':
-      return <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Đã thanh toán</Badge>;
+      return <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Paid</Badge>;
     case 'unpaid':
-      return <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">Chưa thanh toán</Badge>;
+      return <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">Unpaid</Badge>;
     case 'refunded':
-      return <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20">Đã hoàn tiền</Badge>;
+      return <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20">Refunded</Badge>;
     default:
       return <Badge className="bg-slate-500/10 text-slate-500 border-slate-500/20">{status}</Badge>;
   }
@@ -114,11 +114,11 @@ export default function AdminBookingListPage() {
     mutationFn: (id: number) => adminBookingApi.remove(id, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
-      toast.success('Xóa đơn hàng thành công');
+      toast.success('Deleted booking successfully');
       setDeleteId(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Không thể xóa đơn hàng');
+      toast.error(error.message || 'Failed to delete booking');
     }
   });
 
@@ -126,10 +126,10 @@ export default function AdminBookingListPage() {
     mutationFn: (id: number) => adminBookingApi.confirm(id, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
-      toast.success('Xác nhận đơn hàng thành công');
+      toast.success('Confirmed booking successfully');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Không thể xác nhận đơn hàng');
+      toast.error(error.message || 'Failed to confirm booking');
     }
   });
 
@@ -172,8 +172,8 @@ export default function AdminBookingListPage() {
     <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Quản Lý Đơn Hàng</h1>
-          <p className="text-muted-foreground mt-1 text-lg">Theo dõi và xử lý các yêu cầu đặt tour từ khách hàng.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Booking Management</h1>
+          <p className="text-muted-foreground mt-1 text-lg">Track and process tour booking requests from customers.</p>
         </div>
       </div>
 
@@ -184,7 +184,7 @@ export default function AdminBookingListPage() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input
-                  placeholder="Tìm kiếm theo tên, email hoặc mã đơn..."
+                  placeholder="Search by name, email or booking ID..."
                   className="pl-10 bg-white/5 border-white/10"
                   {...register('searchTerm')}
                 />
@@ -195,15 +195,15 @@ export default function AdminBookingListPage() {
                   onValueChange={(val) => setValue('statusFilter', val)}
                 >
                   <SelectTrigger className="w-[160px] bg-white/5 border-white/10">
-                    <SelectValue placeholder="Trạng thái" />
+                    <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                    <SelectItem value="pending_confirm">Chờ xác nhận</SelectItem>
-                    <SelectItem value="confirmed">Đã xác nhận</SelectItem>
-                    <SelectItem value="pending_payment">Chờ thanh toán</SelectItem>
-                    <SelectItem value="cancelled">Đã hủy</SelectItem>
-                    <SelectItem value="expired">Hết hạn</SelectItem>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="pending_confirm">Pending Confirm</SelectItem>
+                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                    <SelectItem value="pending_payment">Pending Payment</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="expired">Expired</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -212,13 +212,13 @@ export default function AdminBookingListPage() {
                   onValueChange={(val) => setValue('paymentFilter', val)}
                 >
                   <SelectTrigger className="w-[180px] bg-white/5 border-white/10">
-                    <SelectValue placeholder="Thanh toán" />
+                    <SelectValue placeholder="Payment" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tất cả thanh toán</SelectItem>
-                    <SelectItem value="paid">Đã thanh toán</SelectItem>
-                    <SelectItem value="unpaid">Chưa thanh toán</SelectItem>
-                    <SelectItem value="refunded">Đã hoàn tiền</SelectItem>
+                    <SelectItem value="all">All Payments</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="unpaid">Unpaid</SelectItem>
+                    <SelectItem value="refunded">Refunded</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -234,7 +234,7 @@ export default function AdminBookingListPage() {
                 <div className="flex items-center gap-2 ml-auto">
                   <Button type="submit" className="bg-primary hover:bg-primary/90">
                     <Search className="mr-2 size-4" />
-                    Tìm kiếm
+                    Search
                   </Button>
 
                   {(appliedFilters.statusFilter !== 'all' || appliedFilters.paymentFilter !== 'all' || appliedFilters.dateFilter !== '' || appliedFilters.searchTerm !== '') && (
@@ -244,7 +244,7 @@ export default function AdminBookingListPage() {
                       onClick={clearFilters}
                       className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
                     >
-                      Xóa lọc
+                      Clear Filters
                     </Button>
                   )}
                 </div>
@@ -256,14 +256,14 @@ export default function AdminBookingListPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-white/5 border-b border-white/5">
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Mã Đơn</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Khách Hàng</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Booking ID</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Customer</th>
                     <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Tour</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Trạng Thái</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Thanh Toán</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Tổng Tiền</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Ngày Đặt</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Thao Tác</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Status</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Payment</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Total</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Date</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -297,12 +297,12 @@ export default function AdminBookingListPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm font-black text-foreground">
-                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(booking.total_amount))}
+                          {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND' }).format(Number(booking.total_amount))}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-xs text-muted-foreground font-medium">
-                          {new Date(booking.created_at).toLocaleDateString('vi-VN')}
+                          {new Date(booking.created_at).toLocaleDateString('en-US')}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -313,11 +313,11 @@ export default function AdminBookingListPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem asChild>
                               <Link href={`/admin/booking/edit/${booking.id}`} className="cursor-pointer">
                                 <Eye className="mr-2 size-4" />
-                                Chi tiết
+                                Details
                               </Link>
                             </DropdownMenuItem>
                             {booking.status === 'pending_confirm' && (
@@ -326,7 +326,7 @@ export default function AdminBookingListPage() {
                                 className="text-emerald-500 cursor-pointer"
                               >
                                 <CheckCircle2 className="mr-2 size-4" />
-                                Xác nhận
+                                Confirm
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
@@ -335,7 +335,7 @@ export default function AdminBookingListPage() {
                               className="text-rose-500 cursor-pointer"
                             >
                               <Trash2 className="mr-2 size-4" />
-                              Xóa
+                              Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -345,7 +345,7 @@ export default function AdminBookingListPage() {
                   {!isLoading && filteredBookings.length === 0 && (
                     <tr>
                       <td colSpan={8} className="px-6 py-12 text-center text-muted-foreground italic">
-                        Không có đơn hàng nào được tìm thấy.
+                        No bookings found.
                       </td>
                     </tr>
                   )}
@@ -359,18 +359,18 @@ export default function AdminBookingListPage() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận xóa?</AlertDialogTitle>
+            <AlertDialogTitle>Confirm Deletion?</AlertDialogTitle>
             <AlertDialogDescription>
-              Hành động này không thể hoàn tác. Đơn hàng sẽ bị xóa vĩnh viễn khỏi hệ thống.
+              This action cannot be undone. The booking will be permanently removed from the system.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && deleteMutation.mutate(deleteId)}
               className="bg-rose-500 hover:bg-rose-600"
             >
-              Xóa ngay
+              Delete Now
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

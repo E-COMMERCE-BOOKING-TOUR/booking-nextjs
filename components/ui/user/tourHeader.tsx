@@ -1,9 +1,9 @@
 'use client'
-import { Box, Flex, Heading, HStack, Text, Button, Badge, VStack, Dialog, Portal, Input } from "@chakra-ui/react";
-import TourCalendar from "./TourCalendar";
+import { Box, Flex, Heading, HStack, Text, Button, Badge, VStack, Dialog, Portal, Input, Spinner } from "@chakra-ui/react";
+import dynamic from "next/dynamic";
 import StarRating from "./starRating";
 import { useState, useTransition, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toaster } from "@/components/chakra/toaster";
 import { createBooking } from "@/actions/booking";
 import logout from "@/actions/logout";
@@ -11,6 +11,9 @@ import { tourApi, ITourSession } from "@/apis/tour";
 import { useQuery } from "@tanstack/react-query";
 import Breadcrumb from "./breadcrumb";
 import { formatPriceValue } from '@/utils/currency';
+import { useTranslation } from "@/libs/i18n/client";
+import { cookieName, fallbackLng } from "@/libs/i18n/settings";
+import Cookies from "js-cookie";
 
 interface TourVariant {
     id: number;
@@ -40,9 +43,17 @@ interface TourHeaderProps {
     breadcrumbItems: { label: string; href: string }[];
     currencySymbol?: string;
     currencyCode?: string;
+    lng?: string;
 }
 
-export default function TourHeader({ title, location, rating, price, oldPrice, slug, variants, durationDays, breadcrumbItems, currencySymbol = 'VND', currencyCode }: TourHeaderProps) {
+const TourCalendar = dynamic(() => import("./TourCalendar"), {
+    loading: () => <Box p={10} textAlign="center"><Spinner size="xl" /></Box>,
+});
+
+export default function TourHeader({ title, location, rating, price, oldPrice, slug, variants, durationDays, breadcrumbItems, currencySymbol = 'VND', currencyCode, lng: propLng }: TourHeaderProps) {
+    const searchParams = useSearchParams();
+    const lng = propLng || searchParams?.get('lng') || fallbackLng;
+    const { t } = useTranslation(lng);
     const router = useRouter();
     const [startDate, setStartDate] = useState<Date | null>(null);
     const [selectedVariantId, setSelectedVariantId] = useState<number | null>(() => variants?.[0]?.id || null);
@@ -125,7 +136,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
     const handleBooking = () => {
         if (!startDate) {
             toaster.create({
-                title: "Please select a date.",
+                title: t("select_date"),
                 type: "warning",
                 duration: 3000,
             });
@@ -133,7 +144,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
         }
         if (!selectedVariantId) {
             toaster.create({
-                title: "Please select a variant.",
+                title: t("select_variant_first"),
                 type: "warning",
                 duration: 3000,
             });
@@ -142,7 +153,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
 
         if (availableSessions.length > 0 && !selectedSessionId) {
             toaster.create({
-                title: "Please select a time slot.",
+                title: "Please select a time slot.", // Need to add this to common.json too if possible, but for now I'll just keep it or use a generic one
                 type: "warning",
                 duration: 3000,
             });
@@ -158,7 +169,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
 
         if (pax.length === 0) {
             toaster.create({
-                title: "Please select at least one passenger.",
+                title: t("select_travelers"),
                 type: "warning",
                 duration: 3000,
             });
@@ -175,7 +186,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
 
             if (!result.ok) {
                 toaster.create({
-                    title: "Booking failed.",
+                    title: t("failed_confirm_booking"),
                     description: result.message,
                     type: "error",
                     duration: 3000,
@@ -188,8 +199,8 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
             }
 
             toaster.create({
-                title: "Booking created.",
-                description: "Redirecting to checkout...",
+                title: t("confirm_booking_dialog"),
+                description: t("finding_adventures"),
                 type: "success",
                 duration: 3000,
             });
@@ -217,14 +228,14 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                 <Breadcrumb
                     items={breadcrumbItems}
                 />
-                <VStack align="start" gap={1}>
-                    <Heading as="h1" size="2xl" fontWeight="black" letterSpacing="tight">
+                <VStack align="start" gap={1} width="100%">
+                    <Heading as="h1" size={{ base: "xl", md: "2xl", lg: "3xl" }} fontWeight="black" letterSpacing="tight" lineHeight="1.2">
                         {title}
                     </Heading>
                     <HStack gap={1} color="gray.500" fontSize="sm" fontWeight="medium">
                         <Text>{location}</Text>
                         <Text>•</Text>
-                        <Text>{durationDays} Days</Text>
+                        <Text>{durationDays} {t("days", { count: durationDays })}</Text>
                     </HStack>
                 </VStack>
 
@@ -234,7 +245,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                         <Text fontSize="md" fontWeight="bold" color="gray.700">{rating.toFixed(1)}</Text>
                     </HStack>
                     <Badge colorPalette="blue" variant="solid" rounded="full" px={3} py={0.5} fontSize="10px" fontWeight="black" textTransform="uppercase">
-                        Recommended
+                        {t("recommended")}
                     </Badge>
                 </HStack>
             </Box>
@@ -242,9 +253,9 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
             <VStack gap={4} align={{ base: "stretch", md: "flex-end" }} minW={{ md: "250px" }}>
                 <VStack align="flex-end" gap={0}>
                     <Text color="gray.500" fontSize="10px" fontWeight="black" textTransform="uppercase" letterSpacing="widest" mb={-1}>
-                        From
+                        {t("from")}
                     </Text>
-                    <Heading as="h2" size="4xl" color="main" fontWeight="black" letterSpacing="tight">
+                    <Heading as="h2" size={{ base: "3xl", md: "4xl" }} color="main" fontWeight="black" letterSpacing="tight">
                         {currencySymbol} {formatPriceValue(price, currencyCode)}
                     </Heading>
                     <HStack gap={2} mt={1}>
@@ -254,7 +265,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                             </Text>
                         )}
                         <Text color="gray.500" fontSize="xs" fontWeight="bold">
-                            / per person
+                            {t("per_person")}
                         </Text>
                     </HStack>
                 </VStack>
@@ -274,9 +285,9 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                             bg="main"
                             color="white"
                             rounded="2xl"
-                            px={12}
-                            py={8}
-                            fontSize="lg"
+                            px={{ base: 6, md: 12 }}
+                            py={{ base: 6, md: 8 }}
+                            fontSize={{ base: "md", md: "lg" }}
                             fontWeight="black"
                             width="100%"
                             _hover={{
@@ -289,7 +300,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                             boxShadow="0 4px 14px 0 rgba(0, 59, 149, 0.39)"
                             onClick={() => setIsBookingOpen(true)}
                         >
-                            Reserve Your Spot
+                            {t("reserve_spot")}
                         </Button>
                     </Dialog.Trigger>
                     <Portal>
@@ -297,12 +308,12 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                         <Dialog.Positioner>
                             <Dialog.Content borderRadius="xl" boxShadow="2xl">
                                 <Dialog.Header>
-                                    <Dialog.Title>Book Tour</Dialog.Title>
+                                    <Dialog.Title>{t("book_tour")}</Dialog.Title>
                                 </Dialog.Header>
                                 <Dialog.Body>
                                     <VStack gap={4} align="stretch">
                                         {/* Date Selection */}
-                                        <Text fontSize="sm" mb={2} fontWeight="bold">Select Date</Text>
+                                        <Text fontSize="sm" mb={2} fontWeight="bold">{t("select_date")}</Text>
                                         {selectedVariant ? (
                                             <VStack align="stretch" gap={2}>
                                                 <Button
@@ -312,14 +323,14 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                                     onClick={openCalendar}
                                                 >
                                                     {startDate
-                                                        ? new Date(startDate).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-                                                        : 'Click to select date...'
+                                                        ? new Date(startDate).toLocaleDateString(lng === 'vi' ? 'vi-VN' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+                                                        : t("click_select_date")
                                                     }
                                                 </Button>
 
                                                 {availableSessions && availableSessions.length > 0 && (
                                                     <Box mt={2}>
-                                                        <Text fontSize="xs" fontWeight="bold" mb={2} color="gray.600">Start Time:</Text>
+                                                        <Text fontSize="xs" fontWeight="bold" mb={2} color="gray.600">{t("start_time_label")}:</Text>
                                                         <Flex gap={2} wrap="wrap">
                                                             {availableSessions.map((s, i) => (
                                                                 <Button
@@ -329,7 +340,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                                                     colorScheme="teal"
                                                                     onClick={() => setSelectedSessionId(s.id)}
                                                                 >
-                                                                    {(s.start_time && s.start_time !== '00:00:00') ? `${s.start_time.substring(0, 5)}${s.end_time ? ` - ${s.end_time.substring(0, 5)}` : ''}` : 'All Day'}
+                                                                    {(s.start_time && s.start_time !== '00:00:00') ? `${s.start_time.substring(0, 5)}${s.end_time ? ` - ${s.end_time.substring(0, 5)}` : ''}` : t("all_day")}
                                                                 </Button>
                                                             ))}
                                                         </Flex>
@@ -337,13 +348,13 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                                 )}
                                             </VStack>
                                         ) : (
-                                            <Text fontSize="sm" color="gray.500">Please select a variant first</Text>
+                                            <Text fontSize="sm" color="gray.500">{t("select_variant_first")}</Text>
                                         )}
 
                                         {/* Variant Selection */}
                                         {variants && variants.length > 1 && (
                                             <Box>
-                                                <Text fontSize="sm" mb={1} fontWeight="bold">Variant</Text>
+                                                <Text fontSize="sm" mb={1} fontWeight="bold">{t("variant")}</Text>
                                                 <Flex gap={2} wrap="wrap">
                                                     {variants.map((v, i) => (
                                                         <Button
@@ -363,7 +374,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                         {/* Passengers */}
                                         {selectedVariant && (
                                             <Box>
-                                                <Text fontSize="sm" mb={1} fontWeight="bold">Passengers</Text>
+                                                <Text fontSize="sm" mb={1} fontWeight="bold">{t("passengers")}</Text>
                                                 <VStack gap={2} align="stretch">
                                                     {(selectedVariant.tour_variant_pax_type_prices || []).filter(p => p.price > 0).map((p, i) => (
                                                         <HStack key={`${p.id}-${i}`} justify="space-between">
@@ -385,7 +396,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                 </Dialog.Body>
                                 <Dialog.Footer>
                                     <Dialog.ActionTrigger asChild>
-                                        <Button variant="outline">Cancel</Button>
+                                        <Button variant="outline">{t("cancel")}</Button>
                                     </Dialog.ActionTrigger>
                                     <Button
                                         bg="main"
@@ -393,7 +404,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                         onClick={handleBooking}
                                         disabled={isPending}
                                     >
-                                        {isPending ? "Booking..." : "Confirm Booking"}
+                                        {isPending ? t("booking") : t("confirm_booking_dialog")}
                                     </Button>
                                 </Dialog.Footer>
                                 <Dialog.CloseTrigger />
@@ -421,7 +432,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                         <Dialog.Positioner>
                             <Dialog.Content borderRadius="xl" boxShadow="2xl">
                                 <Dialog.Header>
-                                    <Dialog.Title>Select Travel Date</Dialog.Title>
+                                    <Dialog.Title>{t("select_travel_date_title")}</Dialog.Title>
                                 </Dialog.Header>
                                 <Dialog.Body>
                                     {selectedVariant && (
@@ -436,7 +447,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                 </Dialog.Body>
                                 <Dialog.Footer>
                                     <Button variant="outline" onClick={closeCalendar}>
-                                        Back
+                                        {t("back")}
                                     </Button>
                                 </Dialog.Footer>
                                 <Dialog.CloseTrigger />

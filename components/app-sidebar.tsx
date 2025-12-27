@@ -46,7 +46,7 @@ const sections = [
     icon: SquareCheck,
     children: [
       { title: "All Bookings", url: "/admin/booking" },
-      { title: "Payment Logs", url: "/admin/booking/payments" },
+      // { title: "Payment Logs", url: "/admin/booking/payments" },
     ],
   },
   {

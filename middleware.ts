@@ -8,10 +8,30 @@ import {
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { fallbackLng, languages, cookieName } from './libs/i18n/settings'
+
+function getLocale(request: NextRequest) {
+    // 1. Check cookie
+    const cookieLocale = request.cookies.get(cookieName)?.value
+    if (cookieLocale && languages.includes(cookieLocale)) return cookieLocale
+
+    // 2. Check header
+    const acceptLanguage = request.headers.get('accept-language')
+    if (acceptLanguage) {
+        const preferredLanguage = acceptLanguage.split(',')[0].split('-')[0]
+        if (languages.includes(preferredLanguage)) return preferredLanguage
+    }
+
+    // 3. Fallback
+    return fallbackLng
+}
 
 export async function middleware(request: NextRequest) {
     const { nextUrl } = request;
     const pathname = nextUrl.pathname;
+
+    // 1. Language detection (Must happen before potential early returns)
+    const lng = getLocale(request);
 
     // Get the session token
     const token = await getToken({
@@ -30,47 +50,45 @@ export async function middleware(request: NextRequest) {
     const isUserRoute = isMatchingRoute(pathname, userRoutes);
     const isAdminRoute = isMatchingRoute(pathname, adminRoutes);
 
-    // 1. Always allow API auth routes (login, register, etc.)
+    let response: NextResponse | null = null;
+
+    // 2. Routing logic
     if (isApiAuthRoute) {
-        return NextResponse.next();
-    }
-
-    // 2. Allow public routes without any checks
-    if (isPublicRoute) {
-        return NextResponse.next();
-    }
-
-    // 3. Admin routes require admin role
-    if (isAdminRoute) {
+        response = NextResponse.next();
+    } else if (isPublicRoute) {
+        response = NextResponse.next();
+    } else if (isAdminRoute) {
         if (!isLoggedIn || !hasAccessToken) {
             const callbackUrl = nextUrl.pathname + nextUrl.search;
-            return NextResponse.redirect(new URL(`/user-login?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url));
+            response = NextResponse.redirect(new URL(`/user-login?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url));
+        } else if (!isAdmin) {
+            response = NextResponse.redirect(new URL("/", request.url));
+        } else {
+            response = NextResponse.next();
         }
-        if (!isAdmin) {
-            return NextResponse.redirect(new URL("/", request.url));
-        }
-        return NextResponse.next();
-    }
-
-    // 4. User protected routes require authentication
-    if (isUserRoute) {
+    } else if (isUserRoute) {
         if (!isLoggedIn || !hasAccessToken) {
             const callbackUrl = nextUrl.pathname + nextUrl.search;
-            return NextResponse.redirect(new URL(`/user-login?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url));
+            response = NextResponse.redirect(new URL(`/user-login?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url));
+        } else {
+            response = NextResponse.next();
         }
-        return NextResponse.next();
-    }
-
-    // 5. Auth routes (login, register) - redirect to home if already logged in
-    if (isAuthRoute) {
+    } else if (isAuthRoute) {
         if (isLoggedIn) {
-            return NextResponse.redirect(new URL("/", request.url));
+            response = NextResponse.redirect(new URL("/", request.url));
+        } else {
+            response = NextResponse.next();
         }
-        return NextResponse.next();
+    } else {
+        response = NextResponse.next();
     }
 
-    // 6. Default: allow the request
-    return NextResponse.next();
+    // 3. Set language cookie if not present or different
+    if (!request.cookies.has(cookieName) || request.cookies.get(cookieName)?.value !== lng) {
+        response.cookies.set(cookieName, lng, { path: '/', maxAge: 60 * 60 * 24 * 365 }); // 1 year
+    }
+
+    return response;
 }
 
 /**

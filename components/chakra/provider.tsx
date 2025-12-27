@@ -8,9 +8,12 @@ import {
 import { system } from "./theme"
 
 export function Provider(props: ColorModeProviderProps) {
+  const { children, ...rest } = props
   return (
-    <ChakraProvider value={system}>
-      <ColorModeProvider {...props} />
-    </ChakraProvider>
+    <ColorModeProvider {...rest}>
+      <ChakraProvider value={system}>
+        {children}
+      </ChakraProvider>
+    </ColorModeProvider>
   )
 }

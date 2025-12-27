@@ -51,26 +51,26 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { useQuery } from '@tanstack/react-query';
 
 const STEPS = [
-    { id: 1, title: 'Thông tin chung', icon: Info },
-    { id: 2, title: 'Chi tiết & Tiện ích', icon: ListChecks },
-    { id: 3, title: 'Hình ảnh', icon: ImageIcon },
-    { id: 4, title: 'Biến thể & Giá', icon: Settings2 },
-    { id: 5, title: 'Lịch trình & Session', icon: CalendarDays },
-    { id: 6, title: 'Xác nhận', icon: CheckCircle2 },
+    { id: 1, title: 'General Info', icon: Info },
+    { id: 2, title: 'Details & Amenities', icon: ListChecks },
+    { id: 3, title: 'Images', icon: ImageIcon },
+    { id: 4, title: 'Variants & Prices', icon: Settings2 },
+    { id: 5, title: 'Schedule & Sessions', icon: CalendarDays },
+    { id: 6, title: 'Confirmation', icon: CheckCircle2 },
 ];
 
 const tourSchema = z.object({
-    title: z.string().min(5, "Tên tour phải có ít nhất 5 ký tự"),
+    title: z.string().min(5, "Tour title must be at least 5 characters"),
     slug: z.string().optional(),
-    description: z.string().min(20, "Mô tả phải có ít nhất 20 ký tự"),
-    summary: z.string().min(10, "Tóm tắt phải có ít nhất 10 ký tự"),
-    address: z.string().min(5, "Địa chỉ không được để trống"),
+    description: z.string().min(20, "Description must be at least 20 characters"),
+    summary: z.string().min(10, "Summary must be at least 10 characters"),
+    address: z.string().min(5, "Address cannot be empty"),
     map_url: z.string().optional(),
-    tax: z.coerce.number().min(0, "Thuế không được âm"),
-    min_pax: z.coerce.number().min(1, "Số khách tối thiểu là 1"),
+    tax: z.coerce.number().min(0, "Tax cannot be negative"),
+    min_pax: z.coerce.number().min(1, "Minimum pax is 1"),
     max_pax: z.coerce.number().nullable().optional(),
-    country_id: z.coerce.number().min(1, "Vui lòng chọn quốc gia"),
-    division_id: z.coerce.number().min(1, "Vui lòng chọn tỉnh/thành"),
+    country_id: z.coerce.number().min(1, "Please select a country"),
+    division_id: z.coerce.number().min(1, "Please select a division"),
     currency_id: z.coerce.number().default(1),
     supplier_id: z.coerce.number().default(1),
     tour_category_ids: z.array(z.number()).default([]),
@@ -79,10 +79,10 @@ const tourSchema = z.object({
         sort_no: z.number(),
         is_cover: z.boolean(),
         file: z.any().optional()
-    })).min(1, "Vui lòng chọn ít nhất 1 hình ảnh"),
+    })).min(1, "Please select at least 1 image"),
     variants: z.array(z.object({
         id: z.number().optional(),
-        name: z.string().min(1, "Tên biến thể không được để trống"),
+        name: z.string().min(1, "Variant name cannot be empty"),
         min_pax_per_booking: z.coerce.number().min(1),
         capacity_per_slot: z.coerce.number().min(1),
         tax_included: z.boolean().default(true),
@@ -94,7 +94,7 @@ const tourSchema = z.object({
             pax_type_name: z.string(),
             price: z.coerce.number().min(0)
         }))
-    })).min(1, "Vui lòng thêm ít nhất 1 biến thể"),
+    })).min(1, "Please add at least 1 variant"),
     is_visible: z.boolean().default(true),
     status: z.enum(['draft', 'active', 'inactive']).default('active'),
     duration_hours: z.coerce.number().min(0).nullable().optional(),
@@ -104,7 +104,7 @@ const tourSchema = z.object({
     included: z.array(z.string()).default([]),
     not_included: z.array(z.string()).default([]),
     highlights: z.object({
-        title: z.string().default('Điểm nổi bật'),
+        title: z.string().default('Highlights'),
         items: z.array(z.string()).default([])
     }).optional(),
     languages: z.array(z.string()).default(['English', 'Vietnamese']),
@@ -175,8 +175,8 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
             meeting_point: '',
             included: [],
             not_included: [],
-            highlights: { title: 'Những trải nghiệm thú vị', items: [] },
-            languages: ['Tiếng Việt', 'Tiếng Anh'],
+            highlights: { title: 'Highlights', items: [] },
+            languages: ['Vietnamese', 'English'],
             staff_score: 9.0,
             testimonial: { name: '', country: '', text: '' },
             map_preview: '',
@@ -302,8 +302,8 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                 meeting_point: initialData.meeting_point || '',
                 included: initialData.included || [],
                 not_included: initialData.not_included || [],
-                highlights: initialData.highlights || { title: 'Những trải nghiệm thú vị', items: [] },
-                languages: initialData.languages || ['Tiếng Việt', 'Tiếng Anh'],
+                highlights: initialData.highlights || { title: 'Highlights', items: [] },
+                languages: initialData.languages || ['Vietnamese', 'English'],
                 staff_score: initialData.staff_score || 9.0,
                 testimonial: initialData.testimonial || { name: '', country: '', text: '' },
                 map_preview: initialData.map_preview || '',
@@ -499,10 +499,10 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
             // 3. Save Tour
             if (isEdit && tourId) {
                 await adminTourApi.update(tourId, finalPayload, token);
-                toast.success('Cập nhật tour thành công!');
+                toast.success('Tour updated successfully!');
             } else {
                 await adminTourApi.create(finalPayload, token);
-                toast.success('Tạo tour thành công!');
+                toast.success('Tour created successfully!');
             }
 
             setTimeout(() => {
@@ -511,7 +511,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
         } catch (error) {
             console.error('Failed to save tour', error);
             const err = error as Error;
-            toast.error('Lỗi khi lưu tour: ' + err.message);
+            toast.error('Error saving tour: ' + err.message);
             isSubmittingRef.current = false;
             setIsSubmitting(false);
         }
@@ -521,15 +521,15 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
         <div className="container w-full py-6 space-y-8 animate-in fade-in duration-500">
             <div className="flex flex-col gap-2">
                 <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-                    {isEdit ? 'Chỉnh sửa Tour' : 'Tạo Tour Mới'}
+                    {isEdit ? 'Edit Tour' : 'Create New Tour'}
                 </h1>
                 <p className="text-muted-foreground">
-                    {isEdit ? `Đang chỉnh sửa tour #${tourId}: ${initialData?.title}` : 'Thiết lập thông tin và cấu hình cho gói du lịch của bạn.'}
+                    {isEdit ? `Editing tour #${tourId}: ${initialData?.title}` : 'Setup information and configuration for your tour package.'}
                 </p>
             </div>
 
             {/* Stepper */}
-            <div className="grid grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                 {STEPS.map((step) => {
                     const Icon = step.icon;
                     const isActive = currentStep === step.id;
@@ -567,8 +567,8 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                         <div className="grid gap-6 animate-in slide-in-from-right-4 duration-300">
                             <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
                                 <CardHeader>
-                                    <CardTitle>Thông tin cơ bản</CardTitle>
-                                    <CardDescription>Cung cấp các thông tin cốt lõi để khách hàng hiểu về tour.</CardDescription>
+                                    <CardTitle>Basic Information</CardTitle>
+                                    <CardDescription>Provide core information so customers can understand the tour.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     <FormField
@@ -576,9 +576,9 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         name="title"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Tên Tour</FormLabel>
+                                                <FormLabel>Tour Title</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="VD: Tour Hạ Long 2 ngày 1 đêm" {...field} className="bg-background/50 border-white/10" />
+                                                    <Input placeholder="e.g. Ha Long Bay 2 Days 1 Night" {...field} className="bg-background/50 border-white/10" />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -590,9 +590,9 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         name="summary"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Tóm tắt ngắn</FormLabel>
+                                                <FormLabel>Short Summary</FormLabel>
                                                 <FormControl>
-                                                    <Textarea placeholder="Mô tả ngắn gọn..." {...field} className="bg-background/50 border-white/10 min-h-[80px]" />
+                                                    <Textarea placeholder="Brief description..." {...field} className="bg-background/50 border-white/10 min-h-[80px]" />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -604,9 +604,9 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         name="description"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Mô tả chi tiết</FormLabel>
+                                                <FormLabel>Detailed Description</FormLabel>
                                                 <FormControl>
-                                                    <Textarea placeholder="Lịch trình chi tiết..." {...field} className="bg-background/50 border-white/10 min-h-[150px]" />
+                                                    <Textarea placeholder="Full itinerary details..." {...field} className="bg-background/50 border-white/10 min-h-[150px]" />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -617,7 +617,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
 
                             <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
                                 <CardHeader>
-                                    <CardTitle>Địa điểm & Phân loại</CardTitle>
+                                    <CardTitle>Location & Classification</CardTitle>
                                 </CardHeader>
                                 <CardContent className="grid grid-cols-2 gap-6">
                                     <FormField
@@ -625,9 +625,9 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         name="address"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Địa chỉ</FormLabel>
+                                                <FormLabel>Address</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="Số nhà, tên đường..." {...field} className="bg-background/50 border-white/10" />
+                                                    <Input placeholder="Street address, city..." {...field} className="bg-background/50 border-white/10" />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -638,11 +638,11 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         name="country_id"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Quốc gia / Khu vực</FormLabel>
+                                                <FormLabel>Country / Region</FormLabel>
                                                 <Select key={`country-${field.value}`} onValueChange={(val) => field.onChange(parseInt(val))} value={field.value?.toString()}>
                                                     <FormControl>
                                                         <SelectTrigger className="bg-background/50 border-white/10">
-                                                            <SelectValue placeholder="Chọn quốc gia" />
+                                                            <SelectValue placeholder="Select Country" />
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
@@ -660,11 +660,11 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         name="division_id"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Tỉnh / Thành phố</FormLabel>
+                                                <FormLabel>Province / City</FormLabel>
                                                 <Select key={`division-${watchedCountryId}-${field.value}`} onValueChange={(val) => field.onChange(parseInt(val))} value={field.value?.toString()} disabled={!watchedCountryId || (divisions.length === 0 && field.value !== 0)}>
                                                     <FormControl>
                                                         <SelectTrigger className="bg-background/50 border-white/10">
-                                                            <SelectValue placeholder="Chọn tỉnh/thành" />
+                                                            <SelectValue placeholder="Select Province/City" />
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
@@ -682,11 +682,11 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         name="currency_id"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Đơn vị tiền tệ</FormLabel>
+                                                <FormLabel>Currency</FormLabel>
                                                 <Select onValueChange={(val) => field.onChange(parseInt(val))} value={field.value?.toString()}>
                                                     <FormControl>
                                                         <SelectTrigger className="bg-background/50 border-white/10">
-                                                            <SelectValue placeholder="Chọn loại tiền" />
+                                                            <SelectValue placeholder="Select Currency" />
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
@@ -704,7 +704,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
 
                             <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
                                 <CardHeader>
-                                    <CardTitle>Cấu hình & Thời lượng</CardTitle>
+                                    <CardTitle>Configuration & Duration</CardTitle>
                                 </CardHeader>
                                 <CardContent className="grid grid-cols-3 gap-6">
                                     <FormField
@@ -712,17 +712,17 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         name="status"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Trạng thái Tour</FormLabel>
+                                                <FormLabel>Tour Status</FormLabel>
                                                 <Select onValueChange={field.onChange} value={field.value}>
                                                     <FormControl>
                                                         <SelectTrigger className="bg-background/50 border-white/10">
-                                                            <SelectValue placeholder="Trạng thái" />
+                                                            <SelectValue placeholder="Status" />
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
-                                                        <SelectItem value="draft">Bản nháp</SelectItem>
-                                                        <SelectItem value="active">Hoạt động</SelectItem>
-                                                        <SelectItem value="inactive">Tạm ngưng</SelectItem>
+                                                        <SelectItem value="draft">Draft</SelectItem>
+                                                        <SelectItem value="active">Active</SelectItem>
+                                                        <SelectItem value="inactive">Inactive</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </FormItem>
@@ -733,7 +733,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         name="duration_days"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Thời lượng (Ngày)</FormLabel>
+                                                <FormLabel>Duration (Days)</FormLabel>
                                                 <FormControl>
                                                     <Input type="number" {...field} value={field.value || ''} onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)} className="bg-background/50 border-white/10" />
                                                 </FormControl>
@@ -745,19 +745,19 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         name="duration_hours"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Số giờ lẻ (nếu có)</FormLabel>
+                                                <FormLabel>Extra Hours</FormLabel>
                                                 <FormControl>
                                                     <Input type="number" {...field} value={field.value || ''} onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)} className="bg-background/50 border-white/10" />
                                                 </FormControl>
                                                 <FormDescription>
-                                                    Ví dụ: 2 ngày 5 giờ (nhập 5 vào đây).
+                                                    Example: 2 days 5 hours (enter 5 here).
                                                     {(watchedDurationDays !== null || field.value) && (
                                                         <span className="block text-emerald-400 mt-1">
-                                                            → Tổng thời gian:
-                                                            {Number(watchedDurationDays || 0) > 0 ? ` ${watchedDurationDays} ngày` : ''}
-                                                            {Number(watchedDurationDays || 0) > 0 && Number(field.value || 0) > 0 ? ' và' : ''}
-                                                            {Number(field.value || 0) > 0 ? ` ${field.value} giờ` : ''}
-                                                            {Number(watchedDurationDays || 0) === 0 && Number(field.value || 0) === 0 ? ' 0 giờ' : ''}
+                                                            → Total Time:
+                                                            {Number(watchedDurationDays || 0) > 0 ? ` ${watchedDurationDays} days` : ''}
+                                                            {Number(watchedDurationDays || 0) > 0 && Number(field.value || 0) > 0 ? ' and' : ''}
+                                                            {Number(field.value || 0) > 0 ? ` ${field.value} hours` : ''}
+                                                            {Number(watchedDurationDays || 0) === 0 && Number(field.value || 0) === 0 ? ' 0 hours' : ''}
                                                         </span>
                                                     )}
                                                 </FormDescription>
@@ -769,7 +769,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         name="tax"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Thuế (%)</FormLabel>
+                                                <FormLabel>Tax (%)</FormLabel>
                                                 <FormControl>
                                                     <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} className="bg-background/50 border-white/10" />
                                                 </FormControl>
@@ -788,9 +788,9 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                 <CardHeader>
                                     <div className="flex items-center gap-2">
                                         <ListChecks className="h-5 w-5 text-primary" />
-                                        <CardTitle>Điểm nổi bật (Highlights)</CardTitle>
+                                        <CardTitle>Highlights</CardTitle>
                                     </div>
-                                    <CardDescription>Các thông tin thu hút khách hàng nhất về tour này.</CardDescription>
+                                    <CardDescription>Key features that attract customers to this tour.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <FormField
@@ -798,577 +798,453 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         name="highlights.title"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Tiêu đề phần Highlights</FormLabel>
+                                                <FormLabel>Section Title</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="VD: Những trải nghiệm thú vị" {...field} className="bg-background/50 border-white/10" />
+                                                    <Input placeholder="e.g. Activity Highlights" {...field} className="bg-background/50 border-white/10" />
                                                 </FormControl>
+                                                <FormMessage />
                                             </FormItem>
                                         )}
                                     />
+
                                     <div className="space-y-2">
-                                        <Label>Danh sách các điểm nổi bật</Label>
-                                        <div className="space-y-2">
-                                            {(watchedHighlights?.items || []).map((item, idx) => (
-                                                <div key={idx} className="flex gap-2">
-                                                    <Input
-                                                        value={item}
-                                                        onChange={(e) => {
-                                                            const newItems = [...(form.getValues('highlights.items') || [])];
-                                                            newItems[idx] = e.target.value;
-                                                            form.setValue('highlights.items', newItems);
-                                                        }}
-                                                        className="bg-background/50 border-white/10"
-                                                    />
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-red-400"
-                                                        onClick={() => {
-                                                            const newItems = form.getValues('highlights.items').filter((_, i) => i !== idx);
-                                                            form.setValue('highlights.items', newItems);
-                                                        }}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            ))}
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                className="w-full border-dashed"
-                                                onClick={() => {
-                                                    const current = form.getValues('highlights.items') || [];
-                                                    form.setValue('highlights.items', [...current, '']);
-                                                }}
-                                            >
-                                                <Plus className="h-4 w-4 mr-2" /> Thêm điểm nổi bật
-                                            </Button>
-                                        </div>
+                                        <Label>Highlight Items</Label>
+                                        {watchedHighlights?.items?.map((_, index) => (
+                                            <div key={index} className="flex gap-2">
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`highlights.items.${index}`}
+                                                    render={({ field }) => (
+                                                        <Input {...field} className="bg-background/50 border-white/10" placeholder="Highlight detail..." />
+                                                    )}
+                                                />
+                                                <Button type="button" variant="ghost" size="icon" onClick={() => {
+                                                    const current = form.getValues('highlights.items');
+                                                    form.setValue('highlights.items', current.filter((_, i) => i !== index));
+                                                }}>
+                                                    <Trash2 className="size-4 text-destructive" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="mt-2 text-primary border-primary/20 hover:bg-primary/5"
+                                            onClick={() => {
+                                                const current = form.getValues('highlights.items') || [];
+                                                form.setValue('highlights.items', [...current, '']);
+                                            }}
+                                        >
+                                            <Plus className="size-4 mr-2" /> Add Highlight
+                                        </Button>
                                     </div>
                                 </CardContent>
                             </Card>
 
                             {/* Section: Inclusions & Exclusions */}
-                            <div className="grid md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-2 gap-6">
                                 <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
                                     <CardHeader>
-                                        <CardTitle className="text-sm font-bold text-emerald-400">Bao gồm</CardTitle>
+                                        <CardTitle className="text-emerald-400">Included</CardTitle>
                                     </CardHeader>
-                                    <CardContent className="space-y-2">
-                                        {(watchedInclusions || []).map((item, idx) => (
-                                            <div key={idx} className="flex gap-2">
-                                                <Input
-                                                    value={item}
-                                                    onChange={(e) => {
-                                                        const newArr = [...form.getValues('included')];
-                                                        newArr[idx] = e.target.value;
-                                                        form.setValue('included', newArr);
-                                                    }}
-                                                    className="bg-background/50 border-white/10 h-8 text-sm"
+                                    <CardContent className="space-y-3">
+                                        {watchedInclusions?.map((_, index) => (
+                                            <div key={index} className="flex gap-2">
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`included.${index}`}
+                                                    render={({ field }) => (
+                                                        <Input {...field} className="bg-background/50 border-white/10" placeholder="e.g. Lunch, Bus..." />
+                                                    )}
                                                 />
-                                                <Button type="button" variant="ghost" size="sm" onClick={() => form.setValue('included', form.getValues('included').filter((_, i) => i !== idx))}>
-                                                    <Trash2 className="h-3 w-3" />
+                                                <Button type="button" variant="ghost" size="icon" onClick={() => {
+                                                    const current = form.getValues('included');
+                                                    form.setValue('included', current.filter((_, i) => i !== index));
+                                                }}>
+                                                    <Trash2 className="size-4 text-destructive" />
                                                 </Button>
                                             </div>
                                         ))}
-                                        <Button type="button" variant="ghost" size="sm" onClick={() => form.setValue('included', [...form.getValues('included'), ''])} className="w-full text-xs">
-                                            + Thêm mục
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            className="w-full border border-dashed border-white/10 hover:border-emerald-500/50 hover:text-emerald-500"
+                                            onClick={() => {
+                                                const current = form.getValues('included') || [];
+                                                form.setValue('included', [...current, '']);
+                                            }}
+                                        >
+                                            <Plus className="size-4 mr-2" /> Add Included Item
                                         </Button>
                                     </CardContent>
                                 </Card>
+
                                 <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
                                     <CardHeader>
-                                        <CardTitle className="text-sm font-bold text-red-400">Không bao gồm</CardTitle>
+                                        <CardTitle className="text-rose-400">Not Included</CardTitle>
                                     </CardHeader>
-                                    <CardContent className="space-y-2">
-                                        {(watchedExclusions || []).map((item, idx) => (
-                                            <div key={idx} className="flex gap-2">
-                                                <Input
-                                                    value={item}
-                                                    onChange={(e) => {
-                                                        const newArr = [...form.getValues('not_included')];
-                                                        newArr[idx] = e.target.value;
-                                                        form.setValue('not_included', newArr);
-                                                    }}
-                                                    className="bg-background/50 border-white/10 h-8 text-sm"
+                                    <CardContent className="space-y-3">
+                                        {watchedExclusions?.map((_, index) => (
+                                            <div key={index} className="flex gap-2">
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`not_included.${index}`}
+                                                    render={({ field }) => (
+                                                        <Input {...field} className="bg-background/50 border-white/10" placeholder="e.g. Tips, Personal expenses..." />
+                                                    )}
                                                 />
-                                                <Button type="button" variant="ghost" size="sm" onClick={() => form.setValue('not_included', form.getValues('not_included').filter((_, i) => i !== idx))}>
-                                                    <Trash2 className="h-3 w-3" />
+                                                <Button type="button" variant="ghost" size="icon" onClick={() => {
+                                                    const current = form.getValues('not_included');
+                                                    form.setValue('not_included', current.filter((_, i) => i !== index));
+                                                }}>
+                                                    <Trash2 className="size-4 text-destructive" />
                                                 </Button>
                                             </div>
                                         ))}
-                                        <Button type="button" variant="ghost" size="sm" onClick={() => form.setValue('not_included', [...form.getValues('not_included'), ''])} className="w-full text-xs">
-                                            + Thêm mục
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            className="w-full border border-dashed border-white/10 hover:border-rose-500/50 hover:text-rose-500"
+                                            onClick={() => {
+                                                const current = form.getValues('not_included') || [];
+                                                form.setValue('not_included', [...current, '']);
+                                            }}
+                                        >
+                                            <Plus className="size-4 mr-2" /> Add Excluded Item
                                         </Button>
                                     </CardContent>
                                 </Card>
                             </div>
 
-                            {/* Section: Logistics & Social */}
-                            <div className="grid md:grid-cols-2 gap-6">
-                                <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
-                                    <CardHeader>
-                                        <CardTitle>Logistics & Bản đồ</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-4">
-                                        <FormField
-                                            control={form.control}
-                                            name="meeting_point"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Điểm hẹn (Meeting Point)</FormLabel>
-                                                    <FormControl>
-                                                        <Input placeholder="VD: Sảnh khách sạn hoặc số 123..." {...field} className="bg-background/50 border-white/10" />
-                                                    </FormControl>
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={form.control}
-                                            name="map_preview"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>URL ảnh xem trước bản đồ</FormLabel>
-                                                    <FormControl>
-                                                        <Input placeholder="Dán link ảnh tĩnh của map..." {...field} className="bg-background/50 border-white/10" />
-                                                    </FormControl>
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={form.control}
-                                            name="staff_score"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Điểm phục vụ (Staff Score: 0-10)</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="number" step="0.1" {...field} className="bg-background/50 border-white/10" />
-                                                    </FormControl>
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <div className="space-y-2 pt-2 border-t border-white/5">
-                                            <Label className="text-xs uppercase text-muted-foreground">Ngôn ngữ hỗ trợ</Label>
-                                            <div className="flex flex-wrap gap-2">
-                                                {(watchedLanguages || []).map((lang, idx) => (
-                                                    <Badge key={idx} variant="secondary" className="bg-primary/10 text-primary border-primary/20 flex gap-1 items-center pr-1">
-                                                        {lang}
-                                                        <Button
-                                                            type="button"
-                                                            variant="ghost"
-                                                            className="size-4 p-0 h-auto hover:bg-transparent hover:text-red-400"
-                                                            onClick={() => {
-                                                                const newLangs = form.getValues('languages').filter((_, i) => i !== idx);
-                                                                form.setValue('languages', newLangs);
-                                                            }}
-                                                        >
-                                                            <Trash2 className="h-3 w-3" />
-                                                        </Button>
-                                                    </Badge>
-                                                ))}
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="h-6 text-[10px] border-dashed"
+                            {/* Section: Other Info */}
+                            <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
+                                <CardHeader>
+                                    <CardTitle>Additional Info</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    <FormField
+                                        control={form.control}
+                                        name="meeting_point"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Meeting Point</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="Gathering location..." {...field} className="bg-background/50 border-white/10" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <div className="space-y-2">
+                                        <Label>Languages Supported</Label>
+                                        <div className="flex flex-wrap gap-2 p-4 rounded-lg border border-white/10 bg-background/20">
+                                            {['Vietnamese', 'English', 'French', 'Chinese', 'Korean', 'Japanese'].map((lang) => (
+                                                <Badge
+                                                    key={lang}
+                                                    variant={watchedLanguages.includes(lang) ? "default" : "outline"}
+                                                    className="cursor-pointer hover:bg-primary/80"
                                                     onClick={() => {
-                                                        const val = prompt('Nhập ngôn ngữ mới:');
-                                                        if (val) {
-                                                            const current = form.getValues('languages') || [];
-                                                            form.setValue('languages', [...current, val]);
+                                                        const current = form.getValues('languages');
+                                                        if (current.includes(lang)) {
+                                                            form.setValue('languages', current.filter(l => l !== lang));
+                                                        } else {
+                                                            form.setValue('languages', [...current, lang]);
                                                         }
                                                     }}
                                                 >
-                                                    <Plus className="h-3 w-3 mr-1" /> Thêm
-                                                </Button>
-                                            </div>
+                                                    {lang}
+                                                </Badge>
+                                            ))}
                                         </div>
-                                    </CardContent>
-                                </Card>
-
-                                <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
-                                    <CardHeader>
-                                        <div className="flex items-center gap-2">
-                                            <MessageSquareQuote className="h-5 w-5 text-primary" />
-                                            <CardTitle>Nhận xét tiêu biểu (Testimonial)</CardTitle>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="space-y-4">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <FormField
-                                                control={form.control}
-                                                name="testimonial.name"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Tên khách</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="VD: Mr. John" {...field} className="bg-background/50 border-white/10" />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control}
-                                                name="testimonial.country"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Quốc gia</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="VD: United Kingdom" {...field} className="bg-background/50 border-white/10" />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <FormField
+                                            control={form.control}
+                                            name="testimonial.name"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Featured Testimonial Name</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="Client Name" {...field} className="bg-background/50 border-white/10" />
+                                                    </FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
                                         <FormField
                                             control={form.control}
                                             name="testimonial.text"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Nội dung khen ngợi</FormLabel>
+                                                    <FormLabel>Testimonial Content</FormLabel>
                                                     <FormControl>
-                                                        <Textarea placeholder="Lời nhận xét hay..." {...field} className="bg-background/50 border-white/10 min-h-[80px]" />
+                                                        <Input placeholder="Review text..." {...field} className="bg-background/50 border-white/10" />
                                                     </FormControl>
                                                 </FormItem>
                                             )}
                                         />
-                                    </CardContent>
-                                </Card>
-                            </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
                         </div>
                     )}
 
                     {currentStep === 3 && (
-                        <div className="grid gap-6 animate-in slide-in-from-right-4 duration-300">
-                            <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
-                                <CardHeader>
-                                    <CardTitle>Bộ sưu tập hình ảnh</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-6">
-                                    <Label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-2xl cursor-pointer hover:bg-primary/5 bg-white/2 border-white/10">
-                                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                            <ImageIcon className="w-6 h-6 text-primary mb-3" />
-                                            <p className="text-sm font-semibold text-primary text-center">Tải ảnh lên</p>
-                                        </div>
-                                        <input id="file-upload" type="file" className="hidden" multiple onChange={handleFileUpload} accept="image/*" />
-                                    </Label>
+                        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-lg font-semibold">Image Gallery</h3>
+                                    <p className="text-sm text-muted-foreground">Drag and drop to reorder. The first image will be the cover.</p>
+                                </div>
+                                <div className="relative">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        className="absolute inset-0 opacity-0 cursor-pointer z-20"
+                                        onChange={handleFileUpload}
+                                    />
+                                    <Button variant="outline" className="border-dashed border-primary text-primary hover:bg-primary/5">
+                                        <Plus className="size-4 mr-2" /> Upload Images
+                                    </Button>
+                                </div>
+                            </div>
 
-                                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                                        <SortableContext items={form.getValues('images').map(img => img.image_url)} strategy={rectSortingStrategy}>
-                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-                                                {(watchedImages || []).map((img, idx) => (
-                                                    <SortableTourImage
-                                                        key={img.image_url}
-                                                        id={img.image_url}
-                                                        image={img}
-                                                        onRemove={() => {
-                                                            const newImages = form.getValues('images').filter((_, i) => i !== idx).map((restImg, restIdx) => ({
-                                                                ...restImg, sort_no: restIdx, is_cover: restIdx === 0
-                                                            }));
-                                                            form.setValue('images', newImages);
-                                                        }}
-                                                    />
-                                                ))}
-                                            </div>
-                                        </SortableContext>
-                                    </DndContext>
-                                </CardContent>
-                            </Card>
+                            <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragEnd={handleDragEnd}
+                            >
+                                <SortableContext
+                                    items={watchedImages.map(img => img.image_url)}
+                                    strategy={rectSortingStrategy}
+                                >
+                                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                                        {watchedImages.map((image, index) => (
+                                            <SortableTourImage
+                                                key={image.image_url}
+                                                id={image.image_url}
+                                                image={image}
+                                                onRemove={() => {
+                                                    const newImages = watchedImages.filter((_, i) => i !== index);
+                                                    form.setValue('images', newImages);
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                </SortableContext>
+                            </DndContext>
+
+                            {watchedImages.length === 0 && (
+                                <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-white/10 rounded-xl bg-white/5">
+                                    <ImageIcon className="size-16 text-muted-foreground/30 mb-4" />
+                                    <p className="text-muted-foreground font-medium">No images yet</p>
+                                    <p className="text-xs text-muted-foreground/60">Upload at least one image to continue</p>
+                                </div>
+                            )}
                         </div>
                     )}
 
                     {currentStep === 4 && (
-                        <div className="grid gap-6 animate-in slide-in-from-right-4 duration-300">
+                        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
                             <div className="flex items-center justify-between">
-                                <h3 className="text-xl font-semibold">Biến thể & Giá</h3>
-                                <Button type="button" variant="outline" onClick={() => appendVariant({
-                                    name: `Biến thể ${variantFields.length + 1}`,
-                                    min_pax_per_booking: 1, capacity_per_slot: 20, tax_included: true, cutoff_hours: 24, status: 'active',
-                                    prices: [{ pax_type_id: 1, pax_type_name: 'Người lớn', price: 1000000 }, { pax_type_id: 2, pax_type_name: 'Trẻ em', price: 700000 }]
-                                })}>Thêm biến thể</Button>
+                                <div>
+                                    <h3 className="text-lg font-semibold">Tour Variants</h3>
+                                    <p className="text-sm text-muted-foreground">Define different package options (Standard, Deluxe, etc.)</p>
+                                </div>
+                                <Button onClick={() => appendVariant({
+                                    name: 'Standard',
+                                    min_pax_per_booking: 1,
+                                    capacity_per_slot: 20,
+                                    tax_included: true,
+                                    cutoff_hours: 24,
+                                    status: 'active',
+                                    prices: [
+                                        { pax_type_id: 1, pax_type_name: 'Adult', price: 0 },
+                                        { pax_type_id: 2, pax_type_name: 'Child', price: 0 }
+                                    ]
+                                })} className="bg-primary text-primary-foreground">
+                                    <Plus className="size-4 mr-2" /> Add Variant
+                                </Button>
                             </div>
 
-                            {variantFields.map((v, vIdx) => (
-                                <Card key={v.id} className="bg-card/30 border-white/10 backdrop-blur-xl">
-                                    <CardContent className="p-6 space-y-4">
-                                        <div className="flex justify-between items-center">
-                                            <FormField control={form.control} name={`variants.${vIdx}.name`} render={({ field }) => (
-                                                <Input {...field} className="text-lg font-bold bg-transparent border-none p-0 focus-visible:ring-0 w-fit" />
-                                            )} />
-                                            <Button type="button" variant="ghost" className="text-red-400" onClick={() => removeVariant(vIdx)}>Xóa</Button>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 border-y border-white/5 py-3">
-                                            <FormField control={form.control} name={`variants.${vIdx}.capacity_per_slot`} render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="text-[10px] uppercase text-muted-foreground">Sức chứa/Slot</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="number" {...field} className="h-8 bg-background/50 border-white/10" />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )} />
-                                            <FormField control={form.control} name={`variants.${vIdx}.min_pax_per_booking`} render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="text-[10px] uppercase text-muted-foreground">Min Pax</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="number" {...field} className="h-8 bg-background/50 border-white/10" />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )} />
-                                            <FormField control={form.control} name={`variants.${vIdx}.cutoff_hours`} render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="text-[10px] uppercase text-muted-foreground">Khóa trước (giờ)</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="number" {...field} className="h-8 bg-background/50 border-white/10" />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )} />
-                                            <FormField control={form.control} name={`variants.${vIdx}.tax_included`} render={({ field }) => (
-                                                <FormItem className="flex flex-row items-center justify-between rounded-lg border border-white/5 p-2 bg-background/50 self-end h-8">
-                                                    <div className="space-y-0.5">
-                                                        <FormLabel className="text-[10px] uppercase text-muted-foreground">Đã gồm thuế</FormLabel>
-                                                    </div>
-                                                    <FormControl>
-                                                        <Input
-                                                            type="checkbox"
-                                                            checked={field.value}
-                                                            onChange={field.onChange}
-                                                            className="h-4 w-4 border-white/20"
+                            <div className="grid grid-cols-1 gap-6">
+                                {variantFields.map((field, index) => (
+                                    <Card key={field.id} className="bg-card/30 border-white/5 relative group">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="absolute top-2 right-2 opacity-50 hover:opacity-100 hover:text-destructive text-muted-foreground transition-opacity"
+                                            onClick={() => removeVariant(index)}
+                                        >
+                                            <Trash2 className="size-4" />
+                                        </Button>
+                                        <CardContent className="p-6 space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`variants.${index}.name`}
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Variant Name</FormLabel>
+                                                            <FormControl>
+                                                                <Input {...field} placeholder="e.g. Standard" className="bg-background/50" />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`variants.${index}.capacity_per_slot`}
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Capacity</FormLabel>
+                                                            <FormControl>
+                                                                <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} className="bg-background/50" />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label className="mb-2 block">Pricing</Label>
+                                                <div className="flex gap-4">
+                                                    {form.watch(`variants.${index}.prices`).map((price, pIdx) => (
+                                                        <FormField
+                                                            key={pIdx}
+                                                            control={form.control}
+                                                            name={`variants.${index}.prices.${pIdx}.price`}
+                                                            render={({ field }) => (
+                                                                <FormItem className="flex-1">
+                                                                    <FormLabel className="text-xs">{price.pax_type_name}</FormLabel>
+                                                                    <FormControl>
+                                                                        <div className="relative">
+                                                                            <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} className="pl-8 bg-background/50" />
+                                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                                                                        </div>
+                                                                    </FormControl>
+                                                                </FormItem>
+                                                            )}
                                                         />
-                                                    </FormControl>
-                                                </FormItem>
-                                            )} />
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            {(watchedVariants?.[vIdx]?.prices || []).map((p, pIdx: number) => (
-                                                <div key={pIdx} className="p-3 rounded-xl bg-background/50 border border-white/5">
-                                                    <Label className="text-[10px] text-muted-foreground uppercase">{p.pax_type_name}</Label>
-                                                    <FormField control={form.control} name={`variants.${vIdx}.prices.${pIdx}.price`} render={({ field }) => (
-                                                        <Input type="number" {...field} className="h-9 font-bold bg-transparent border-none p-0 focus-visible:ring-0" />
-                                                    )} />
+                                                    ))}
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                                {variantFields.length === 0 && (
+                                    <div className="text-center p-8 text-muted-foreground border border-dashed border-white/10 rounded-xl">
+                                        No variants added yet.
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 
                     {currentStep === 5 && (
-                        <div className="grid gap-6 animate-in slide-in-from-right-4 duration-300">
-                            {(watchedVariants || []).map((v, vIdx) => (
-                                <VariantSchedulingEditor
-                                    key={vIdx}
-                                    value={(scheduling[vIdx]?.ranges || []).map(r => ({
-                                        from: r.start ? new Date(r.start) : new Date(),
-                                        to: r.end ? new Date(r.end) : new Date()
-                                    }))}
-                                    onChange={(newRanges) => {
-                                        const current = scheduling[vIdx] || { ranges: [], excluded: [], timeSlots: [] };
-                                        setScheduling({
-                                            ...scheduling,
-                                            [vIdx]: {
-                                                ...current,
-                                                ranges: newRanges.map(r => ({
-                                                    start: r.from.toISOString().split('T')[0],
-                                                    end: r.to.toISOString().split('T')[0]
-                                                }))
-                                            }
-                                        });
-                                    }}
-                                    excludedDates={scheduling[vIdx]?.excluded || []}
-                                    onExclude={(date) => {
-                                        const current = scheduling[vIdx] || { ranges: [], excluded: [], timeSlots: [] };
-                                        setScheduling({ ...scheduling, [vIdx]: { ...current, excluded: [...current.excluded, date] } });
-                                    }}
-                                    onRemoveExcluded={(date) => {
-                                        const current = scheduling[vIdx];
-                                        setScheduling({ ...scheduling, [vIdx]: { ...current, excluded: current.excluded.filter(d => d !== date) } });
-                                    }}
-                                    startTimeSlots={scheduling[vIdx]?.timeSlots || ['08:00']}
-                                    onTimeSlotsChange={(slots) => {
-                                        const current = scheduling[vIdx] || { ranges: [], excluded: [], timeSlots: [] };
-                                        setScheduling({ ...scheduling, [vIdx]: { ...current, timeSlots: slots } });
-                                    }}
-                                    variantDuration={scheduling[vIdx]?.durationHours}
-                                    onDurationChange={(dur) => {
-                                        const current = scheduling[vIdx] || { ranges: [], excluded: [], timeSlots: [] };
-                                        setScheduling({ ...scheduling, [vIdx]: { ...current, durationHours: dur } });
-                                    }}
-                                    durationDays={watchedDurationDays || 0}
-                                />
-                            ))}
+                        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-lg font-semibold">Schedule & Sessions</h3>
+                                    <p className="text-sm text-muted-foreground">Configure availability and departure times for each variant.</p>
+                                </div>
+                            </div>
+
+                            {variantFields.length === 0 ? (
+                                <div className="p-8 text-center text-rose-400 bg-rose-500/10 rounded-xl border border-rose-500/20">
+                                    Please add at least one variant in the previous step first.
+                                </div>
+                            ) : (
+                                <div className="space-y-8">
+                                    {variantFields.map((variant, index) => (
+                                        <div key={variant.id} className="border border-white/10 rounded-xl p-6 bg-card/10">
+                                            <div className="mb-4">
+                                                <h4 className="font-bold text-primary text-lg">{form.getValues(`variants.${index}.name`)}</h4>
+                                                <p className="text-xs text-muted-foreground">Configure schedule for this variant</p>
+                                            </div>
+                                            <VariantSchedulingEditor
+                                                value={scheduling[index] || { ranges: [], excluded: [], timeSlots: ['08:00'] }}
+                                                onChange={(newSchedule) => {
+                                                    setScheduling(prev => ({
+                                                        ...prev,
+                                                        [index]: newSchedule
+                                                    }));
+                                                }}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
                     {currentStep === 6 && (
-                        <div className="space-y-6 animate-in zoom-in-95 duration-500">
-                            <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
-                                <CardHeader className="pb-4 border-b border-white/5">
-                                    <div className="flex items-center gap-3">
-                                        <CheckCircle2 className="h-6 w-6 text-emerald-500" />
-                                        <div>
-                                            <CardTitle>Xác nhận thông tin</CardTitle>
-                                            <CardDescription>Kiểm tra kỹ các thông tin dưới đây trước khi hoàn tất.</CardDescription>
-                                        </div>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="p-6 space-y-8">
-                                    {/* Section 1: Basic Info */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <div className="space-y-4">
-                                            <h4 className="text-sm font-bold uppercase tracking-wider text-primary/80">Thông tin cơ bản</h4>
-                                            <div className="space-y-3">
-                                                <div>
-                                                    <p className="text-[10px] text-muted-foreground uppercase">Tên tour</p>
-                                                    <p className="font-semibold">{watchedTitle}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-[10px] text-muted-foreground uppercase">Địa chỉ</p>
-                                                    <p className="text-sm">{watchedAddress}</p>
-                                                </div>
-                                                <div className="flex gap-4">
-                                                    <div>
-                                                        <p className="text-[10px] text-muted-foreground uppercase">Thời lượng</p>
-                                                        <p className="text-sm">
-                                                            {watchedDurationDays ? `${watchedDurationDays} ngày` : ''}
-                                                            {watchedDurationDays && watchedDurationHours ? ' ' : ''}
-                                                            {watchedDurationHours ? `${watchedDurationHours} giờ` : ''}
-                                                            {!watchedDurationDays && !watchedDurationHours && 'N/A'}
-                                                        </p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[10px] text-muted-foreground uppercase">Thuế</p>
-                                                        <p className="text-sm">{watchedTax}%</p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[10px] text-muted-foreground uppercase">Trạng thái</p>
-                                                        <Badge variant="outline" className="capitalize">{watchedStatus}</Badge>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                        <div className="flex flex-col items-center justify-center py-10 space-y-6 animate-in zoom-in-95 duration-500">
+                            <div className="size-24 rounded-full bg-emerald-500/10 flex items-center justify-center mb-4 ring-4 ring-emerald-500/20 ring-offset-4 ring-offset-background">
+                                <CheckCircle2 className="size-12 text-emerald-500" />
+                            </div>
+                            <h2 className="text-2xl font-bold">Ready to Launch!</h2>
+                            <p className="text-muted-foreground text-center max-w-lg">
+                                You have completed all the necessary steps. Review your information one last time before saving.
+                            </p>
 
-                                        <div className="space-y-4">
-                                            <h4 className="text-sm font-bold uppercase tracking-wider text-primary/80">Hình ảnh</h4>
-                                            <div className="flex items-center gap-4">
-                                                {watchedImages?.[0] ? (
-                                                    <div className="size-20 rounded-lg overflow-hidden border border-white/10 relative">
-                                                        <Image src={watchedImages[0].image_url} alt="Tour Cover" fill className="object-cover" />
-                                                    </div>
-                                                ) : (
-                                                    <div className="size-20 rounded-lg bg-muted flex items-center justify-center border border-dashed border-white/10">
-                                                        <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                                                    </div>
-                                                )}
-                                                <div>
-                                                    <p className="text-sm font-medium">{watchedImages?.length || 0} hình ảnh đã chọn</p>
-                                                    <p className="text-xs text-muted-foreground">Ảnh bìa đã được thiết lập</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <Separator className="bg-white/5" />
-
-                                    {/* Section 2: Variants & Prices */}
-                                    <div className="space-y-4">
-                                        <h4 className="text-sm font-bold uppercase tracking-wider text-primary/80">Biến thể & Bảng giá</h4>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            {(watchedVariants || []).map((v, idx) => (
-                                                <div key={idx} className="p-4 rounded-xl bg-white/2 border border-white/5 space-y-3">
-                                                    <p className="font-bold text-sm text-primary">{v.name}</p>
-                                                    <div className="space-y-2">
-                                                        {v.prices?.map((p, pIdx) => (
-                                                            <div key={pIdx} className="flex justify-between text-xs">
-                                                                <span className="text-muted-foreground">{p.pax_type_name}</span>
-                                                                <span className="font-mono">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price)}</span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                    <div className="pt-2 border-t border-white/5 flex justify-between items-center text-[10px]">
-                                                        <span className="text-muted-foreground">Sức chứa: {v.capacity_per_slot}</span>
-                                                        <span className="text-muted-foreground">Cutoff: {v.cutoff_hours}h</span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <Separator className="bg-white/5" />
-
-                                    {/* Section 3: Scheduling */}
-                                    <div className="space-y-4">
-                                        <h4 className="text-sm font-bold uppercase tracking-wider text-primary/80">Lịch trình cài đặt</h4>
-                                        <div className="space-y-3">
-                                            {(watchedVariants || []).map((v, idx) => {
-                                                const sched = scheduling[idx];
-                                                return (
-                                                    <div key={idx} className="flex flex-col gap-1">
-                                                        <p className="text-xs font-semibold">{v.name}:</p>
-                                                        {sched?.ranges?.length ? (
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {sched.ranges.map((r, rIdx) => (
-                                                                    <Badge key={rIdx} variant="secondary" className="text-[10px] bg-white/5">
-                                                                        {r.start} → {r.end}
-                                                                    </Badge>
-                                                                ))}
-                                                                {sched.excluded?.length > 0 && (
-                                                                    <span className="text-[10px] text-red-400 self-center">
-                                                                        (Trừ {sched.excluded.length} ngày)
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        ) : (
-                                                            <p className="text-[10px] text-muted-foreground">Chưa cài đặt lịch trình</p>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <div className="pt-4">
-                                <Button
-                                    type="button"
-                                    size="lg"
-                                    onClick={() => form.handleSubmit(onSubmit)()}
-                                    disabled={isSubmitting}
-                                    className="bg-emerald-600 hover:bg-emerald-500 w-full shadow-lg shadow-emerald-900/20"
-                                >
-                                    {isSubmitting ? (
-                                        <div className="flex items-center gap-2">
-                                            <div className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                            Đang lưu...
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center gap-2">
-                                            <Save className="size-4" />
-                                            {isEdit ? 'Cập nhật thay đổi' : 'Hoàn tất & Lưu Tour'}
-                                        </div>
-                                    )}
-                                </Button>
-                                <p className="text-center text-[10px] text-muted-foreground mt-4">
-                                    Bằng cách nhấn nút trên, bạn đồng ý rằng tất cả thông tin đã cung cấp là chính xác.
-                                </p>
+                            <div className="grid grid-cols-2 gap-4 w-full max-w-2xl mt-8">
+                                <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-2">
+                                    <span className="text-xs text-muted-foreground uppercase tracking-wider">Title</span>
+                                    <p className="font-medium truncate">{watchedTitle}</p>
+                                </div>
+                                <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-2">
+                                    <span className="text-xs text-muted-foreground uppercase tracking-wider">Location</span>
+                                    <p className="font-medium truncate">{watchedAddress}</p>
+                                </div>
+                                <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-2">
+                                    <span className="text-xs text-muted-foreground uppercase tracking-wider">Variants</span>
+                                    <p className="font-medium">{watchedVariants?.length || 0} variants configured</p>
+                                </div>
+                                <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-2">
+                                    <span className="text-xs text-muted-foreground uppercase tracking-wider">Status</span>
+                                    <Badge variant="outline" className="capitalize">{watchedStatus}</Badge>
+                                </div>
                             </div>
                         </div>
                     )}
                 </form>
             </Form>
 
-            <div className="flex justify-between pt-8 border-t border-white/5">
-                <Button variant="ghost" onClick={prevStep} disabled={currentStep === 1 || isSubmitting}>Quay lại</Button>
-                {currentStep < 6 && <Button onClick={nextStep} className="px-8 bg-primary">Tiếp theo</Button>}
+            <div className="flex items-center justify-between pt-6 border-t border-white/5 sticky bottom-0 bg-background/80 backdrop-blur-xl p-4 -mx-4 md:static md:bg-transparent md:p-0">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={prevStep}
+                    disabled={currentStep === 1 || isSubmitting}
+                    className="text-muted-foreground hover:text-foreground"
+                >
+                    Back
+                </Button>
+                <div className="flex items-center gap-3">
+                    {currentStep < STEPS.length ? (
+                        <Button type="button" onClick={nextStep} className="bg-primary hover:bg-primary/90 text-primary-foreground min-w-[120px]">
+                            Next Step
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={form.handleSubmit(onSubmit)}
+                            disabled={isSubmitting}
+                            className="bg-emerald-500 hover:bg-emerald-600 text-white min-w-[150px] shadow-lg shadow-emerald-500/20"
+                        >
+                            {isSubmitting ? (
+                                <>Saving...</>
+                            ) : (
+                                <>
+                                    <Save className="size-4 mr-2" />
+                                    {isEdit ? 'Update Tour' : 'Create Tour'}
+                                </>
+                            )}
+                        </Button>
+                    )}
+                </div>
             </div>
         </div>
     );

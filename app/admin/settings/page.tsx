@@ -87,7 +87,7 @@ export default function AdminSettingsPage() {
         mutationFn: (data: UpdateSiteSettingsDTO) => adminSettingsApi.update(data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-settings'] });
-            toast.success('Cập nhật settings thành công');
+            toast.success('Settings updated successfully');
             setPendingLogo(null);
             setPendingFavicon(null);
             setPendingSquareBanners([]);
@@ -96,7 +96,7 @@ export default function AdminSettingsPage() {
             setRemovedRectBanners([]);
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Không thể cập nhật settings');
+            toast.error(error.message || 'Failed to update settings');
         }
     });
 
@@ -157,7 +157,7 @@ export default function AdminSettingsPage() {
 
     const onSubmit = async (data: SettingsFormData) => {
         let finalData = { ...data };
-        const uploadToastId = toast.loading('Đang chuẩn bị dữ liệu...');
+        const uploadToastId = toast.loading('Preparing data...');
 
         try {
             // 1. Handle Logo & Favicon
@@ -191,7 +191,7 @@ export default function AdminSettingsPage() {
             toast.dismiss(uploadToastId);
             updateMutation.mutate(finalData);
         } catch (error) {
-            toast.error('Upload hình ảnh thất bại');
+            toast.error('Image upload failed');
             toast.dismiss(uploadToastId);
         }
     };
@@ -211,8 +211,8 @@ export default function AdminSettingsPage() {
         <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Cài Đặt Website</h1>
-                    <p className="text-muted-foreground mt-1 text-lg">Cấu hình thông tin chung và banner của website.</p>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Website Settings</h1>
+                    <p className="text-muted-foreground mt-1 text-lg">Configure general information and website banners.</p>
                 </div>
                 <Button
                     onClick={handleSubmit(onSubmit)}
@@ -224,7 +224,7 @@ export default function AdminSettingsPage() {
                     ) : (
                         <Save className="mr-2 size-4" />
                     )}
-                    Lưu Cài Đặt
+                    Save Settings
                 </Button>
             </div>
 
@@ -238,13 +238,13 @@ export default function AdminSettingsPage() {
                             </div>
                             <div>
                                 <CardTitle>SEO Settings</CardTitle>
-                                <CardDescription>Cấu hình tiêu đề và meta cho SEO</CardDescription>
+                                <CardDescription>Configure title and meta for SEO</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="site_title">Tiêu đề website</Label>
+                            <Label htmlFor="site_title">Website Title</Label>
                             <Input
                                 id="site_title"
                                 placeholder="TripConnect - Du Lịch & Khám Phá"
@@ -255,7 +255,7 @@ export default function AdminSettingsPage() {
                             <Label htmlFor="meta_description">Meta Description</Label>
                             <Textarea
                                 id="meta_description"
-                                placeholder="Mô tả ngắn về website..."
+                                placeholder="Short description about the website..."
                                 rows={3}
                                 {...register('meta_description')}
                             />
@@ -280,7 +280,7 @@ export default function AdminSettingsPage() {
                             </div>
                             <div>
                                 <CardTitle>Branding Assets</CardTitle>
-                                <CardDescription>Logo và favicon của hệ thống</CardDescription>
+                                <CardDescription>System Logo and Favicon</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
@@ -306,7 +306,7 @@ export default function AdminSettingsPage() {
                                         <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={(e) => onDirectFileChange(e, 'logo_url')} />
                                         <Button type="button" variant="outline" size="sm" onClick={() => logoRef.current?.click()}>
                                             <Upload className="mr-2 size-4" />
-                                            Chọn Logo
+                                            Select Logo
                                         </Button>
                                     </div>
                                 </div>
@@ -332,7 +332,7 @@ export default function AdminSettingsPage() {
                                         <input ref={faviconRef} type="file" accept="image/*,.ico" className="hidden" onChange={(e) => onDirectFileChange(e, 'favicon_url')} />
                                         <Button type="button" variant="outline" size="sm" onClick={() => faviconRef.current?.click()}>
                                             <Upload className="mr-2 size-4" />
-                                            Chọn Favicon
+                                            Select Favicon
                                         </Button>
                                     </div>
                                 </div>
@@ -349,13 +349,13 @@ export default function AdminSettingsPage() {
                                 <ImageIcon className="size-5 text-amber-500" />
                             </div>
                             <div>
-                                <CardTitle>Banners Square (1:1)</CardTitle>
-                                <CardDescription>Các banner có kích thước vuông</CardDescription>
+                                <CardTitle>Square Banners (1:1)</CardTitle>
+                                <CardDescription>Square-sized banners</CardDescription>
                             </div>
                         </div>
                         <Button type="button" variant="outline" size="sm" onClick={() => squareBannerRef.current?.click()}>
                             <Plus className="mr-2 size-4" />
-                            Thêm Ảnh
+                            Add Image
                         </Button>
                         <input ref={squareBannerRef} type="file" multiple accept="image/*" className="hidden" onChange={(e) => onBannerFileChange(e, 'square')} />
                     </CardHeader>
@@ -388,7 +388,7 @@ export default function AdminSettingsPage() {
                             ))}
                             {(activeSquareBanners.length === 0 && pendingSquareBanners.length === 0) && (
                                 <div className="col-span-full h-32 flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-xl text-muted-foreground italic text-sm">
-                                    Chưa có banner nào
+                                    No banners yet
                                 </div>
                             )}
                         </div>
@@ -403,13 +403,13 @@ export default function AdminSettingsPage() {
                                 <ImageIcon className="size-5 text-indigo-500" />
                             </div>
                             <div>
-                                <CardTitle>Banners Rectangle (Chữ nhật)</CardTitle>
-                                <CardDescription>Các banner chính hiển thị rộng ngang</CardDescription>
+                                <CardTitle>Rectangle Banners</CardTitle>
+                                <CardDescription>Main horizontal banners</CardDescription>
                             </div>
                         </div>
                         <Button type="button" variant="outline" size="sm" onClick={() => rectBannerRef.current?.click()}>
                             <Plus className="mr-2 size-4" />
-                            Thêm Ảnh
+                            Add Image
                         </Button>
                         <input ref={rectBannerRef} type="file" multiple accept="image/*" className="hidden" onChange={(e) => onBannerFileChange(e, 'rect')} />
                     </CardHeader>
@@ -442,7 +442,7 @@ export default function AdminSettingsPage() {
                             ))}
                             {(activeRectBanners.length === 0 && pendingRectBanners.length === 0) && (
                                 <div className="col-span-full h-32 flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-xl text-muted-foreground italic text-sm">
-                                    Chưa có banner nào
+                                    No banners yet
                                 </div>
                             )}
                         </div>
@@ -457,15 +457,15 @@ export default function AdminSettingsPage() {
                                 <Building2 className="size-5 text-emerald-500" />
                             </div>
                             <div>
-                                <CardTitle>Thông Tin Footer</CardTitle>
-                                <CardDescription>Thông tin công ty hiển thị ở footer</CardDescription>
+                                <CardTitle>Footer Information</CardTitle>
+                                <CardDescription>Company information displayed in the footer</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="company_name">Tên công ty</Label>
+                                <Label htmlFor="company_name">Company Name</Label>
                                 <Input
                                     id="company_name"
                                     placeholder="TripConnect Company"
@@ -482,7 +482,7 @@ export default function AdminSettingsPage() {
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="phone">Số điện thoại</Label>
+                                <Label htmlFor="phone">Phone Number</Label>
                                 <Input
                                     id="phone"
                                     placeholder="+84 123 456 789"
@@ -499,7 +499,7 @@ export default function AdminSettingsPage() {
                             </div>
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="address">Địa chỉ</Label>
+                            <Label htmlFor="address">Address</Label>
                             <Input
                                 id="address"
                                 placeholder="123 Đường ABC, Quận 1, TP.HCM"
@@ -507,10 +507,10 @@ export default function AdminSettingsPage() {
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="footer_description">Mô tả footer</Label>
+                            <Label htmlFor="footer_description">Footer Description</Label>
                             <Textarea
                                 id="footer_description"
-                                placeholder="Giới thiệu ngắn về công ty..."
+                                placeholder="Short introduction about the company..."
                                 rows={3}
                                 {...register('footer_description')}
                             />
@@ -526,8 +526,8 @@ export default function AdminSettingsPage() {
                                 <Share2 className="size-5 text-amber-500" />
                             </div>
                             <div>
-                                <CardTitle>Liên Kết Mạng Xã Hội</CardTitle>
-                                <CardDescription>URL các trang mạng xã hội</CardDescription>
+                                <CardTitle>Social Media Links</CardTitle>
+                                <CardDescription>Social media page URLs</CardDescription>
                             </div>
                         </div>
                     </CardHeader>

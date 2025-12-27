@@ -3,15 +3,23 @@
 import { Box, Button, Icon, Image } from "@chakra-ui/react";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import { useState } from "react";
+import { useTranslation } from "@/libs/i18n/client";
+import { cookieName, fallbackLng } from "@/libs/i18n/settings";
+import Cookies from "js-cookie";
+import { useSearchParams } from "next/navigation";
 
 interface TourMapSectionProps {
     mapUrl: string;
     previewImage?: string;
+    lng?: string;
 }
 
 const DEFAULT_PREVIEW = "https://images.unsplash.com/photo-1524661135-423995f22d0b?w=400&h=300&fit=crop";
 
-export default function TourMapSection({ mapUrl, previewImage }: TourMapSectionProps) {
+export default function TourMapSection({ mapUrl, previewImage, lng: propLng }: TourMapSectionProps) {
+    const searchParams = useSearchParams();
+    const lng = propLng || searchParams?.get('lng') || fallbackLng;
+    const { t } = useTranslation(lng);
     const [showMap, setShowMap] = useState(false);
 
     return (
@@ -51,7 +59,7 @@ export default function TourMapSection({ mapUrl, previewImage }: TourMapSectionP
                 transition="all 0.2s"
                 onClick={() => setShowMap(!showMap)}
             >
-                {showMap ? "Hide map" : "Show on map"}
+                {showMap ? t("hide_map") : t("show_on_map")}
                 <Icon as={FaMapMarkerAlt} ml={2} />
             </Button>
         </Box>
