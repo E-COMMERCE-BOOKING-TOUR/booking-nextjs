@@ -146,6 +146,8 @@ export default function Chatbox({ lng, isOpen, onClose }: { lng: string; isOpen:
                 justify="space-between"
                 align="center"
                 shadow="md"
+                flexShrink={0}
+                zIndex={10}
             >
                 <HStack gap={3}>
                     <Circle size="10" bg="whiteAlpha.300" backdropFilter="blur(4px)">
@@ -176,16 +178,21 @@ export default function Chatbox({ lng, isOpen, onClose }: { lng: string; isOpen:
                     color="white"
                     _hover={{ bg: 'whiteAlpha.200' }}
                     borderRadius="full"
+                    cursor="pointer"
+                    zIndex={11}
+                    aria-label="Close chat"
                 >
                     <X size={20} />
                 </Button>
             </Flex>
 
             {/* Content Area */}
-            <Flex direction="column" flex={1} bg="transparent">
+            <Flex direction="column" flex={1} bg="transparent" minH={0}>
                 {isConnecting ? (
                     <Flex flex={1} justify="center" align="center" direction="column" gap={4}>
-                        <Loader2 className="animate-spin" style={{ color: 'main' }} size={32} />
+                        <Box color="main">
+                            <Loader2 className="animate-spin" size={32} />
+                        </Box>
                         <Text fontSize="sm" fontWeight="medium" color="gray.500">
                             {t('securing_connection', 'Securing connection...')}
                         </Text>
@@ -239,7 +246,7 @@ export default function Chatbox({ lng, isOpen, onClose }: { lng: string; isOpen:
                             <div ref={messagesEndRef} />
                         </VStack>
 
-                        <HStack p={4} bg="white" borderTop="1px solid" borderColor="gray.100" gap={2}>
+                        <HStack p={4} bg="white" borderTop="1px solid" borderColor="gray.100" gap={2} flexShrink={0}>
                             <Input
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
