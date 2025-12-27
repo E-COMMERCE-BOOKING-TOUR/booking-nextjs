@@ -1,66 +1,67 @@
-"use client"
+"use client";
 
-import { Box, Button, HStack, Icon, Text, VStack } from "@chakra-ui/react"
-import { MoreHorizontal } from "lucide-react"
+import { Box, Heading, VStack, Text, HStack, Spinner, Flex } from "@chakra-ui/react";
+import { useQuery } from "@tanstack/react-query";
+import article from "@/apis/article";
+import Link from "next/link";
 
-type TrendingItem = {
-  id: string | number
-  context?: string
-  region?: string
-  label: string
-  posts: string
-}
+export default function BlogSidebarRight() {
 
-type BlogSidebarRightProps = {
-  title?: string
-  items?: TrendingItem[]
-  className?: string
-}
+  const { data: trendingTags, isLoading } = useQuery({
+    queryKey: ["trending-tags"],
+    queryFn: async () => await article.getTrendingTags(4),
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  });
 
-const defaultItems: TrendingItem[] = [
-  { id: 1, context: "Vietnam", label: "Hello", posts: "457K posts" },
-  { id: 2, region: "Vietnam", label: "phong", posts: "21.6K posts" },
-  { id: 3, region: "Vietnam", label: "Adoption", posts: "45.7K posts" },
-  { id: 4, region: "Vietnam", label: "FADE", posts: "34.4K posts" },
-]
-
-export default function BlogSidebarRight({
-  title = "What’s happening",
-  items = defaultItems,
-  className,
-}: Readonly<BlogSidebarRightProps>) {
   return (
     <Box
-      className={className}
-      padding={5}
-      bg="blackAlpha.700"
-      color="white"
-      borderRadius="xl"
-      borderWidth="1px"
-      borderColor="whiteAlpha.200"
-      w="full"
+      w={{ base: "full", lg: "300px" }}
+      display={{ base: "none", lg: "block" }}
+      position="sticky"
+      top="30px"
+      h="fit-content"
+      paddingTop="1.25rem"
     >
-      <Text fontSize="lg" fontWeight="bold" px={2} py={1}>{title}</Text>
+      <Box
+        bg="white"
+        color="black"
+        borderRadius="2xl"
+        p={5}
+        shadow="sm"
+        mb={6}
+        border="1px solid"
+        borderColor="gray.100"
+      >
+        <Heading size="md" mb={4}>Trending Tags</Heading>
 
-      <VStack align="stretch" mt={1} wordSpacing={2}>
-        {items.map((it) => {
-          const top = it.context ? `${it.context} · Trending` : it.region ? `Trending in ${it.region}` : "Trending"
-          return (
-            <Box key={it.id} px={2} py={3} borderRadius="md" _hover={{ bg: "whiteAlpha.100" }}>
-              <HStack justify="space-between" align="start">
-                <VStack align="start" wordSpacing={0.5}>
-                  <Text fontSize="xs" color="whiteAlpha.700">{top}</Text>
-                  <Text fontSize="md" fontWeight="semibold">{it.label}</Text>
-                  <Text fontSize="xs" color="whiteAlpha.700">{it.posts}</Text>
-                </VStack>
-                <Button variant="ghost" size="sm" px={2} aria-label="more" _hover={{ bg: "whiteAlpha.200" }}>
-                  <Icon as={MoreHorizontal} />
-                </Button>
-              </HStack>
-            </Box>
-          )
-        })}
-      </VStack>
+        {isLoading ? (
+          <Flex justify="center" py={4}>
+            <Spinner color="blue.500" />
+          </Flex>
+        ) : (
+          <VStack align="stretch" gap={0}>
+            {trendingTags?.map((tag, index, arr) => (
+              <Link href={`/social/explore?tag=${tag._id}`} key={tag._id}>
+                <HStack
+                  justify="space-between"
+                  cursor="pointer"
+                  _hover={{ bg: "gray.50" }}
+                  py={3}
+                  borderBottom={index !== arr.length - 1 ? "1px solid" : "none"}
+                  borderColor="gray.100"
+                  transition="all 0.2s"
+                >
+                  <Text fontWeight="semibold" fontSize="md">#{tag._id}</Text>
+                  <Text color="gray.500" fontSize="sm">{tag.count} posts</Text>
+                </HStack>
+              </Link>
+            ))}
+            {(!trendingTags || trendingTags.length === 0) && (
+              <Text color="gray.500" fontSize="sm">No trending tags yet.</Text>
+            )}
+          </VStack>
+        )}
+      </Box>
     </Box>
-  )
+  );
 }

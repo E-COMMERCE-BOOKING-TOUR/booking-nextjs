@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking UI Redesign Concepts</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+    :root {
+      /* Variables will be updated via JS */
+      --bg-color: #f0f2f5;
+      --card-bg: #ffffff;
+      --text-main: #1a1a1a;
+      --text-sec: #65676b;
+      --accent: #2563eb;
+      --border-radius: 12px;
+      --shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      --border: 1px solid #e4e6eb;
+      --glass-filter: none;
+      --sidebar-bg: transparent;
+    }
+
+    /* THEME 1: GLASSMORPHISM */
+    [data-theme="glass"] {
+      --bg-image: linear-gradient(135deg, #9faff8 0%, #f5f5f5 100%);
+      --bg-color: #f0f2f5;
+      /* Fallback */
+      --card-bg: rgba(255, 255, 255, 0.7);
+      --text-main: #1f2937;
+      --text-sec: #4b5563;
+      --accent: #7c3aed;
+      --border-radius: 24px;
+      --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+      --border: 1px solid rgba(255, 255, 255, 0.4);
+      --glass-filter: blur(12px);
+      --sidebar-bg: rgba(255, 255, 255, 0.4);
+    }
+
+    /* THEME 2: SOFT MINIMAL */
+    [data-theme="soft"] {
+      --bg-image: none;
+      --bg-color: #fafafa;
+      --card-bg: #ffffff;
+      --text-main: #2d3436;
+      --text-sec: #636e72;
+      --accent: #00cec9;
+      --border-radius: 20px;
+      --shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08);
+      --border: none;
+      --glass-filter: none;
+      --sidebar-bg: transparent;
+    }
+
+    /* THEME 3: NEON DARK */
+    [data-theme="dark"] {
+      --bg-image: none;
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --text-sec: #94a3b8;
+      --accent: #22d3ee;
+      --border-radius: 16px;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+      --border: 1px solid #334155;
+      --glass-filter: none;
+      --sidebar-bg: transparent;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-color);
+      background-image: var(--bg-image);
+      background-attachment: fixed;
+      color: var(--text-main);
+      margin: 0;
+      padding: 0;
+      transition: all 0.3s ease;
+      min-height: 100vh;
+    }
+
+    /* Controls */
+    .controls {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: white;
+      padding: 10px;
+      border-radius: 50px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-theme {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: transform 0.2s;
+    }
+
+    .btn-theme:hover {
+      transform: scale(1.05);
+    }
+
+    .btn-glass {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .btn-soft {
+      background: #fafafa;
+      color: #2d3436;
+      border: 1px solid #ddd;
+    }
+
+    .btn-dark {
+      background: #0f172a;
+      color: #22d3ee;
+    }
+
+    /* Layout */
+    .layout {
+      display: grid;
+      grid-template-columns: 260px 1fr 300px;
+      gap: 30px;
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: sticky;
+      top: 30px;
+      height: 100%;
+      background: var(--sidebar-bg);
+      backdrop-filter: var(--glass-filter);
+      -webkit-backdrop-filter: var(--glass-filter);
+      border-radius: var(--border-radius);
+      padding: 20px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 14px 20px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-sec);
+      font-weight: 500;
+    }
+
+    .nav-item:hover,
+    .nav-item.active {
+      background-color: var(--accent);
+      color: white;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .nav-item i {
+      width: 20px;
+      font-size: 1.1rem;
+    }
+
+    /* Main Feed */
+    .feed {
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 10px;
+    }
+
+    .tab {
+      padding: 10px 0;
+      font-weight: 600;
+      color: var(--text-sec);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .tab.active {
+      color: var(--text-main);
+    }
+
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: var(--accent);
+      border-radius: 10px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      border: var(--border);
+      backdrop-filter: var(--glass-filter);
+      -webkit-backdrop-filter: var(--glass-filter);
+      transition: transform 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
+      border-radius: 50%;
+      margin-right: 15px;
+      display: grid;
+      place-items: center;
+      color: white;
+      font-weight: bold;
+    }
+
+    .user-meta h4 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .user-meta span {
+      font-size: 0.8rem;
+      color: var(--text-sec);
+    }
+
+    .post-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .tags {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .tag {
+      color: var(--accent);
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .post-image {
+      width: 100%;
+      height: 300px;
+      background-color: #ddd;
+      border-radius: 16px;
+      object-fit: cover;
+      margin-bottom: 20px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .stat-box {
+      background: rgba(0, 0, 0, 0.03);
+      padding: 10px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .stat-box[data-theme="dark"] {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-sec);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-val {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .actions {
+      display: flex;
+      gap: 20px;
+      border-top: 1px solid var(--border);
+      padding-top: 15px;
+    }
+
+    .action-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-sec);
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .action-btn:hover {
+      color: var(--accent);
+    }
+
+    /* Right Sidebar */
+    .right-sidebar {
+      height: 100%;
+    }
+
+    .trending-card {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      border: var(--border);
+      backdrop-filter: var(--glass-filter);
+    }
+
+    .trend-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .trend-item:last-child {
+      margin: 0;
+      border: none;
+    }
+
+    .trend-tag {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .trend-count {
+      font-size: 0.8rem;
+      color: var(--text-sec);
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar,
+      .right-sidebar {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body data-theme="glass">
+
+  <div class="controls">
+    <button class="btn-theme btn-glass" onclick="setTheme('glass')">🔮 Glassmorphism</button>
+    <button class="btn-theme btn-soft" onclick="setTheme('soft')">☁️ Soft Minimal</button>
+    <button class="btn-theme btn-dark" onclick="setTheme('dark')">🌃 Neon Dark</button>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="nav-item active"><i class="fas fa-home"></i> Home</div>
+      <div class="nav-item"><i class="fas fa-compass"></i> Explore</div>
+      <div class="nav-item"><i class="fas fa-bell"></i> Notifications</div>
+      <div class="nav-item"><i class="fas fa-bookmark"></i> Bookmarks</div>
+      <div class="nav-item"><i class="fas fa-user"></i> Profile</div>
+    </aside>
+
+    <main class="feed">
+      <div class="tabs">
+        <div class="tab active">For you</div>
+        <div class="tab">Following</div>
+      </div>
+
+      <div class="card">
+        <div class="user-info">
+          <div class="avatar">JD</div>
+          <div class="user-meta">
+            <h4>John Doe</h4>
+            <span>11 thg 12, 2025</span>
+          </div>
+        </div>
+        <span class="post-title">Du lịch Hạ Long bằng du thuyền</span>
+        <div class="tags">
+          <span class="tag">#ha-long</span>
+          <span class="tag">#du-thuyen</span>
+        </div>
+        <img
+          src="https://picsum.photos/750/500"
+          class="post-image" alt="Ha Long">
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-label">Location</div>
+            <div class="stat-val">Ha Long Bay</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Date</div>
+            <div class="stat-val">12/2025</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Weather</div>
+            <div class="stat-val">Sunny 🌤️</div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="action-btn"><i class="far fa-heart"></i> 360 Likes</button>
+          <button class="action-btn"><i class="far fa-comment"></i> 45 Comments</button>
+          <button class="action-btn"><i class="far fa-share-square"></i> Share</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="user-info">
+          <div class="avatar" style="background: linear-gradient(to right, #ff9a9e, #fecfef);">AB</div>
+          <div class="user-meta">
+            <h4>Alex Ben</h4>
+            <span>10 thg 12, 2025</span>
+          </div>
+        </div>
+        <span class="post-title">Du lịch Sapa mùa tuyết rơi</span>
+        <div class="tags">
+          <span class="tag">#sapa</span>
+          <span class="tag">#snow</span>
+        </div>
+        <img
+          src="https://picsum.photos/750/500"
+          class="post-image" alt="Sapa">
+
+        <div class="actions">
+          <button class="action-btn"><i class="far fa-heart"></i> 512 Likes</button>
+          <button class="action-btn"><i class="far fa-comment"></i> 80 Comments</button>
+        </div>
+      </div>
+
+    </main>
+
+    <aside class="right-sidebar">
+      <div class="trending-card">
+        <h3>Trending Tags</h3>
+        <div class="trend-item">
+          <span class="trend-tag">#nuoc-ngoai</span>
+          <span class="trend-count">1.2k posts</span>
+        </div>
+        <div class="trend-item">
+          <span class="trend-tag">#phuot</span>
+          <span class="trend-count">850 posts</span>
+        </div>
+        <div class="trend-item">
+          <span class="trend-tag">#camping</span>
+          <span class="trend-count">600 posts</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    function setTheme(theme) {
+      document.body.setAttribute('data-theme', theme);
+    }
+  </script>
+</body>
+
+</html>

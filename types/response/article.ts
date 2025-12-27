@@ -1,14 +1,20 @@
+export interface IArticleImage {
+    image_url: string;
+}
+
 export interface IArticlePopular {
     id: number | string;
     title: string;
-    description: string;
-    image: string;
+    content: string;
     tags: string[];
-    images: string[];
-    timestamp?: string;
-    views: number;
-    likes: number;
-    comments: number;
+    images: IArticleImage[];
+    created_at?: string;
+    count_views: number;
+    count_likes: number;
+    count_comments: number;
     user: { name: string; avatar: string };
+    tour_id?: number | string;
+    is_visible?: boolean;
+    comments?: any[];
 }
 

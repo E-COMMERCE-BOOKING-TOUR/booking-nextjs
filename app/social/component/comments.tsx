@@ -1,214 +1,370 @@
 "use client";
-import { useMemo, useState, useEffect } from "react";
-import { Box, Button, Grid, GridItem, HStack, Icon, Image, Input, Text, VStack, Dialog, CloseButton, Portal } from "@chakra-ui/react";
-import { FiMessageCircle, FiSend, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import React, { useEffect, useMemo, useState } from "react";
+import { Box, Button, Grid, GridItem, HStack, Icon, Image, Input, Text, VStack, Dialog, CloseButton, Portal, Flex, Avatar } from "@chakra-ui/react";
+import { FiMessageCircle, FiSend, FiChevronLeft, FiChevronRight, FiHeart, FiShare2, FiBookmark } from "react-icons/fi";
+import { HiDotsHorizontal } from "react-icons/hi";
+import { useSession } from "next-auth/react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import articleApi from "@/apis/article";
+import { userApi } from "@/apis/user";
+import { dateFormat } from "@/libs/function";
 
-export const flatTourComments = [
-    // ===== TOUR 201 - Đà Lạt 3N2Đ =====
-    { id: 1, content: "Tour đi rất vui, phong cảnh đẹp.", tour_id: 0, user_id: 101, parent_id: null },
-    { id: 2, content: "Hướng dẫn viên rất nhiệt tình.", tour_id: 0, user_id: 102, parent_id: null },
-    { id: 3, content: "Đồ ăn ngon, hợp khẩu vị.", tour_id: 0, user_id: 103, parent_id: null },
+// Intefaces mapping to backend DTOs
+export interface CommentParams {
+    id: string | number;
+    content: string;
+    parent_id: string | number | null;
+    user_id: number;
+    created_at: string;
+    updated_at: string;
+    user?: {
+        id: number;
+        name: string;
+        avatar: string;
+    };
+}
+// Extended for tree structure
+type CommentNode = CommentParams & { children: CommentNode[] };
 
-    // children of 1
-    { id: 4, content: "Bạn đi vào tháng mấy vậy?", tour_id: 0, user_id: 104, parent_id: 1 },
-    { id: 5, content: "Mình cũng thích Đà Lạt lắm.", tour_id: 0, user_id: 105, parent_id: 1 },
+function buildTree(data: any[]) {
+    if (!data) return [];
 
-    // children of 4
-    { id: 6, content: "Mình đi vào tháng 12, rất lạnh.", tour_id: 0, user_id: 106, parent_id: 4 },
-    { id: 7, content: "Đi mùa đó có hoa dã quỳ không?", tour_id: 0, user_id: 107, parent_id: 4 },
+    // Create a map for quick lookup
+    const map = new Map<string | number, CommentNode>();
 
-    // children of 6
-    { id: 8, content: "Có nhé, chụp hình rất đẹp.", tour_id: 0, user_id: 108, parent_id: 6 },
+    // Normalize data and initialize map
+    const normalizedData = data.map(c => ({
+        ...c,
+        id: c.id ?? c._id, // Handle both id and _id
+        children: []
+    })).filter(c => c.id != null);
 
-    // children of 2
-    { id: 9, content: "Hướng dẫn viên tên gì vậy bạn?", tour_id: 0, user_id: 109, parent_id: 2 },
-
-    // children of 9
-    { id: 10, content: "Anh tên Minh, rất thân thiện.", tour_id: 0, user_id: 110, parent_id: 9 },
-
-
-    // ===== TOUR 202 - Phú Quốc 4N3Đ =====
-    { id: 11, content: "Biển Phú Quốc đẹp mê luôn.", tour_id: 1, user_id: 111, parent_id: null },
-    { id: 12, content: "Khách sạn sạch sẽ và tiện nghi.", tour_id: 1, user_id: 112, parent_id: null },
-    { id: 13, content: "Di chuyển hơi nhiều nhưng rất đáng.", tour_id: 1, user_id: 113, parent_id: null },
-
-    // children of 11
-    { id: 14, content: "Bạn đi vào mùa nào?", tour_id: 1, user_id: 114, parent_id: 11 },
-    { id: 15, content: "Mình thích Bãi Sao nhất.", tour_id: 1, user_id: 115, parent_id: 11 },
-
-    // children of 14
-    { id: 16, content: "Mình đi tháng 5, nắng đẹp.", tour_id: 1, user_id: 116, parent_id: 14 },
-
-    // children of 12
-    { id: 17, content: "Khách sạn tên gì vậy bạn?", tour_id: 1, user_id: 117, parent_id: 12 },
-
-    // children of 17
-    { id: 18, content: "Mường Thanh Phú Quốc bạn nhé.", tour_id: 1, user_id: 118, parent_id: 17 },
-
-    // children of 13
-    { id: 19, content: "Đi nhiều mới thấy Phú Quốc đáng tiền.", tour_id: 1, user_id: 119, parent_id: 13 },
-
-    // reply level 3
-    { id: 20, content: "Đúng rồi, nên đi ít nhất 1 lần.", tour_id: 1, user_id: 120, parent_id: 19 },
-];
-
-
-type FlatComment = typeof flatTourComments[number];
-type CommentNode = FlatComment & { children: CommentNode[] };
-
-function buildTree(data: FlatComment[], tourId?: number) {
-    const filteredById = typeof tourId === "number" ? data.filter(d => d.tour_id === tourId) : data;
-    const filtered = Array.isArray(filteredById) && filteredById.length > 0 ? filteredById : data;
-    const map = new Map<number, CommentNode>();
-
-    filtered.forEach(c => map.set(c.id, { ...c, children: [] }));
+    normalizedData.forEach(c => map.set(c.id, c));
 
     const roots: CommentNode[] = [];
-    filtered.forEach(c => {
-        if (c.parent_id === null) {
-            const root = map.get(c.id);
-            if (root) roots.push(root);
-        }
-    });
-    filtered.forEach(c => {
-        if (c.parent_id !== null) {
-            let current: FlatComment = c;
-            while (current.parent_id !== null) {
-                const parent = map.get(current.parent_id);
-                if (!parent) break;
-                current = parent;
+
+    normalizedData.forEach(c => {
+        const node = map.get(c.id);
+        if (!node) return;
+
+        if (c.parent_id) {
+            // It's a child, add to parent's children
+            const parent = map.get(c.parent_id);
+            if (parent) {
+                parent.children.push(node);
+            } else {
+                // Orphaned node logic (optional: treat as root or ignore)
+                roots.push(node); // Fallback
             }
-            const rootNode = map.get(current.id);
-            const node = map.get(c.id);
-            if (rootNode && node) {
-                rootNode.children.push(node);
-            }
+        } else {
+            // It's a root
+            roots.push(node);
         }
     });
 
-    console.log(roots);
     return roots;
 }
 
 export function PopUpComment({
     isOpen,
     onClose,
-    tourId,
+    articleId,
     images,
-    comments = flatTourComments,
+    comments = [],
+    refetch,
+    author,
+    caption,
+    createdAt,
+    likeCount
 }: {
     isOpen: boolean;
     onClose: () => void;
-    tourId?: number;
+    articleId?: string;
     images?: string[];
-    comments?: FlatComment[];
+    comments?: CommentParams[];
+    refetch?: () => void;
+    author?: { name: string; avatar?: string };
+    caption?: string;
+    createdAt?: string;
+    likeCount?: number;
 }) {
-    const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+    const { data: session } = useSession();
+    const queryClient = useQueryClient();
+    const [expanded, setExpanded] = useState<Record<string | number, boolean>>({});
     const [text, setText] = useState("");
-    const nodes = useMemo(() => buildTree(comments, tourId), [comments, tourId]);
-    const [imgIndex, setImgIndex] = useState(0);
-    useEffect(() => { if (isOpen) setImgIndex(0); }, [isOpen]);
+    const [replyingTo, setReplyingTo] = useState<CommentParams | null>(null);
+    const [users, setUsers] = useState<Record<number, any>>({});
 
-    const toggle = (id: number) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+    const nodes = useMemo(() => buildTree(comments), [comments]);
+
+    const [imgIndex, setImgIndex] = useState(0);
+
+    const toggle = (id: string | number) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            const userIds = Array.from(new Set(comments.map(c => c.user_id)));
+            const newUsers: Record<number, any> = { ...users };
+            let hasNew = false;
+
+            for (const id of userIds) {
+                if (!newUsers[id]) {
+                    try {
+                        const res = await userApi.getById(id);
+                        if (res) {
+                            newUsers[id] = res;
+                            hasNew = true;
+                        }
+                    } catch (error) {
+                        console.error(`Failed to fetch user ${id}`, error);
+                    }
+                }
+            }
+
+            if (hasNew) {
+                setUsers(newUsers);
+            }
+        };
+
+        if (comments.length > 0) {
+            fetchUsers();
+        }
+    }, [comments]);
+
+
+    const postCommentMutation = useMutation({
+        mutationFn: async (content: string) => {
+            if (!session?.user?.accessToken || !articleId) return;
+            return await articleApi.addComment(articleId, content, session.user.accessToken, replyingTo?.id || undefined);
+        },
+        onSuccess: () => {
+            setText("");
+            setReplyingTo(null);
+            console.log("Comment posted");
+            if (refetch) refetch();
+            queryClient.invalidateQueries({ queryKey: ["articles"] });
+            queryClient.invalidateQueries({ queryKey: ["popular-articles-infinite"] });
+            queryClient.invalidateQueries({ queryKey: ["popular-articles"] });
+        },
+        onError: () => {
+            console.error("Failed to post comment");
+        }
+    });
+
+    const handlePost = () => {
+        if (!text.trim()) return;
+        postCommentMutation.mutate(text);
+    };
+
+    const handleReply = (comment: CommentParams) => {
+        setReplyingTo(comment);
+        setText(`@${users[comment.user_id]?.name || comment.user_id} `);
+    };
 
     const CommentItem = ({ node, depth = 0 }: { node: CommentNode; depth?: number }) => {
         const hasChildren = node.children.length > 0;
-        const canShowChildren = hasChildren && depth < 1;
+        const canShowChildren = hasChildren && depth < 2; // Limit nesting visual depth if too deep, but functionality remains
         const isOpenChild = !!expanded[node.id];
+        const user = users[node.user_id];
+
         return (
-            <Box pl={depth ? 8 : 0} py={3} borderBottomWidth={depth ? 0 : 1} borderColor="whiteAlpha.200">
-                <HStack align="start" gap={3} paddingLeft={4}>
-                    <Box bg="whiteAlpha.300" rounded="full" minW={8} minH={8} />
-                    <VStack align="start" gap={1} flex={1}>
-                        <Text color="white" fontSize="sm" fontWeight={"bold"}>Sơn Tùng MTP</Text>
-                        <Text color="gray.300" fontSize="sm">
-                            {node.parent_id ? <Text as="span" color="white" fontSize="sm" fontWeight={"bold"} mr={2}>Sơn Tùng MTP</Text> : null}
+            <Flex gap={3} mt={4} pl={depth ? 8 : 0}>
+                <Avatar.Root size="xs" flexShrink={0}>
+                    <Avatar.Fallback name={user?.name || node.user?.name || `U${node.user_id}`} />
+                    {(user?.avatar || node.user?.avatar) && <Avatar.Image src={user?.avatar || node.user?.avatar} />}
+                </Avatar.Root>
+                <VStack align="start" gap={1} flex={1}>
+                    <Text fontSize="sm" lineHeight="1.4">
+                        <Text as="span" fontWeight="bold" mr={2} cursor="pointer" _hover={{ textDecoration: 'underline' }}>
+                            {user?.name || node.user?.name || `User ${node.user_id}`}
+                        </Text>
+                        <Text as="span" color="gray.200">
                             {node.content}
                         </Text>
-                        <HStack gap={3} color="whiteAlpha.700" fontSize="xs">
-                            <Text>3d</Text>
-                            <Text>Reply</Text>
-                            {canShowChildren ? (
-                                <Button variant="outline" color="white" size="xs" onClick={() => toggle(node.id)}>
-                                    {isOpenChild ? "Hide replies" : "View replies"}
-                                </Button>
+                    </Text>
+
+                    <HStack gap={4} fontSize="xs" color="gray.500" mt={0.5}>
+                        <Text>{node.created_at ? new Date(node.created_at).toLocaleDateString() : 'Just now'}</Text>
+                        {/* Placeholder for likes logic on comment */}
+                        {/* <Text fontWeight="semibold" cursor="pointer">12 likes</Text> */}
+                        <Text fontWeight="semibold" cursor="pointer" onClick={() => handleReply(node)}>Reply</Text>
+                    </HStack>
+
+                    {/* View replies button */}
+                    {canShowChildren && (
+                        <Box mt={1}>
+                            {!isOpenChild ? (
+                                <HStack gap={2} cursor="pointer" onClick={() => toggle(node.id)}>
+                                    <Box w={6} h="1px" bg="gray.500" />
+                                    <Text fontSize="xs" color="gray.500" fontWeight="semibold">
+                                        View replies ({node.children.length})
+                                    </Text>
+                                </HStack>
                             ) : null}
-                        </HStack>
-                        {canShowChildren && isOpenChild ? (
-                            <VStack align="stretch" gap={0} mt={2}>
-                                {node.children.map(ch => (
-                                    <CommentItem key={ch.id} node={ch} depth={depth + 1} />
-                                ))}
-                            </VStack>
-                        ) : null}
-                    </VStack>
-                </HStack>
-            </Box>
+                        </Box>
+                    )}
+
+                    {/* Nested Replies */}
+                    {(isOpenChild || depth > 0) && node.children.length > 0 && (
+                        <Box w="full">
+                            {node.children.map(ch => (
+                                <CommentItem key={ch.id} node={ch} depth={depth + 1} />
+                            ))}
+                        </Box>
+                    )}
+                </VStack>
+                {/* Like button for comment - placeholder interaction */}
+                <Icon as={FiHeart} boxSize={3} color="gray.500" cursor="pointer" mt={1} />
+            </Flex>
         );
     };
 
 
     return (
-        <Dialog.Root open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }} size="lg" placement="center" motionPreset="slide-in-bottom">
+        <Dialog.Root open={isOpen} onOpenChange={(details) => { if (!details.open) onClose(); }} size="xl" placement="center" motionPreset="slide-in-bottom">
             <Portal>
-                <Dialog.Backdrop />
+                <Dialog.Backdrop bg="blackAlpha.800" backdropFilter="blur(5px)" />
                 <Dialog.Positioner>
-                    <Dialog.Content bg="black" color="white" borderRadius="xl" overflow="hidden">
-                        <Dialog.Header>
-                            <HStack justify="space-between" px={4} py={2}>
-                                <Text fontWeight="semibold" fontSize="lg">Comments</Text>
-                                <Dialog.CloseTrigger asChild>
-                                    <CloseButton size="sm" onClick={onClose} />
-                                </Dialog.CloseTrigger>
-                            </HStack>
-                        </Dialog.Header>
-                        <Dialog.Body p={0}>
-                            <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }}>
-                                <GridItem>
-                                    <Box
-                                        bg="black"
-                                        w="full"
-                                        h={{ base: "70vh", md: "80vh" }}
-                                        position="relative"
-                                        display={"flex"}
-                                        justifyContent={"center"}
-                                        alignItems={"center"}
-                                    >
-                                        {images && images.length > 0 ? (
-                                            <Image src={images[imgIndex]} alt="tour" h="full" objectFit="cover" />
-                                        ) : (
-                                            <Box w="full" h="full" bg="whiteAlpha.200" />
-                                        )}
-                                        {images && images.length > 1 ? (
-                                            <>
-                                                <Button aria-label="Prev" variant="ghost" colorScheme="whiteAlpha" position="absolute" left={2} top="50%" transform="translateY(-50%)" onClick={() => setImgIndex((p) => (p - 1 + images.length) % images.length)}>
-                                                    <Icon as={FiChevronLeft} />
-                                                </Button>
-                                                <Button aria-label="Next" variant="ghost" colorScheme="whiteAlpha" position="absolute" right={2} top="50%" transform="translateY(-50%)" onClick={() => setImgIndex((p) => (p + 1) % images.length)}>
-                                                    <Icon as={FiChevronRight} />
-                                                </Button>
-                                            </>
-                                        ) : null}
+                    <Dialog.Content
+                        bg="black"
+                        color="white"
+                        borderRadius="xl" // Less rounded?
+                        overflow="hidden"
+                        maxW="6xl" // Wider to resemble desktop instagram
+                        w="90vw"
+                        h="85vh" // Fixed height
+                        p={0}
+                    >
+                        {/* Close Button on top right outside? Or inside header. Instagram puts it outside often. 
+                             We'll use internal one for simplicity or custom absolute one.
+                         */}
+                        <Box position="absolute" right={2} top={2} zIndex={10}>
+                            <Dialog.CloseTrigger asChild>
+                                <CloseButton size="md" color="white" onClick={onClose} />
+                            </Dialog.CloseTrigger>
+                        </Box>
+
+                        <Grid templateColumns={{ base: "1fr", md: "1.2fr 1fr" }} h="full">
+                            {/* Left: Image Carousel */}
+                            <GridItem bg="black" display="flex" alignItems="center" justifyContent="center" position="relative" h="full" borderRight="1px solid" borderColor="whiteAlpha.200">
+                                {images && images.length > 0 ? (
+                                    <Image src={images[imgIndex]} alt="article" maxH="100%" maxW="100%" objectFit="contain" />
+                                ) : (
+                                    <Box w="full" h="full" display="flex" alignItems="center" justifyContent="center">
+                                        <Text color="gray.500">No Image</Text>
                                     </Box>
-                                </GridItem>
-                                <GridItem borderLeftWidth={{ base: 0, md: 1 }} borderColor="whiteAlpha.200">
-                                    <VStack align="stretch" h={{ base: "70vh", md: "80vh" }} wordSpacing={0} overflow="hidden">
-                                        <VStack align="stretch" flex={1} overflowY="auto">
-                                            {nodes.map(n => (
-                                                <CommentItem key={n.id} node={n} />
-                                            ))}
-                                        </VStack>
-                                        <Box p={3} borderTopWidth={1} borderColor="whiteAlpha.200" bg="black">
-                                            <HStack gap={3}>
-                                                <Icon as={FiMessageCircle} />
-                                                <Input placeholder="Add a comment..." value={text} onChange={e => setText(e.target.value)} color="white" />
-                                                <Button colorScheme="blue"><FiSend />Post</Button>
-                                            </HStack>
-                                        </Box>
-                                    </VStack>
-                                </GridItem>
-                            </Grid>
-                        </Dialog.Body>
+                                )}
+                                {images && images.length > 1 && (
+                                    <>
+                                        <Button aria-label="Prev" variant="ghost" colorScheme="whiteAlpha" position="absolute" left={2} top="50%" transform="translateY(-50%)" onClick={() => setImgIndex((p) => (p - 1 + images.length) % images.length)} borderRadius="full" p={0}>
+                                            <Icon as={FiChevronLeft} color="white" boxSize={6} />
+                                        </Button>
+                                        <Button aria-label="Next" variant="ghost" colorScheme="whiteAlpha" position="absolute" right={2} top="50%" transform="translateY(-50%)" onClick={() => setImgIndex((p) => (p + 1) % images.length)} borderRadius="full" p={0}>
+                                            <Icon as={FiChevronRight} color="white" boxSize={6} />
+                                        </Button>
+                                    </>
+                                )}
+                            </GridItem>
+
+                            {/* Right: Details & Comments */}
+                            <GridItem h="full" display="flex" flexDirection="column" bg="black">
+                                {/* Header */}
+                                <HStack p={4} borderBottom="1px solid" borderColor="whiteAlpha.200" justify="space-between">
+                                    <HStack gap={3}>
+                                        <Avatar.Root size="sm">
+                                            <Avatar.Fallback name={author?.name} />
+                                            {author?.avatar && <Avatar.Image src={author.avatar} />}
+                                        </Avatar.Root>
+                                        <Text fontWeight="bold" fontSize="sm">{author?.name || "Unknown"}</Text>
+                                        {/* <Text fontSize="sm" color="blue.400" fontWeight="semibold" cursor="pointer">• Follow</Text> */}
+                                    </HStack>
+                                    <Icon as={HiDotsHorizontal} cursor="pointer" />
+                                </HStack>
+
+                                {/* Scrollable Content */}
+                                <Box flex={1} overflowY="auto" p={4} css={{ '&::-webkit-scrollbar': { display: 'none' } }}>
+                                    {/* Author Caption */}
+                                    {caption && (
+                                        <Flex gap={3} mb={4}>
+                                            <Avatar.Root size="sm" flexShrink={0}>
+                                                <Avatar.Fallback name={author?.name} />
+                                                {author?.avatar && <Avatar.Image src={author.avatar} />}
+                                            </Avatar.Root>
+                                            <VStack align="start" gap={1}>
+                                                <Text fontSize="sm" lineHeight="1.4">
+                                                    <Text as="span" fontWeight="bold" mr={2}>{author?.name}</Text>
+                                                    <Text as="span">{caption}</Text>
+                                                </Text>
+                                                <Text fontSize="xs" color="gray.500">{createdAt ? dateFormat(createdAt) : 'Just now'}</Text>
+                                            </VStack>
+                                        </Flex>
+                                    )}
+
+                                    {/* Comments Tree */}
+                                    {nodes.length > 0 ? (
+                                        nodes.map(n => (
+                                            <CommentItem key={n.id} node={n} />
+                                        ))
+                                    ) : (
+                                        !caption && (
+                                            <Box py={10} textAlign="center">
+                                                <Text color="gray.500" fontSize="sm">No comments yet.</Text>
+                                                <Text color="gray.500" fontSize="xs">Start the conversation.</Text>
+                                            </Box>
+                                        )
+                                    )}
+                                </Box>
+
+                                {/* Footer Actions */}
+                                <Box p={4} borderTop="1px solid" borderColor="whiteAlpha.200">
+                                    <HStack justify="space-between" mb={3} fontSize="2xl">
+                                        <HStack gap={4}>
+                                            <Icon as={FiHeart} cursor="pointer" _hover={{ color: 'gray.400' }} />
+                                            <Icon as={FiMessageCircle} cursor="pointer" _hover={{ color: 'gray.400' }} />
+                                            <Icon as={FiShare2} cursor="pointer" _hover={{ color: 'gray.400' }} />
+                                        </HStack>
+                                        <Icon as={FiBookmark} cursor="pointer" _hover={{ color: 'gray.400' }} />
+                                    </HStack>
+                                    <Text fontWeight="bold" fontSize="sm" mb={1}>{likeCount || 0} likes</Text>
+                                    <Text fontSize="xs" color="gray.500" textTransform="uppercase" mb={4}>{createdAt ? dateFormat(createdAt) : 'Just now'}</Text>
+
+                                    {/* Input Area */}
+                                    <HStack gap={2} pt={2} borderTop="1px solid" borderColor="whiteAlpha.100">
+                                        {/* Emoji Icon placeholder */}
+                                        {/* <Icon as={MdTagFaces} color="white" boxSize={6} cursor="pointer" /> */}
+
+                                        <Input
+                                            variant="outline"
+                                            border="none"
+                                            placeholder="Add a comment..."
+                                            value={text}
+                                            onChange={e => setText(e.target.value)}
+                                            color="white"
+                                            fontSize="sm"
+                                            p={0}
+                                            _placeholder={{ color: 'gray.500' }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && !postCommentMutation.isPending) handlePost();
+                                            }}
+                                        />
+                                        <Button
+                                            variant="plain"
+                                            color="blue.400"
+                                            fontWeight="semibold"
+                                            size="sm"
+                                            p={0}
+                                            onClick={handlePost}
+                                            disabled={!text.trim() || postCommentMutation.isPending}
+                                            loading={postCommentMutation.isPending}
+                                            _hover={{ color: 'blue.300', bg: 'transparent' }}
+                                            _disabled={{ color: 'blue.800', cursor: 'not-allowed' }}
+                                        >
+                                            Post
+                                        </Button>
+                                    </HStack>
+                                </Box>
+                            </GridItem>
+                        </Grid>
                     </Dialog.Content>
                 </Dialog.Positioner>
             </Portal>

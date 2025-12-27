@@ -65,5 +65,10 @@ const userApi = {
         });
         return res;
     },
+    getById: async (id: number) => {
+        const url = "/user/getById";
+        const res = await fetchC.post(url, { id });
+        return res;
+    }
 };
 export { userApi }

@@ -41,6 +41,13 @@ export const bookingApi = {
         const res = await fetchC.post(url, dto, { headers: authHeaders.headers });
         return res;
     },
+    getHistory: async (token?: string) => {
+        const url = "/user/booking/history";
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+        const res = await fetchC.get(url, { headers: authHeaders.headers });
+        return res as { id: number; title: string; image?: string }[];
+    },
     getCurrent: async (token?: string): Promise<BookingResult> => {
         const url = "/user/booking/current";
         const authHeaders = await getAuthHeaders(token);
@@ -182,22 +189,6 @@ export const bookingApi = {
 
         if (!response.ok) throw new Error("Failed to download invoice");
         return await response.blob();
-    },
-    getHistory: async (token: string, page: number = 1, limit: number = 10): Promise<{ ok: boolean; data?: { data: IBookingDetail[], total: number, page: number, limit: number, totalPages: number }; error?: string }> => {
-        const url = `/user/booking/history?page=${page}&limit=${limit}`;
-        try {
-            const res = await fetchC.get(url, {
-                headers: {
-                    "Authorization": "Bearer " + token
-                }
-            });
-            return { ok: true, data: res };
-        } catch (error) {
-            return {
-                ok: false,
-                error: (error as Error)?.message || "Failed to fetch booking history"
-            };
-        }
-    },
+    }
 };
 export default bookingApi;
