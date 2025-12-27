@@ -1,5 +1,6 @@
 "use client"
 import { Box, Button, Container, Heading, Text, VStack } from "@chakra-ui/react";
+import { IDivisionTrending } from "@/types/response/division";
 import { ChevronRight } from "lucide-react";
 import Image from "next/image";
 
@@ -21,7 +22,11 @@ const layersConfig = [
   { translateY: "calc(100vh * 0.95)", duration: "38s", direction: "reverse", opacity: 0.6 },
 ];
 
-export default function Diagonal() {
+export default function Diagonal({ divisions = [] }: { divisions?: IDivisionTrending[] }) {
+  const displayImages = divisions.length > 0
+    ? divisions.map(d => d.image)
+    : galleryImages;
+
   return (
     <>
       <Box
@@ -88,7 +93,7 @@ export default function Diagonal() {
             >
               {/* Render 3 sets for truly seamless loop */}
               {[0, 1, 2].map((setIndex) => (
-                galleryImages.map((image, index) => (
+                displayImages.map((image, index) => (
                   <Box
                     key={`layer${layerIndex}-set${setIndex}-img${index}`}
                     className="diagonal-image-box"

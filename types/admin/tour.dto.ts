@@ -1,3 +1,17 @@
+export interface ITourPolicyRule {
+    id?: number;
+    before_hours: number;
+    fee_pct: number;
+    sort_no: number;
+}
+
+export interface ITourPolicy {
+    id?: number;
+    name: string;
+    rules: ITourPolicyRule[];
+    supplier_id?: number;
+}
+
 export type CreateTourDTO = {
     title: string;
     description: string;
@@ -41,6 +55,7 @@ export type CreateTourDTO = {
             pax_type_id: number;
             price: number;
         }[];
+        tour_policy_id?: number;
         sessions?: {
             session_date: string;
             start_time: string;
@@ -108,6 +123,7 @@ export interface IAdminTourVariant {
         start_time: string;
         end_time?: string;
     }[];
+    tour_policy?: ITourPolicy;
 }
 
 export interface IAdminTourDetail extends Omit<CreateTourDTO, "tour_category_ids" | "variants" | "images"> {

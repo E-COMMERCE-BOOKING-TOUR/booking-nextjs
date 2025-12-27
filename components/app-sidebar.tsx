@@ -37,6 +37,7 @@ const sections = [
     icon: GalleryVerticalEnd,
     children: [
       { title: "All Tours", url: "/admin/tour" },
+      { title: "Refund Policies", url: "/admin/tour/policies" },
       { title: "Create New", url: "/admin/tour/create" },
     ],
   },

@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import {
     Settings2,
     CalendarDays,
@@ -93,7 +94,8 @@ const tourSchema = z.object({
             pax_type_id: z.number(),
             pax_type_name: z.string(),
             price: z.coerce.number().min(0)
-        }))
+        })),
+        tour_policy_id: z.coerce.number().min(1, "Please select a refund policy").optional()
     })).min(1, "Please add at least 1 variant"),
     is_visible: z.boolean().default(true),
     status: z.enum(['draft', 'active', 'inactive']).default('active'),
@@ -147,7 +149,6 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
         enabled: !!token,
         staleTime: 5 * 60 * 1000,
     });
-
     const form = useForm<TourFormValues>({
         resolver: zodResolver(tourSchema) as Resolver<TourFormValues>,
         defaultValues: {
@@ -181,6 +182,14 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
             testimonial: { name: '', country: '', text: '' },
             map_preview: '',
         }
+    });
+
+    const selectedSupplierId = useWatch({ control: form.control, name: 'supplier_id' });
+
+    const { data: policies = [] } = useQuery({
+        queryKey: ['policies', selectedSupplierId],
+        queryFn: () => adminTourApi.getPoliciesBySupplier(selectedSupplierId, token),
+        enabled: !!token && !!selectedSupplierId,
     });
 
     const { fields: variantFields, append: appendVariant, remove: removeVariant } = useFieldArray({
@@ -231,10 +240,11 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                 let durationHours = null;
                 const sessionWithDuration = sortedSessions.find((s) => s.start_time && s.end_time);
                 if (sessionWithDuration) {
-                    const safeGetTime = (t: string | Date | number | unknown) => {
+                    const safeGetTime = (t: string | Date | number | unknown): string => {
                         if (typeof t === 'string') return t;
                         if (t instanceof Date) return t.toLocaleTimeString('en-GB', { hour12: false });
-                        return new Date(t).toLocaleTimeString('en-GB', { hour12: false });
+                        if (typeof t === 'number') return new Date(t).toLocaleTimeString('en-GB', { hour12: false });
+                        return String(t);
                     };
                     const [h1] = safeGetTime(sessionWithDuration.start_time).split(':').map(Number);
                     const [h2] = safeGetTime(sessionWithDuration.end_time).split(':').map(Number);
@@ -291,18 +301,36 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                 tour_category_ids: initialData.tour_categories?.map((c) => c.id) || [],
                 published_at: initialData.published_at ? new Date(initialData.published_at).toISOString().split('T')[0] : null,
                 variants: initialData.variants?.map((v: IAdminTourVariant) => ({
-                    ...v,
+                    id: v.id,
+                    name: v.name,
+                    min_pax_per_booking: v.min_pax_per_booking,
+                    capacity_per_slot: v.capacity_per_slot,
+                    tax_included: v.tax_included,
+                    cutoff_hours: v.cutoff_hours,
+                    status: v.status,
                     prices: v.tour_variant_pax_type_prices?.map((p) => ({
                         id: p.id,
                         pax_type_id: p.pax_type?.id || 0,
                         pax_type_name: p.pax_type?.name || '',
                         price: p.price
+                    })) || [],
+                    tour_policy_id: v.tour_policy?.id,
+                    sessions: v.tour_sessions?.map(s => ({
+                        session_date: s.session_date,
+                        start_time: s.start_time,
+                        end_time: s.end_time || null,
+                        status: 'open',
+                        capacity: 0,
+                        capacity_available: 0
                     })) || []
                 })) || [],
                 meeting_point: initialData.meeting_point || '',
                 included: initialData.included || [],
                 not_included: initialData.not_included || [],
-                highlights: initialData.highlights || { title: 'Highlights', items: [] },
+                highlights: {
+                    title: initialData.highlights?.title || 'Highlights',
+                    items: initialData.highlights?.items || []
+                },
                 languages: initialData.languages || ['Vietnamese', 'English'],
                 staff_score: initialData.staff_score || 9.0,
                 testimonial: initialData.testimonial || { name: '', country: '', text: '' },
@@ -477,14 +505,20 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                 }
 
                 return {
-                    ...v,
                     id: v.id,
+                    name: v.name,
+                    min_pax_per_booking: v.min_pax_per_booking,
+                    capacity_per_slot: v.capacity_per_slot,
+                    tax_included: v.tax_included,
+                    cutoff_hours: v.cutoff_hours,
+                    status: v.status,
                     prices: v.prices.map(p => ({
                         id: p.id,
                         pax_type_id: p.pax_type_id,
                         price: p.price
                     })),
-                    sessions: sessions
+                    tour_policy_id: v.tour_policy_id,
+                    sessions: sessions as any[]
                 };
             });
 
@@ -706,76 +740,100 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                 <CardHeader>
                                     <CardTitle>Configuration & Duration</CardTitle>
                                 </CardHeader>
-                                <CardContent className="grid grid-cols-3 gap-6">
-                                    <FormField
-                                        control={form.control}
-                                        name="status"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Tour Status</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value}>
+                                <CardContent className="space-y-6">
+                                    <div className="grid grid-cols-3 gap-6">
+                                        <FormField
+                                            control={form.control}
+                                            name="status"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Tour Status</FormLabel>
+                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                        <FormControl>
+                                                            <SelectTrigger className="bg-background/50 border-white/10">
+                                                                <SelectValue placeholder="Status" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            <SelectItem value="draft">Draft</SelectItem>
+                                                            <SelectItem value="active">Active</SelectItem>
+                                                            <SelectItem value="inactive">Inactive</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="duration_days"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Duration (Days)</FormLabel>
                                                     <FormControl>
-                                                        <SelectTrigger className="bg-background/50 border-white/10">
-                                                            <SelectValue placeholder="Status" />
-                                                        </SelectTrigger>
+                                                        <Input type="number" {...field} value={field.value || ''} onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)} className="bg-background/50 border-white/10" />
                                                     </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="draft">Draft</SelectItem>
-                                                        <SelectItem value="active">Active</SelectItem>
-                                                        <SelectItem value="inactive">Inactive</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="duration_days"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Duration (Days)</FormLabel>
-                                                <FormControl>
-                                                    <Input type="number" {...field} value={field.value || ''} onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)} className="bg-background/50 border-white/10" />
-                                                </FormControl>
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="duration_hours"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Extra Hours</FormLabel>
-                                                <FormControl>
-                                                    <Input type="number" {...field} value={field.value || ''} onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)} className="bg-background/50 border-white/10" />
-                                                </FormControl>
-                                                <FormDescription>
-                                                    Example: 2 days 5 hours (enter 5 here).
-                                                    {(watchedDurationDays !== null || field.value) && (
-                                                        <span className="block text-emerald-400 mt-1">
-                                                            → Total Time:
-                                                            {Number(watchedDurationDays || 0) > 0 ? ` ${watchedDurationDays} days` : ''}
-                                                            {Number(watchedDurationDays || 0) > 0 && Number(field.value || 0) > 0 ? ' and' : ''}
-                                                            {Number(field.value || 0) > 0 ? ` ${field.value} hours` : ''}
-                                                            {Number(watchedDurationDays || 0) === 0 && Number(field.value || 0) === 0 ? ' 0 hours' : ''}
-                                                        </span>
-                                                    )}
-                                                </FormDescription>
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="tax"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Tax (%)</FormLabel>
-                                                <FormControl>
-                                                    <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} className="bg-background/50 border-white/10" />
-                                                </FormControl>
-                                            </FormItem>
-                                        )}
-                                    />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="duration_hours"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Extra Hours</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="number" {...field} value={field.value || ''} onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)} className="bg-background/50 border-white/10" />
+                                                    </FormControl>
+                                                    <FormDescription>
+                                                        Example: 2 days 5 hours (enter 5 here).
+                                                        {(watchedDurationDays !== null || field.value) && (
+                                                            <span className="block text-emerald-400 mt-1">
+                                                                → Total Time:
+                                                                {Number(watchedDurationDays || 0) > 0 ? ` ${watchedDurationDays} days` : ''}
+                                                                {Number(watchedDurationDays || 0) > 0 && Number(field.value || 0) > 0 ? ' and' : ''}
+                                                                {Number(field.value || 0) > 0 ? ` ${field.value} hours` : ''}
+                                                                {Number(watchedDurationDays || 0) === 0 && Number(field.value || 0) === 0 ? ' 0 hours' : ''}
+                                                            </span>
+                                                        )}
+                                                    </FormDescription>
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="tax"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Tax (%)</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} className="bg-background/50 border-white/10" />
+                                                    </FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                    <div className="mt-6 border-t border-white/5 pt-6">
+                                        <FormField
+                                            control={form.control}
+                                            name="is_visible"
+                                            render={({ field }) => (
+                                                <FormItem className="flex flex-row items-center justify-between rounded-lg border border-white/10 p-4 bg-background/50">
+                                                    <div className="space-y-0.5">
+                                                        <FormLabel className="text-base text-white">Public Visibility</FormLabel>
+                                                        <FormDescription>
+                                                            Toggle whether this tour is visible to customers on the public site.
+                                                        </FormDescription>
+                                                    </div>
+                                                    <FormControl>
+                                                        <Switch
+                                                            checked={field.value}
+                                                            onCheckedChange={field.onChange}
+                                                        />
+                                                    </FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
                                 </CardContent>
                             </Card>
                         </div>
@@ -819,7 +877,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                     )}
                                                 />
                                                 <Button type="button" variant="ghost" size="icon" onClick={() => {
-                                                    const current = form.getValues('highlights.items');
+                                                    const current = form.getValues('highlights.items') || [];
                                                     form.setValue('highlights.items', current.filter((_, i) => i !== index));
                                                 }}>
                                                     <Trash2 className="size-4 text-destructive" />
@@ -1005,7 +1063,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         className="absolute inset-0 opacity-0 cursor-pointer z-20"
                                         onChange={handleFileUpload}
                                     />
-                                    <Button variant="outline" className="border-dashed border-primary text-primary hover:bg-primary/5">
+                                    <Button type="button" variant="outline" className="border-dashed border-primary text-primary hover:bg-primary/5">
                                         <Plus className="size-4 mr-2" /> Upload Images
                                     </Button>
                                 </div>
@@ -1053,7 +1111,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                     <h3 className="text-lg font-semibold">Tour Variants</h3>
                                     <p className="text-sm text-muted-foreground">Define different package options (Standard, Deluxe, etc.)</p>
                                 </div>
-                                <Button onClick={() => appendVariant({
+                                <Button type="button" onClick={() => appendVariant({
                                     name: 'Standard',
                                     min_pax_per_booking: 1,
                                     capacity_per_slot: 20,
@@ -1063,8 +1121,9 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                     prices: [
                                         { pax_type_id: 1, pax_type_name: 'Adult', price: 0 },
                                         { pax_type_id: 2, pax_type_name: 'Child', price: 0 }
-                                    ]
-                                })} className="bg-primary text-primary-foreground">
+                                    ],
+                                    tour_policy_id: undefined
+                                })} className="bg-primary hover:bg-primary/90 text-white shadow-sm flex items-center gap-2">
                                     <Plus className="size-4 mr-2" /> Add Variant
                                 </Button>
                             </div>
@@ -1130,6 +1189,54 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                         />
                                                     ))}
                                                 </div>
+                                            </div>
+
+                                            <Separator className="bg-white/5 my-4" />
+
+                                            <div className="space-y-4">
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`variants.${index}.tour_policy_id`}
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <div className="flex items-center justify-between">
+                                                                <FormLabel className="text-base font-semibold text-primary">Refund Policy</FormLabel>
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 text-xs text-primary hover:text-primary/80"
+                                                                    onClick={() => router.push('/admin/tour/policies')}
+                                                                >
+                                                                    Manage Policies
+                                                                </Button>
+                                                            </div>
+                                                            <Select onValueChange={field.onChange} value={field.value?.toString()}>
+                                                                <FormControl>
+                                                                    <SelectTrigger className="bg-background/40 h-10 border-white/10">
+                                                                        <SelectValue placeholder="Select a refund policy" />
+                                                                    </SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent className="bg-slate-900 border-white/10 text-white">
+                                                                    {policies.map((p) => (
+                                                                        <SelectItem key={p.id} value={p.id!.toString()} className="hover:bg-white/10 focus:bg-white/10">
+                                                                            {p.name}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                    {policies.length === 0 && (
+                                                                        <div className="p-2 text-xs text-muted-foreground italic">
+                                                                            No policies found for this supplier.
+                                                                        </div>
+                                                                    )}
+                                                                </SelectContent>
+                                                            </Select>
+                                                            <FormDescription className="text-[10px] text-muted-foreground">
+                                                                Select a cancellation policy for this tour variant. Policies are shared across tours of the same supplier.
+                                                            </FormDescription>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
                                             </div>
                                         </CardContent>
                                     </Card>
@@ -1213,7 +1320,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                 </form>
             </Form>
 
-            <div className="flex items-center justify-between pt-6 border-t border-white/5 sticky bottom-0 bg-background/80 backdrop-blur-xl p-4 -mx-4 md:static md:bg-transparent md:p-0">
+            <div className="w-full flex items-center justify-between pt-6 bg-background/80 backdrop-blur-xl md:static md:bg-transparent md:p-0">
                 <Button
                     type="button"
                     variant="ghost"
@@ -1246,6 +1353,6 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

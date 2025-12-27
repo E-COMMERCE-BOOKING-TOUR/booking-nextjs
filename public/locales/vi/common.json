@@ -394,5 +394,12 @@
     "final_payment_amount_label": "Số tiền quyết toán:",
     "quick_actions_title": "Thao tác nhanh",
     "view_history_button": "Xem lịch sử thay đổi",
-    "back_to_list": "Quay lại danh sách"
+    "back_to_list": "Quay lại danh sách",
+    "refund_policy_title": "Chính sách Hủy & Hoàn tiền",
+    "cancel_before_hours": "Hủy trước {{count}} giờ",
+    "cancel_before_days": "Hủy trước {{count}} ngày",
+    "cancel_anytime": "Hủy bất kỳ lúc nào",
+    "at_start_time": "Vào lúc khởi hành",
+    "free_cancellation": "MIỄN PHÍ",
+    "cancellation_fee_pct": "Phí {{pct}}%"
 }

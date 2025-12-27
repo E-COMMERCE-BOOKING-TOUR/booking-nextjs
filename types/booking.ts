@@ -1,3 +1,15 @@
+export interface ITourPolicyRule {
+    id: number;
+    before_hours: number;
+    fee_pct: number;
+}
+
+export interface ITourPolicy {
+    id: number;
+    name: string;
+    rules: ITourPolicyRule[];
+}
+
 export interface IBookingPassenger {
     full_name: string;
     phone_number: string;
@@ -43,6 +55,7 @@ export interface IBookingDetail {
         expiry_date?: string;
         account_holder?: string;
     };
+    policy?: ITourPolicy;
 }
 
 export interface IConfirmBooking {

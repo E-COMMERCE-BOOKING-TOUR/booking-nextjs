@@ -18,6 +18,11 @@ import {
   MapPin,
   Clock,
   Tag,
+  ShieldCheck,
+  ShieldAlert,
+  Check,
+  X,
+  AlertCircle
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -29,6 +34,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { cn } from '@/libs/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +45,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 export default function AdminTourListPage() {
   const { data: session, status: sessionStatus } = useSession();
@@ -51,6 +64,9 @@ export default function AdminTourListPage() {
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [checkingVisibilityId, setCheckingVisibilityId] = useState<number | null>(null);
+  const [report, setReport] = useState<any>(null);
+  const [isChecking, setIsChecking] = useState(false);
 
   const { data: tourResponse, isLoading } = useQuery({
     queryKey: ['admin-tours', keyword, statusFilter, currentPage, sortBy, sortOrder],
@@ -105,6 +121,19 @@ export default function AdminTourListPage() {
       toast.success('Status updated successfully');
     },
   });
+
+  const checkVisibility = async (id: number) => {
+    setCheckingVisibilityId(id);
+    setIsChecking(true);
+    try {
+      const data = await adminTourApi.getVisibilityReport(id, token);
+      setReport(data);
+    } catch (err: any) {
+      toast.error('Error checking visibility: ' + err.message);
+    } finally {
+      setIsChecking(false);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -260,6 +289,17 @@ export default function AdminTourListPage() {
                             <Edit className="size-4" />
                           </Button>
                         </Link>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className={cn(
+                            "size-8",
+                            tour.is_visible ? "text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50" : "text-amber-500 hover:text-amber-600 hover:bg-amber-50"
+                          )}
+                          onClick={() => checkVisibility(tour.id)}
+                        >
+                          {tour.is_visible ? <ShieldCheck className="size-4" /> : <ShieldAlert className="size-4" />}
+                        </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="size-8 text-muted-foreground">
@@ -373,6 +413,84 @@ export default function AdminTourListPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={report !== null} onOpenChange={(open) => !open && setReport(null)}>
+        <DialogContent className="max-w-md bg-slate-900 border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              {report?.isVisiblePublic ? (
+                <ShieldCheck className="text-emerald-500 size-6" />
+              ) : (
+                <ShieldAlert className="text-amber-500 size-6" />
+              )}
+              Visibility Report
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Diagnostic for &quot;{report?.title}&quot;
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className={cn(
+              "p-4 rounded-lg flex items-center justify-between",
+              report?.isVisiblePublic ? "bg-emerald-500/10 border border-emerald-500/20" : "bg-amber-500/10 border border-amber-500/20"
+            )}>
+              <span className="font-semibold">Public Status:</span>
+              <Badge variant={report?.isVisiblePublic ? "default" : "destructive"} className={cn(
+                report?.isVisiblePublic ? "bg-emerald-500" : "bg-amber-500"
+              )}>
+                {report?.isVisiblePublic ? "VISIBLE" : "HIDDEN"}
+              </Badge>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Checklist</h4>
+              <ul className="space-y-2">
+                {[
+                  { label: "Tour Status is Active", value: report?.checks?.status },
+                  { label: "Public Visibility Toggle is ON", value: report?.checks?.is_visible },
+                  { label: "Has at least one image", value: report?.checks?.has_images },
+                  { label: "Has variants", value: report?.checks?.has_variants },
+                  { label: "Has active variants", value: report?.checks?.has_active_variants },
+                  { label: "Has pricing (>0)", value: report?.checks?.has_pricing },
+                  { label: "Has upcoming sessions", value: report?.checks?.has_upcoming_sessions },
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center justify-between text-sm">
+                    <span className="text-slate-300">{item.label}</span>
+                    {item.value ? (
+                      <Check className="size-4 text-emerald-500" />
+                    ) : (
+                      <X className="size-4 text-red-500" />
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {report?.issues?.length > 0 && (
+              <div className="pt-4 border-t border-white/5">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-red-400 mb-2 flex items-center gap-1">
+                  <AlertCircle className="size-3" /> Issues to fix:
+                </h4>
+                <ul className="space-y-1">
+                  {report.issues.map((issue: string, i: number) => (
+                    <li key={i} className="text-xs text-slate-300 flex items-start gap-2">
+                      <span className="mt-1 size-1 rounded-full bg-red-400 flex-shrink-0" />
+                      {issue}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex justify-end pt-4">
+            <Button onClick={() => setReport(null)} className="w-full sm:w-auto">
+              Close Diagnostic
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

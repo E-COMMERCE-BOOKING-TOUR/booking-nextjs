@@ -393,5 +393,12 @@
     "final_payment_amount_label": "Final Payment Amount:",
     "quick_actions_title": "Quick Actions",
     "view_history_button": "View History",
-    "back_to_list": "Back to List"
+    "back_to_list": "Back to List",
+    "refund_policy_title": "Cancellation & Refund Policy",
+    "cancel_before_hours": "Cancel up to {{count}} hours before",
+    "cancel_before_days": "Cancel up to {{count}} days before",
+    "cancel_anytime": "Cancel anytime",
+    "at_start_time": "At start time",
+    "free_cancellation": "FREE",
+    "cancellation_fee_pct": "{{pct}}% fee"
 }

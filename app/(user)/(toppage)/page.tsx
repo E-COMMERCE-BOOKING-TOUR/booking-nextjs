@@ -132,7 +132,7 @@ export default async function TopPage() {
         </Container>
       </VStack>
       <Box position="absolute" borderBottomRightRadius={20} borderBottomLeftRadius={20} zIndex={11} left={0} right={0} bg="linear-gradient(180deg, rgb(255 255 255) 0%, rgba(0, 0, 0, 0) 100%)" h="100px" />
-      <Diagonal />
+      <Diagonal divisions={trendingDestinations} />
     </>
   );
 }
