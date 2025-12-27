@@ -1,6 +1,6 @@
 "use client";
 
-import { GalleryVerticalEnd, Home, SquareCheck, ThumbsUp, Users, LogOut, Compass, Bell, MapPin, Settings } from "lucide-react";
+import { GalleryVerticalEnd, Home, SquareCheck, ThumbsUp, Users, LogOut, Compass, Bell, MapPin, Settings, MessageCircle } from "lucide-react";
 
 import {
   Sidebar,
@@ -73,6 +73,12 @@ const sections = [
     base: "/admin/review",
     icon: ThumbsUp,
     url: "/admin/review",
+  },
+  {
+    title: "Message Management",
+    base: "/admin/message",
+    icon: MessageCircle,
+    url: "/admin/message",
   },
   {
     title: "Notifications",

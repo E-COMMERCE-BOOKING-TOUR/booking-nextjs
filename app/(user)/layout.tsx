@@ -6,6 +6,7 @@ import { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { cookieName, fallbackLng } from '@/libs/i18n/settings';
 import '../globals.css';
+import ChatboxWrapper from '@/components/chatbox/ChatboxWrapper';
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -47,6 +48,7 @@ export default async function TopPageLayout({
       {children}
       <Toaster />
       <UserFooter settings={settings} lng={lng} />
+      <ChatboxWrapper lng={lng} />
     </Provider>
   );
 }
