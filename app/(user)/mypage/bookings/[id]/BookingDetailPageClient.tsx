@@ -17,6 +17,10 @@ import {
     Badge,
     Table,
     Separator,
+    Dialog,
+    Portal,
+    CloseButton,
+    Button as ChakraButton,
 } from "@chakra-ui/react";
 import {
     Calendar,
@@ -28,13 +32,17 @@ import {
     Mail,
     Phone,
     ArrowLeft,
-    MapPin
+    MapPin,
+    XCircle,
+    AlertTriangle
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-
+import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from "@/libs/i18n/client";
 import { useSearchParams } from "next/navigation";
+import { toaster } from '@/components/chakra/toaster';
 
 export default function BookingDetailPageClient({ lng }: { lng: string }) {
     const searchParams = useSearchParams();
@@ -48,6 +56,37 @@ export default function BookingDetailPageClient({ lng }: { lng: string }) {
         queryKey: ['user-booking-detail', id, token],
         queryFn: () => bookingApi.getDetail(id, token),
         enabled: !!token && !!id,
+    });
+
+    const [showCancelDialog, setShowCancelDialog] = useState(false);
+    const [refundInfo, setRefundInfo] = useState<{ refundAmount: number; feeAmount: number; feePct: number } | null>(null);
+    const [loadingRefund, setLoadingRefund] = useState(false);
+    const queryClient = useQueryClient();
+
+    const handleOpenCancelDialog = async () => {
+        setLoadingRefund(true);
+        const result = await bookingApi.calculateRefund(id, token);
+        if (result.ok && result.data) {
+            setRefundInfo(result.data);
+        }
+        setLoadingRefund(false);
+        setShowCancelDialog(true);
+    };
+
+    const cancelMutation = useMutation({
+        mutationFn: () => bookingApi.cancelConfirmed(id, token),
+        onSuccess: (result) => {
+            if (result.ok) {
+                toaster.success({ title: t('booking_cancelled', { defaultValue: 'Booking cancelled successfully' }) });
+                queryClient.invalidateQueries({ queryKey: ['user-booking-detail', id] });
+                setShowCancelDialog(false);
+            } else {
+                toaster.error({ title: result.error || 'Failed to cancel' });
+            }
+        },
+        onError: () => {
+            toaster.error({ title: 'Failed to cancel booking' });
+        },
     });
 
     if (isLoading) {
@@ -107,17 +146,90 @@ export default function BookingDetailPageClient({ lng }: { lng: string }) {
                 <VStack align="end" gap={1}>
                     <Text fontSize="xs" color="gray.400" fontWeight="bold" letterSpacing="widest">{t('total_amount_label', { defaultValue: 'TOTAL AMOUNT' })}</Text>
                     <Text fontSize="2xl" fontWeight="black" color="blue.600">
-                        {b.total_amount.toLocaleString(lng === 'vi' ? 'vi-VN' : 'en-US')} {b.currency}
+                        {Number(b.total_amount).toLocaleString(lng === 'vi' ? 'vi-VN' : 'en-US')} {b.currency}
                     </Text>
+                    {b.status === 'confirmed' && (
+                        <ChakraButton
+                            variant="outline"
+                            size="sm"
+                            colorPalette="red"
+                            mt={2}
+                            rounded="full"
+                            onClick={handleOpenCancelDialog}
+                            disabled={loadingRefund}
+                            _hover={{ bg: 'red.50' }}
+                        >
+                            <XCircle className="w-4 h-4" />
+                            {loadingRefund ? t('loading', { defaultValue: 'Loading...' }) : t('cancel_booking_btn', { defaultValue: 'Cancel Booking' })}
+                        </ChakraButton>
+                    )}
                 </VStack>
             </HStack>
 
+            {/* Cancellation Dialog */}
+            <Dialog.Root open={showCancelDialog} onOpenChange={(e) => setShowCancelDialog(e.open)} role="alertdialog">
+                <Portal>
+                    <Dialog.Backdrop />
+                    <Dialog.Positioner>
+                        <Dialog.Content>
+                            <Dialog.Header>
+                                <Dialog.Title>
+                                    <HStack gap={2}>
+                                        <AlertTriangle className="w-5 h-5 text-orange-500" />
+                                        <Text>{t('cancel_booking_title', { defaultValue: 'Cancel Booking' })}</Text>
+                                    </HStack>
+                                </Dialog.Title>
+                            </Dialog.Header>
+                            <Dialog.Body>
+                                <VStack align="stretch" gap={4}>
+                                    <Text>{t('cancel_confirm_message', { defaultValue: 'Are you sure you want to cancel this booking?' })}</Text>
+                                    {refundInfo && (
+                                        <Box p={4} bg="gray.50" rounded="lg">
+                                            <VStack align="stretch" gap={2}>
+                                                <HStack justify="space-between">
+                                                    <Text color="gray.600">{t('cancellation_fee_label', { defaultValue: 'Cancellation Fee' })} ({refundInfo.feePct}%):</Text>
+                                                    <Text fontWeight="bold" color="red.600">
+                                                        {refundInfo.feeAmount.toLocaleString(lng === 'vi' ? 'vi-VN' : 'en-US')} {b.currency}
+                                                    </Text>
+                                                </HStack>
+                                                <Separator />
+                                                <HStack justify="space-between">
+                                                    <Text color="gray.600" fontWeight="bold">{t('refund_amount_label', { defaultValue: 'Refund Amount' })}:</Text>
+                                                    <Text fontWeight="black" color="green.600" fontSize="lg">
+                                                        {refundInfo.refundAmount.toLocaleString(lng === 'vi' ? 'vi-VN' : 'en-US')} {b.currency}
+                                                    </Text>
+                                                </HStack>
+                                            </VStack>
+                                        </Box>
+                                    )}
+                                </VStack>
+                            </Dialog.Body>
+                            <Dialog.Footer gap={2}>
+                                <Dialog.ActionTrigger asChild>
+                                    <ChakraButton variant="outline">{t('cancel_btn', { defaultValue: 'Cancel' })}</ChakraButton>
+                                </Dialog.ActionTrigger>
+                                <ChakraButton
+                                    colorPalette="red"
+                                    onClick={() => cancelMutation.mutate()}
+                                    disabled={cancelMutation.isPending}
+                                >
+                                    {cancelMutation.isPending ? t('processing', { defaultValue: 'Processing...' }) : t('confirm_cancel_btn', { defaultValue: 'Confirm Cancellation' })}
+                                </ChakraButton>
+                            </Dialog.Footer>
+                            <Dialog.CloseTrigger asChild>
+                                <CloseButton size="sm" />
+                            </Dialog.CloseTrigger>
+                        </Dialog.Content>
+                    </Dialog.Positioner>
+                </Portal>
+            </Dialog.Root>
+
             <Separator />
 
-            <Grid templateColumns={{ base: "1fr", lg: "repeat(3, 1fr)" }} gap={8}>
+            <Grid templateColumns={{ base: "1fr", lg: "repeat(3, 1fr)" }} gap={4}>
                 {/* Left Side: Details */}
                 <GridItem colSpan={{ base: 1, lg: 2 }}>
-                    <VStack align="stretch" gap={8}>
+                    <VStack align="stretch" gap={4}>
 
                         {/* Tour Info */}
                         <Box p={4} rounded="2xl" border="1px solid" borderColor="gray.100">
@@ -150,7 +262,16 @@ export default function BookingDetailPageClient({ lng }: { lng: string }) {
                                 </VStack>
                             </HStack>
                         </Box>
-
+                        {b.status === 'cancelled' && b.cancel_reason && (
+                            <Box p={3} bg="red.50" rounded="md" border="1px dashed" borderColor="red.200" width="100%">
+                                <Text fontSize="xs" fontWeight="bold" color="red.500" textTransform="uppercase" mb={1}>
+                                    {t('cancellation_reason_label', { defaultValue: 'Cancellation Reason' })}
+                                </Text>
+                                <Text fontSize="sm" color="red.700">
+                                    {b.cancel_reason}
+                                </Text>
+                            </Box>
+                        )}
                         {/* Items Table */}
                         <Box p={4} rounded="2xl" border="1px solid" borderColor="gray.100">
                             <HStack mb={4}>
@@ -174,10 +295,10 @@ export default function BookingDetailPageClient({ lng }: { lng: string }) {
                                             </Table.Cell>
                                             <Table.Cell textAlign="center">{item.quantity}</Table.Cell>
                                             <Table.Cell textAlign="right">
-                                                {item.unit_price.toLocaleString(lng === 'vi' ? 'vi-VN' : 'en-US')} {b.currency}
+                                                {Number(item.unit_price).toLocaleString(lng === 'vi' ? 'vi-VN' : 'en-US')} {b.currency}
                                             </Table.Cell>
                                             <Table.Cell textAlign="right" fontWeight="bold">
-                                                {item.total_amount.toLocaleString(lng === 'vi' ? 'vi-VN' : 'en-US')} {b.currency}
+                                                {Number(item.total_amount).toLocaleString(lng === 'vi' ? 'vi-VN' : 'en-US')} {b.currency}
                                             </Table.Cell>
                                         </Table.Row>
                                     ))}
@@ -217,7 +338,7 @@ export default function BookingDetailPageClient({ lng }: { lng: string }) {
 
                 {/* Right Side: Sidebar Info */}
                 <GridItem>
-                    <VStack align="stretch" gap={6}>
+                    <VStack align="stretch" gap={4}>
                         {/* Contact Card */}
                         <Box p={4} rounded="2xl" border="1px solid" borderColor="gray.100">
                             <Heading size="sm" mb={4}>{t('contact_info_title', { defaultValue: 'Contact Information' })}</Heading>

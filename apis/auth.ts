@@ -12,13 +12,24 @@ const authApi = {
         });
         return res;
     },
-    register: async ({ email, username, password }: ICreateRegister) => {
+    register: async ({ email, username, password, full_name, phone }: ICreateRegister) => {
         const url = "/auth/register";
         const res: IResponseAuth = await fetchC.post(url, {
-            email: email,
-            username: username,
-            password: password,
+            email,
+            username,
+            password,
+            full_name,
+            phone,
             password_confirmation: password
+        }, {
+            cache: "no-store"
+        });
+        return res;
+    },
+    forgotPassword: async (email: string) => {
+        const url = "/auth/forgot-password";
+        const res: IResponseAuth = await fetchC.post(url, {
+            email
         }, {
             cache: "no-store"
         });

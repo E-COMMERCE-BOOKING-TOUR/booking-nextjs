@@ -7,18 +7,25 @@ export const LoginSchema = z.object({
 })
 
 export const RegisterSchema = z.object({
-    username: z.string().min(4),
-    password: z.string().min(5),
-    confirmPassword: z.string().min(5),
+    username: z.string().min(4, "Username must be at least 4 characters"),
+    password: z.string().min(5, "Password must be at least 5 characters"),
+    confirmPassword: z.string().min(5, "Confirm password must be at least 5 characters"),
+    full_name: z.string().min(2, "Full name must be at least 2 characters"),
+    email: z.string().email("Invalid email address"),
+    phone: z.string().optional(),
 }).refine(
     (values) => {
         return values.password === values.confirmPassword;
     },
     {
-        message: "Xác nhận mật khẩu không khớp!",
+        message: "Passwords do not match!",
         path: ["confirmPassword"],
     }
 );
+
+export const ForgotPasswordSchema = z.object({
+    email: z.string().email("Invalid email address"),
+});
 
 export const CommentSchema = z.object({
     message: z.string().min(1).max(5000)

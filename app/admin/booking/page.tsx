@@ -52,6 +52,8 @@ const StatusBadge = ({ status }: { status: string }) => {
       return <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Confirmed</Badge>;
     case 'pending_confirm':
       return <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">Pending Confirm</Badge>;
+    case 'waiting_supplier':
+      return <Badge className="bg-purple-500/10 text-purple-500 border-purple-500/20">Waiting Supplier</Badge>;
     case 'pending_payment':
       return <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20">Pending Payment</Badge>;
     case 'cancelled':
@@ -200,6 +202,7 @@ export default function AdminBookingListPage() {
                   <SelectContent>
                     <SelectItem value="all">All Statuses</SelectItem>
                     <SelectItem value="pending_confirm">Pending Confirm</SelectItem>
+                    <SelectItem value="waiting_supplier">Waiting Supplier</SelectItem>
                     <SelectItem value="confirmed">Confirmed</SelectItem>
                     <SelectItem value="pending_payment">Pending Payment</SelectItem>
                     <SelectItem value="cancelled">Cancelled</SelectItem>
@@ -297,7 +300,7 @@ export default function AdminBookingListPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm font-black text-foreground">
-                          {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND' }).format(Number(booking.total_amount))}
+                          {Number(booking.total_amount).toLocaleString('en-US')} {booking.currency || 'VND'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

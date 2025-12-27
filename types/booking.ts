@@ -56,6 +56,7 @@ export interface IBookingDetail {
         account_holder?: string;
     };
     policy?: ITourPolicy;
+    cancel_reason?: string;
 }
 
 export interface IConfirmBooking {

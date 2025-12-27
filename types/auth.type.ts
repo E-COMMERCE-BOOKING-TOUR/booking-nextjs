@@ -1,5 +1,7 @@
 export interface ICreateRegister {
-    email?: string;
+    email: string;
     username: string;
-    password: string
+    password: string;
+    full_name: string;
+    phone?: string;
 }

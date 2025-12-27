@@ -41,12 +41,21 @@ export const bookingApi = {
         const res = await fetchC.post(url, dto, { headers: authHeaders.headers });
         return res;
     },
-    getHistory: async (token?: string) => {
-        const url = "/user/booking/history";
+    getHistory: async (token?: string, page: number = 1, limit: number = 10): Promise<{ ok: boolean; data?: { data: IBookingDetail[]; total: number; page: number; limit: number; totalPages: number }; error?: string }> => {
+        const url = `/user/booking/history?page=${page}&limit=${limit}`;
         const authHeaders = await getAuthHeaders(token);
-        if (!authHeaders.ok) throw new Error(authHeaders.message);
-        const res = await fetchC.get(url, { headers: authHeaders.headers });
-        return res as { id: number; title: string; image?: string }[];
+        if (!authHeaders.ok) {
+            return { ok: false, error: authHeaders.message };
+        }
+        try {
+            const res = await fetchC.get(url, { headers: authHeaders.headers });
+            return { ok: true, data: res };
+        } catch (error) {
+            return {
+                ok: false,
+                error: (error as Error)?.message || 'Failed to fetch booking history'
+            };
+        }
     },
     getCurrent: async (token?: string): Promise<BookingResult> => {
         const url = "/user/booking/current";
@@ -189,6 +198,38 @@ export const bookingApi = {
 
         if (!response.ok) throw new Error("Failed to download invoice");
         return await response.blob();
+    },
+    calculateRefund: async (id: number, token?: string): Promise<{ ok: boolean; data?: { refundAmount: number; feeAmount: number; feePct: number }; error?: string }> => {
+        const url = `/user/booking/${id}/calculate-refund`;
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) {
+            return { ok: false, error: authHeaders.message };
+        }
+        try {
+            const res = await fetchC.get(url, { headers: authHeaders.headers });
+            return { ok: true, data: res };
+        } catch (error) {
+            return {
+                ok: false,
+                error: (error as Error)?.message || "Failed to calculate refund"
+            };
+        }
+    },
+    cancelConfirmed: async (id: number, token?: string): Promise<{ ok: boolean; message?: string; refundAmount?: number; error?: string }> => {
+        const url = `/user/booking/${id}/cancel-confirmed`;
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) {
+            return { ok: false, error: authHeaders.message };
+        }
+        try {
+            const res = await fetchC.post(url, {}, { headers: authHeaders.headers });
+            return { ok: true, message: res.message, refundAmount: res.refundAmount };
+        } catch (error) {
+            return {
+                ok: false,
+                error: (error as Error)?.message || "Failed to cancel booking"
+            };
+        }
     }
 };
 export default bookingApi;

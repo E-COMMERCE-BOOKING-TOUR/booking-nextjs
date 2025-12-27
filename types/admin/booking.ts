@@ -32,4 +32,11 @@ export interface IAdminBookingDetail {
     booking_payment?: {
         payment_method_name: string;
     };
+    currency?: string;
+    cancel_reason?: string;
+    payment_information?: {
+        brand?: string;
+        last4?: string;
+        account_holder?: string;
+    };
 }

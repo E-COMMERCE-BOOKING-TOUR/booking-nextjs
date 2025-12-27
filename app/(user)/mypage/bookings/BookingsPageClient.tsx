@@ -12,6 +12,7 @@ import {
     IconButton,
     ButtonGroup,
     Pagination,
+    Spinner,
 } from "@chakra-ui/react";
 import { useSession } from "next-auth/react";
 import bookingApi from "@/apis/booking";
@@ -33,7 +34,7 @@ export default function BookingsPageClient({ lng }: { lng: string }) {
     const [page, setPage] = useState(1);
     const limit = 10;
 
-    const { data: response } = useQuery({
+    const { data: response, isLoading } = useQuery({
         queryKey: ["booking-history", token, page],
         queryFn: async () => {
             if (!token) return { data: [], total: 0, page: 1, limit: 10, totalPages: 0 };
@@ -60,7 +61,14 @@ export default function BookingsPageClient({ lng }: { lng: string }) {
                 </Badge>
             </HStack>
 
-            {bookings.length === 0 ? (
+            {isLoading ? (
+                <Box display="flex" justifyContent="center" alignItems="center" py={20}>
+                    <VStack gap={4}>
+                        <Spinner size="xl" color="blue.500" />
+                        <Text color="gray.500">{t('loading_bookings', { defaultValue: 'Loading your bookings...' })}</Text>
+                    </VStack>
+                </Box>
+            ) : bookings.length === 0 ? (
                 <Box py={20} textAlign="center">
                     <VStack gap={4}>
                         <Box p={6} bg="gray.50" rounded="full">

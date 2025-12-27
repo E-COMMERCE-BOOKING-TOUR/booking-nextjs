@@ -19,10 +19,15 @@ export const adminBookingApi = {
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.post(`/admin/booking/confirm/${id}`, {}, { headers: authHeaders.headers });
     },
-    cancel: async (id: number | string, token?: string) => {
+    cancel: async (id: number | string, token?: string, reason?: string) => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
-        return fetchC.post(`/admin/booking/cancel/${id}`, {}, { headers: authHeaders.headers });
+        return fetchC.post(`/admin/booking/cancel/${id}`, { reason }, { headers: authHeaders.headers });
+    },
+    calculateRefund: async (id: number | string, token?: string): Promise<{ refundAmount: number; feeAmount: number; feePct: number }> => {
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+        return fetchC.get(`/admin/booking/calculate-refund/${id}`, { headers: authHeaders.headers });
     },
     updatePaymentStatus: async (id: number | string, status: string, token?: string) => {
         const authHeaders = await getAuthHeaders(token);
