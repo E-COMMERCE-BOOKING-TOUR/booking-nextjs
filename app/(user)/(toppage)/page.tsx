@@ -17,9 +17,11 @@ export default async function TopPage() {
   const lng = cookieStore.get(cookieName)?.value || fallbackLng;
   const { t } = await useTranslation(lng);
 
-  const popularTours = await tour.popular(8);
-  const trendingDestinations = await division.trending(6);
-  const settings = await settingsApi.get();
+  const [popularTours, trendingDestinations, settings] = await Promise.all([
+    tour.popular(8),
+    division.trending(6),
+    settingsApi.get()
+  ]);
 
   return (
     <>

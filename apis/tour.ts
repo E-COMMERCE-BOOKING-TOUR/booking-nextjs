@@ -129,7 +129,7 @@ const toQueryRecord = (params?: ITourSearchParams): Record<string, string> | und
 export const tourApi = {
     popular: async (limit: number = 8): Promise<ITourPopular[]> => {
         const url = `/user/tour/popular?limit=${limit}`;
-        const res = await fetchC.get(url, { cache: 'no-store' });
+        const res = await fetchC.get(url, { next: { revalidate: 3600 } });
         return Array.isArray(res) ? res : (res?.data || []);
     },
     detail: async (slug: string): Promise<ITour> => {
