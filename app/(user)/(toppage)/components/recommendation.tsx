@@ -1,10 +1,10 @@
 import { HeaderList } from "@/components/ui/user";
 import { Box, HStack, Image, SimpleGrid, Text, VStack } from "@chakra-ui/react";
 
-export default function RecentSearch() {
+export default function Recommendation() {
   return <Box>
     <HeaderList
-      title="Your recent searches"
+      title="Recommend for you"
     />
     <SimpleGrid columns={4} gap={4} mb={4}>
       <RecentSearchItem image="/assets/images/icon.png" title="Hanoi" description="14 Nov-16 Nov, 2 people" />

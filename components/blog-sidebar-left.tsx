@@ -10,7 +10,7 @@ import {
     MoreHorizontal,
 } from "lucide-react"
 import { useSession } from "next-auth/react";
-
+import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 
 type Item = {
@@ -20,14 +20,6 @@ type Item = {
     icon: React.ComponentType<{ className?: string }>
 }
 
-const defaultItems: Item[] = [
-    { key: "home", label: "Home", href: "/social", icon: Home },
-    { key: "explore", label: "Explore", href: "/social/explore", icon: Search },
-    { key: "notifications", label: "Notifications", href: "/social/notification", icon: Bell },
-    { key: "bookmarks", label: "Bookmarks", href: "/social/bookmark", icon: Bookmark },
-    { key: "profile", label: "Profile", href: "/social/profile", icon: User },
-]
-
 type BlogSidebarLeftProps = {
     active?: string
     items?: Item[]
@@ -36,56 +28,69 @@ type BlogSidebarLeftProps = {
 
 export default function BlogSidebarLeft({
     active,
-    items = defaultItems,
+    items,
     className,
 }: Readonly<BlogSidebarLeftProps>) {
     const { data: session } = useSession();
     const pathname = usePathname();
 
+    // Generate items with dynamic profile link
+    const menuItems = useMemo(() => {
+        const userUuid = (session?.user as any)?.uuid;
+        return [
+            { key: "home", label: "Home", href: "/social", icon: Home },
+            { key: "explore", label: "Explore", href: "/social/explore", icon: Search },
+            { key: "notifications", label: "Notifications", href: "/social/notification", icon: Bell },
+            { key: "bookmarks", label: "Bookmarks", href: "/social/bookmark", icon: Bookmark },
+            { key: "profile", label: "Profile", href: userUuid ? `/social/profile/${userUuid}` : "/social", icon: User },
+        ];
+    }, [session?.user]);
+
+    const finalItems = items || menuItems;
+
     return (
         <Box
             className={className}
             w="full"
+            bg="white"
+            color="black"
+            borderRadius="xl"
             p={5}
-            position={"sticky"}
-            top={"30px"}
-            h={"fit-content"}
+            position="sticky"
+            top="80px"
+            h="fit-content"
         >
             {session?.user?.name ?
-                <Button 
-                    w="full"
-                    paddingEnd={3}
-                    marginBottom={6}
-                    variant="ghost"
-                    borderRadius="xl"
-                    justifyContent="flex-start"
-                    alignItems="center"
-                    color="gray.700"
-                    _hover={{ bg: "gray.50" }}
-                    fontWeight="semibold"
-                    h="auto"
-                    py={3}
-                    px={4}
-                >
+                <a href={(session?.user as any)?.uuid ? `/social/profile/${(session?.user as any)?.uuid}` : "/social"}>
+                    <Button
+                        w="full"
+                        paddingEnd={3}
+                        marginBottom={6}
+                        variant="ghost"
+                        borderRadius="xl"
+                        justifyContent="flex-start"
+                        alignItems="center"
+                        color="gray.700"
+                        _hover={{ bg: "gray.50" }}
+                        fontWeight="semibold"
+                        h="auto"
+                        py={3}
+                        px={4}
+                    >
 
-                    <HStack w="full" gap={3}>
-                        <Avatar.Root size="md">
-                            <Avatar.Image src="https://picsum.photos/100/100" />
-                            <Avatar.Fallback name="John Doe" />
-                        </Avatar.Root>
-                        <Text fontSize={"md"}>{session?.user?.name}</Text>
-                    </HStack>
-                </Button> : null
+                        <HStack w="full">
+                            <Avatar.Root size="md">
+                                <Avatar.Image src="https://picsum.photos/100/100" />
+                                <Avatar.Fallback name={session?.user?.name || "User"} />
+                            </Avatar.Root>
+                            <Text fontSize={"md"} lineClamp={1}>{session?.user?.name}</Text>
+                        </HStack>
+                    </Button>
+                </a> : null
             }
             <VStack align="stretch" gap={2}>
-                {items.map((it) => {
+                {finalItems.map((it) => {
                     const IconComp = it.icon
-                    // Logic to determine active:
-                    // 1. If explicit 'active' prop is passed, use it.
-                    // 2. Otherwise compare pathname.
-                    // Special case for 'Home' (/social) to avoid being active on subpages if needed, OR exact match.
-                    // For now, let's use exact match for Home, and startsWith for others if preferred,
-                    // BUT simplistic approach: pathname === it.href?
 
                     let isActive = false;
                     if (active) {
@@ -93,6 +98,8 @@ export default function BlogSidebarLeft({
                     } else {
                         if (it.href === '/social') {
                             isActive = pathname === '/social';
+                        } else if (it.key === 'profile') {
+                            isActive = pathname?.startsWith('/social/profile') ?? false;
                         } else {
                             isActive = pathname?.startsWith(it.href) ?? false;
                         }
@@ -107,9 +114,9 @@ export default function BlogSidebarLeft({
                                 justifyContent="flex-start"
                                 alignItems="center"
                                 color={isActive ? "white" : "gray.500"}
-                                bg={isActive ? "#00cec9" : "transparent"}
+                                bg={isActive ? "main" : "transparent"}
                                 _hover={{
-                                    bg: isActive ? "#00cec9" : "gray.50",
+                                    bg: isActive ? "main" : "gray.50",
                                     transform: "translateY(-2px)",
                                     boxShadow: isActive ? "lg" : "none"
                                 }}

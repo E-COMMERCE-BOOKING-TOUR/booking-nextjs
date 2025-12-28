@@ -38,7 +38,7 @@ export default async function CheckoutCompletePage() {
     }
 
     const booking = result.data;
-    const redirectPath = getRedirectIfNeeded(booking.status, "complete");
+    const redirectPath = getRedirectIfNeeded(booking.status, "waiting_supplier");
     if (redirectPath) {
         redirect(redirectPath);
     }

@@ -60,15 +60,28 @@ const ListNotification = () => {
         );
     }
 
+    const formatRelativeTime = (date: string | Date) => {
+        const now = new Date();
+        const past = new Date(date);
+        const diffInMs = now.getTime() - past.getTime();
+        const diffInSeconds = Math.floor(diffInMs / 1000);
+        const diffInMinutes = Math.floor(diffInSeconds / 60);
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        const diffInDays = Math.floor(diffInHours / 24);
+
+        if (diffInSeconds < 60) return 'Just now';
+        if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+        if (diffInHours < 24) return `${diffInHours}h ago`;
+        if (diffInDays < 7) return `${diffInDays}d ago`;
+        return past.toLocaleDateString();
+    };
+
     const mapNotificationToItemData = (notif: INotification) => {
-        // Mapping INotification to the structure expected by ItemNotification
-        // Since INotification doesn't have sender info, we use title as user and description as content for now.
-        // Or we might need to adjust ItemNotification to better suit the real data model.
         return {
             user: notif.title,
-            avatar: "", // Placeholder or default avatar
+            avatar: "",
             content: notif.description,
-            time: new Date(notif.created_at).toLocaleString() // Simple formatting
+            time: formatRelativeTime(notif.created_at)
         };
     };
 

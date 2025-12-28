@@ -9,24 +9,26 @@ export interface IAddCardResponse {
 }
 
 const userApi = {
-    signOut: async (token: string) => {
+    signOut: async (token?: string) => {
         const url = "/auth/logout";
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
         const res: IResponseAuthLogout = await fetchC.post(url, {}, {
             cache: "no-store",
-            headers: {
-                "Authorization": "Bearer " + token
-            }
+            headers: authHeaders.headers
         });
         return res;
     },
-    info: async (token: string) => {
+    info: async (token?: string) => {
         const url = "/auth/me";
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
         const res: IUserAuth = await fetchC.get(url, {
             cache: "no-store",
             headers: {
+                ...authHeaders.headers,
                 "X-Requested-With": "XMLHttpRequest",
                 "content-type": "application/json",
-                "Authorization": "Bearer " + token
             }
         });
         return res;
@@ -49,19 +51,19 @@ const userApi = {
     },
     updateProfile: async (token: string, data: Record<string, unknown>) => {
         const url = "/user/update-me";
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
         const res = await fetchC.post(url, { data }, {
-            headers: {
-                "Authorization": "Bearer " + token
-            }
+            headers: authHeaders.headers
         });
         return res;
     },
     changePassword: async (token: string, data: Record<string, unknown>) => {
         const url = "/user/change-password";
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
         const res = await fetchC.post(url, { data }, {
-            headers: {
-                "Authorization": "Bearer " + token
-            }
+            headers: authHeaders.headers
         });
         return res;
     },
@@ -69,6 +71,46 @@ const userApi = {
         const url = "/user/getById";
         const res = await fetchC.post(url, { id });
         return res;
+    },
+    follow: async (token: string, id: number) => {
+        const url = `/user/follow/${id}`;
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+        return await fetchC.post(url, {}, {
+            headers: authHeaders.headers
+        });
+    },
+    unfollow: async (token: string, id: number) => {
+        const url = `/user/unfollow/${id}`;
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+        return await fetchC.post(url, {}, {
+            headers: authHeaders.headers
+        });
+    },
+    getFollowing: async (token: string) => {
+        const url = "/user/following";
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+        return await fetchC.get(url, {
+            headers: authHeaders.headers
+        });
+    },
+    getFollowersById: async (id: number) => {
+        const url = `/user/followers/${id}`;
+        return await fetchC.get(url);
+    },
+    getFollowingById: async (id: number) => {
+        const url = `/user/following/${id}`;
+        return await fetchC.get(url);
+    },
+    getByUuid: async (uuid: string) => {
+        const url = `/user/getByUuid/${uuid}`;
+        return await fetchC.get(url);
+    },
+    getArticlesByUuid: async (uuid: string) => {
+        const url = `/user/article/by-user/${uuid}`;
+        return await fetchC.get(url);
     }
 };
 export { userApi }

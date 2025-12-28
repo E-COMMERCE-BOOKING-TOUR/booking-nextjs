@@ -1,10 +1,18 @@
 "use client";
-import { Box, HStack, VStack, Text, Image, Button, Icon, Avatar, Grid, useDisclosure } from "@chakra-ui/react";
+import { Box, HStack, VStack, Text, Image, Button, Icon, Avatar, Grid, useDisclosure, Menu, Portal } from "@chakra-ui/react";
 import Link from "next/link";
-import { FiMessageCircle, FiEye, FiThumbsUp, FiMapPin, FiCalendar, FiCloud, FiShare2, FiBookmark, FiArrowRight } from "react-icons/fi";
+import { FiMessageCircle, FiEye, FiThumbsUp, FiMapPin, FiCalendar, FiCloud, FiShare2, FiBookmark, FiArrowRight, FiFlag } from "react-icons/fi";
+import { HiDotsHorizontal } from "react-icons/hi";
 import type { IArticlePopular } from "@/types/response/article";
 import { dateFormat } from "@/libs/function";
 import { PopUpComment } from "./comments";
+import { useTranslation } from "@/libs/i18n/client";
+import { useSession } from "next-auth/react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { userApi } from "@/apis/user";
+import { toaster } from "@/components/chakra/toaster";
+import article from "@/apis/article";
+import { useState, useEffect } from "react";
 
 type ItemBlogProps = IArticlePopular & {
     href?: string;
@@ -13,6 +21,9 @@ type ItemBlogProps = IArticlePopular & {
     tagLabel?: string;
     articleId?: string;
     comments?: any[];
+    lng?: string;
+    followingIds?: number[];
+    onFollowChange?: () => void;
 }
 
 function TagList({ tags }: { tags: string[] }) {
@@ -22,7 +33,8 @@ function TagList({ tags }: { tags: string[] }) {
             {tags.map((tag, i) => (
                 <Link key={i} href={`/social/explore?tag=${tag}`}>
                     <Text
-                        color="blue.500"
+                        color="main"
+                        fontWeight="600"
                         cursor="pointer"
                         _hover={{ textDecoration: "underline" }}
                     >
@@ -47,14 +59,14 @@ const ImagesGrid = ({ data, title }: { data: string[]; title: string }) => {
     const n = data.length;
     if (n === 1) {
         return (
-            <Box borderRadius="md" w="full" display="flex" justifyContent="center" alignItems="center" overflow="hidden" mb={3}>
+            <Box borderRadius="md" w="full" display="flex" justifyContent="center" alignItems="center" overflow="hidden">
                 <Image src={data[0]} alt={title} w="full" h="300px" objectFit="cover" />
             </Box>
         );
     }
     if (n === 2) {
         return (
-            <Grid templateColumns="1fr 1fr" gap={1} borderRadius="md" overflow="hidden" mb={3}>
+            <Grid templateColumns="1fr 1fr" gap={1} borderRadius="md" overflow="hidden">
                 <Box>
                     <Image src={data[0]} alt={title} w="full" h="300px" objectFit="cover" />
                 </Box>
@@ -100,111 +112,358 @@ const ImagesGrid = ({ data, title }: { data: string[]; title: string }) => {
 };
 
 export default function ItemBlog(props: ItemBlogProps) {
-    const { images, title, tags, created_at, count_views, count_likes, count_comments, comments, user } = props;
+    const { images, title, tags, created_at, count_views, count_likes, count_comments, comments, user, user_id, tour, lng, followingIds, onFollowChange } = props;
+    const { t } = useTranslation(lng || 'en');
+    const { data: session } = useSession();
     const { open, onOpen, onClose } = useDisclosure();
     const imageUrls = images?.map(img => img.image_url) || [];
+
+    const isFollowing = followingIds?.includes(user_id);
+    const isMe = session?.user && (Number((session.user as any).id) === user_id);
+    // Note: uuid or id comparison depends on how user_id is stored. In backend-booking-tour it's 'id'.
+
+    const followMutation = useMutation({
+        mutationFn: () => userApi.follow(session?.user?.accessToken || '', user_id),
+        onSuccess: () => {
+            toaster.create({ title: "Followed successfully", type: "success" });
+            onFollowChange?.();
+        },
+        onError: () => {
+            toaster.create({ title: "Failed to follow", type: "error" });
+        }
+    });
+
+    const unfollowMutation = useMutation({
+        mutationFn: () => userApi.unfollow(session?.user?.accessToken || '', user_id),
+        onSuccess: () => {
+            toaster.create({ title: "Unfollowed successfully", type: "success" });
+            onFollowChange?.();
+        },
+        onError: () => {
+            toaster.create({ title: "Failed to unfollow", type: "error" });
+        }
+    });
+
+    // Like state & mutations
+    const userUuid = (session?.user as any)?.uuid as string | undefined;
+    const [isLiked, setIsLiked] = useState(false);
+    const [likeCount, setLikeCount] = useState(count_likes || 0);
+
+    // Update isLiked when session loads or users_like changes
+    useEffect(() => {
+        if (userUuid && props.users_like) {
+            const liked = props.users_like.includes(userUuid);
+            setIsLiked(liked);
+        }
+    }, [userUuid, props.users_like]);
+
+    const likeMutation = useMutation({
+        mutationFn: () => article.like(props.id?.toString() || '', session?.user?.accessToken),
+        onSuccess: () => {
+            setIsLiked(true);
+            setLikeCount(prev => prev + 1);
+        },
+        onError: () => {
+            toaster.create({ title: "Failed to like", type: "error" });
+        }
+    });
+
+    const unlikeMutation = useMutation({
+        mutationFn: () => article.unlike(props.id?.toString() || '', session?.user?.accessToken),
+        onSuccess: () => {
+            setIsLiked(false);
+            setLikeCount(prev => Math.max(0, prev - 1));
+        },
+        onError: () => {
+            toaster.create({ title: "Failed to unlike", type: "error" });
+        }
+    });
+
+    const handleLike = () => {
+        if (!session?.user?.accessToken) {
+            toaster.create({ title: "Please login to like", type: "warning" });
+            return;
+        }
+        if (isLiked) {
+            unlikeMutation.mutate();
+        } else {
+            likeMutation.mutate();
+        }
+    };
+
+    const handleReport = () => {
+        if (!session?.user?.accessToken) {
+            toaster.create({ title: "Please login to report", type: "warning" });
+            return;
+        }
+        article.report(props.id?.toString() || '', 'Inappropriate content', session.user.accessToken)
+            .then(() => toaster.create({ title: "Report submitted", type: "success" }))
+            .catch(() => toaster.create({ title: "Failed to report", type: "error" }));
+    };
+
+    // Bookmark state & mutations
+    const [isBookmarked, setIsBookmarked] = useState(false);
+
+    useEffect(() => {
+        if (userUuid && props.users_bookmark) {
+            setIsBookmarked(props.users_bookmark.includes(userUuid));
+        }
+    }, [userUuid, props.users_bookmark]);
+
+    const bookmarkMutation = useMutation({
+        mutationFn: () => article.bookmark(props.id?.toString() || '', session?.user?.accessToken),
+        onSuccess: () => setIsBookmarked(true),
+        onError: () => toaster.create({ title: "Failed to bookmark", type: "error" })
+    });
+
+    const unbookmarkMutation = useMutation({
+        mutationFn: () => article.unbookmark(props.id?.toString() || '', session?.user?.accessToken),
+        onSuccess: () => setIsBookmarked(false),
+        onError: () => toaster.create({ title: "Failed to unbookmark", type: "error" })
+    });
+
+    const handleBookmark = () => {
+        if (!session?.user?.accessToken) {
+            toaster.create({ title: "Please login to bookmark", type: "warning" });
+            return;
+        }
+        if (isBookmarked) {
+            unbookmarkMutation.mutate();
+        } else {
+            bookmarkMutation.mutate();
+        }
+    };
 
     const content = (
         <Box
             bg="white"
-            color="black"
-            borderRadius="2xl"
-            p={6}
-            shadow="sm"
+            borderRadius="xl"
+            p={{ base: 4, md: 6 }}
+            shadow="0 10px 40px -10px rgba(0,0,0,0.05)"
             border="1px solid"
-            borderColor="gray.100"
-            w={'full'}
-            justifyContent={'center'}
-            alignItems={'center'}
-            gap={5}
-            mx={3}
+            borderColor="gray.50"
+            transition="all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+            _hover={{
+                shadow: "0 20px 60px -15px rgba(0,0,0,0.1)",
+                borderColor: "main/20"
+            }}
+            w="full"
         >
-            {/* Header */}
-            <HStack align="center" gap={4} mb={4} justifyContent={'center'}>
-                {user?.avatar ? (
-                    <Avatar.Root size="md">
-                        <Avatar.Fallback name={user.name} />
-                        <Avatar.Image src={user.avatar} />
-                    </Avatar.Root>
-                ) : (
-                    <Avatar.Root size="md">
-                        <Avatar.Fallback name={user?.name || "Unknown"} />
-                        {user?.avatar ? <Avatar.Image src={user.avatar} /> : null}
-                    </Avatar.Root>
-                )}
-                <VStack align="start" gap={0} flex={1}>
-                    <Text fontWeight="bold" color="black" fontSize="md">{user?.name || "John Doe"}</Text>
-                    <HStack gap={2} fontSize="xs" color="gray.500">
-                        {created_at ? <Text>{dateFormat(created_at)}</Text> : null}
+            <VStack align="stretch" gap={5}>
+                {/* Author Info */}
+                <HStack justify="space-between" align="center">
+                    <HStack gap={3}>
+                        <Avatar.Root
+                            size="md"
+                            ring="2px"
+                            ringOffset="2px"
+                            ringColor="blue.50"
+                        >
+                            <Avatar.Fallback name={user?.name || "U"} />
+                            <Avatar.Image src={user?.avatar || "https://picsum.photos/50/50"} />
+                        </Avatar.Root>
+                        <VStack align="start" gap={0}>
+                            <HStack gap={2}>
+                                <Text fontWeight="800" fontSize="md" color="gray.900" letterSpacing="tight">
+                                    {user?.name || "Traveler"}
+                                </Text>
+                                {!isMe && session?.user && (
+                                    <Button
+                                        size="2xs"
+                                        variant={isFollowing ? "outline" : "solid"}
+                                        colorScheme={isFollowing ? "gray" : "blue"}
+                                        borderRadius="full"
+                                        fontSize="10px"
+                                        h="20px"
+                                        px={3}
+                                        bg={isFollowing ? "transparent" : "main"}
+                                        color={isFollowing ? "gray.500" : "white"}
+                                        _hover={{ opacity: 0.8 }}
+                                        onClick={isFollowing ? () => unfollowMutation.mutate() : () => followMutation.mutate()}
+                                        loading={followMutation.isPending || unfollowMutation.isPending}
+                                    >
+                                        {isFollowing ? t('following_btn', { defaultValue: 'Following' }) : t('follow_btn', { defaultValue: 'Follow' })}
+                                    </Button>
+                                )}
+                            </HStack>
+                            <Text fontSize="xs" color="gray.400" fontWeight="medium">
+                                {dateFormat(created_at) || "Recently"}
+                            </Text>
+                        </VStack>
                     </HStack>
-                </VStack>
-                {/* <HStack gap={2}>
-                    <Button size="md" bg={'blackAlpha.300'} >
-                        <FiBookmark size={25} color="black" />
-                    </Button>
-                    <Button size="md" bg={'blackAlpha.300'} >
-                        <Text color={'black'}>View Tour</Text>
-                        <FiArrowRight size={25} color="black" />
-                    </Button>
-                </HStack> */}
-            </HStack>
+                    <Menu.Root positioning={{ placement: "bottom-end" }}>
+                        <Menu.Trigger asChild>
+                            <Button variant="ghost" size="sm" borderRadius="full" color="gray.400">
+                                <Icon as={HiDotsHorizontal} />
+                            </Button>
+                        </Menu.Trigger>
+                        <Portal>
+                            <Menu.Positioner>
+                                <Menu.Content bg="white" borderRadius="xl" shadow="lg" minW="150px" zIndex="popover">
+                                    <Menu.Item value="report" _hover={{ bg: "red.50", color: "red.500" }} onClick={handleReport}>
+                                        <HStack gap={2}>
+                                            <Icon as={FiFlag} />
+                                            <Text>Report</Text>
+                                        </HStack>
+                                    </Menu.Item>
+                                </Menu.Content>
+                            </Menu.Positioner>
+                        </Portal>
+                    </Menu.Root>
+                </HStack>
 
-            {/* Text */}
-            <Text fontSize="lg" fontWeight="600" color="black" mb={2}>
-                {title}
-            </Text>
-            {tags && tags.length > 0 && <TagList tags={tags} />}
-            <Box mb={4} />
+                {/* Title */}
+                <Text
+                    fontSize={{ base: "xl", md: "2xl" }}
+                    fontWeight="black"
+                    color="gray.900"
+                    lineHeight="1.2"
+                    letterSpacing="tight"
+                >
+                    {title}
+                </Text>
 
-            {images && images.length > 0 ? (
-                <Box borderRadius="xl" overflow="hidden" mb={5}>
-                    <ImagesGrid key={'das'} title={title} data={imageUrls} />
-                </Box>
-            ) : null}
-
-            {/* Stats Grid */}
-            <Grid templateColumns={{ base: "repeat(3, 1fr)" }} gap={3} w="full" mb={5}>
-                {[
-                    { key: 'city', label: 'LOCATION', value: 'Ho Chi Minh', icon: FiMapPin },
-                    { key: 'date', label: 'DATE', value: dateFormat(created_at), icon: FiCalendar },
-                    { key: 'weather', label: 'WEATHER', value: 'Sunny', icon: FiCloud },
-                ]?.map((it) => (
+                {/* Image Gallery */}
+                {imageUrls.length > 0 && (
                     <Box
-                        key={it.key}
-                        bg="gray.50"
-                        borderRadius="lg"
-                        p={3}
-                        textAlign="center"
+                        borderRadius="2xl"
+                        overflow="hidden"
+                        position="relative"
+                        cursor="pointer"
+                        onClick={onOpen}
+                        role="group"
                     >
-                        <Text fontSize="xs" color="gray.500" textTransform="uppercase" letterSpacing="0.5px" mb={1}>{it.label}</Text>
-                        <Text fontSize="sm" fontWeight="600" color="gray.800" lineClamp={1}>{it.value}</Text>
+                        <ImagesGrid key={'das'} title={title} data={imageUrls} />
+                        <Box
+                            position="absolute"
+                            inset={0}
+                            bg="blackAlpha.200"
+                            opacity={0}
+                            _groupHover={{ opacity: 1 }}
+                            transition="opacity 0.3s"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            pointerEvents="none"
+                        >
+                            <Icon as={FiEye} color="white" boxSize={10} filter="drop-shadow(0 0 10px rgba(0,0,0,0.3))" />
+                        </Box>
                     </Box>
-                ))}
-            </Grid>
+                )}
 
-            {/* Actions */}
-            <HStack gap={6} pt={4} borderTop="1px solid" borderColor="gray.100">
-                <Button size="sm" variant="ghost" color="gray.500" _hover={{ color: "blue.500" }} px={0} gap={2}>
-                    <Icon as={FiThumbsUp} /> <Text>{count_likes ?? 0} Likes</Text>
-                </Button>
-                <Button size="sm" variant="ghost" color="gray.500" _hover={{ color: "blue.500" }} px={0} gap={2} onClick={onOpen}>
-                    <Icon as={FiMessageCircle} /> <Text>{count_comments ?? 0} Comments</Text>
-                </Button>
-                <Button size="sm" variant="ghost" color="gray.500" _hover={{ color: "blue.500" }} px={0} gap={2}>
-                    <Icon as={FiShare2} /> <Text>Share</Text>
-                </Button>
-            </HStack>
-            <PopUpComment
-                isOpen={open}
-                onClose={onClose}
-                images={imageUrls}
-                comments={comments || []}
-                articleId={props.id ? props.id.toString() : undefined}
-                author={{ name: user?.name || "Unknown", avatar: user?.avatar ?? undefined }}
-                caption={props.content}
-                createdAt={created_at}
-                likeCount={count_likes}
-            />
+                {/* Tags */}
+                {tags?.length > 0 && (
+                    <HStack wrap="wrap" gap={2}>
+                        {tags.map((tag: any, i) => (
+                            <Text
+                                key={i}
+                                fontSize="sm"
+                                fontWeight="800"
+                                color="main"
+                                bg="blue.50"
+                                px={3}
+                                py={1}
+                                borderRadius="lg"
+                                cursor="pointer"
+                                transition="all 0.2s"
+                                _hover={{ bg: "main", color: "white", transform: "translateY(-1px)" }}
+                            >
+                                #{tag._id || tag}
+                            </Text>
+                        ))}
+                    </HStack>
+                )}
+
+                {/* Quick Info Grid */}
+                <Grid templateColumns="repeat(3, 1fr)" gap={3}>
+                    {[
+                        {
+                            key: 'city',
+                            label: t('location_label', { defaultValue: 'TOUR' }),
+                            value: tour ? tour.title : 'Destinations',
+                            icon: FiMapPin,
+                            link: tour ? `/tour/${tour.slug}` : undefined
+                        },
+                        { key: 'date', label: t('date_label', { defaultValue: 'DATE' }), value: dateFormat(created_at), icon: FiCalendar },
+                        { key: 'weather', label: t('weather_label', { defaultValue: 'WEATHER' }), value: 'Sunny', icon: FiCloud },
+                    ]?.map((it) => (
+                        <VStack
+                            key={it.key}
+                            bg="gray.50"
+                            p={3}
+                            borderRadius="2xl"
+                            align="center"
+                            gap={0}
+                            border="1px solid"
+                            borderColor="gray.100"
+                            as={it.link ? Link : Box}
+                            {...(it.link ? { href: it.link } : {})}
+                            _hover={it.link ? { bg: "blue.50", borderColor: "main/20" } : {}}
+                            cursor={it.link ? "pointer" : "default"}
+                        >
+                            <Text fontSize="2xs" fontWeight="bold" color="gray.400" textTransform="uppercase" mb={1}>{it.label}</Text>
+                            <Text fontSize="xs" fontWeight="800" color="gray.800" textAlign="center" lineClamp={1}>{it.value}</Text>
+                        </VStack>
+                    ))}
+                </Grid>
+
+                {/* Actions */}
+                <HStack justify="space-between" pt={2} borderTop="1px solid" borderColor="gray.100">
+                    <HStack gap={1}>
+                        <Button
+                            variant="ghost"
+                            size="md"
+                            color={isLiked ? "main" : "gray.600"}
+                            _hover={{ bg: "blue.50", color: "main" }}
+                            borderRadius="xl"
+                            gap={2}
+                            px={4}
+                            onClick={handleLike}
+                            loading={likeMutation.isPending || unlikeMutation.isPending}
+                        >
+                            <Icon as={FiThumbsUp} />
+                            <Text fontWeight="800" fontSize="sm">{likeCount} {t('likes', { defaultValue: 'Likes' })}</Text>
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="md"
+                            color="gray.600"
+                            _hover={{ bg: "blue.50", color: "main" }}
+                            borderRadius="xl"
+                            gap={2}
+                            px={4}
+                            onClick={onOpen}
+                        >
+                            <Icon as={FiMessageCircle} />
+                            <Text fontWeight="800" fontSize="sm">{count_comments ?? 0} {t('comments', { defaultValue: 'Comments' })}</Text>
+                        </Button>
+                    </HStack>
+                    <Button
+                        variant="ghost"
+                        size="md"
+                        color={isBookmarked ? "main" : "gray.600"}
+                        _hover={{ bg: "blue.50", color: "main" }}
+                        borderRadius="xl"
+                        px={4}
+                        onClick={handleBookmark}
+                        loading={bookmarkMutation.isPending || unbookmarkMutation.isPending}
+                    >
+                        <Icon as={FiBookmark} boxSize={5} />
+                    </Button>
+                </HStack>
+
+                <PopUpComment
+                    isOpen={open}
+                    onClose={onClose}
+                    articleId={props.id ? props.id.toString() : undefined}
+                    images={imageUrls}
+                    comments={comments || []}
+                    author={user ? { name: user.name, avatar: user.avatar } : undefined}
+                    caption={title}
+                    createdAt={created_at}
+                    likeCount={count_likes}
+                />
+            </VStack>
         </Box>
     );
 

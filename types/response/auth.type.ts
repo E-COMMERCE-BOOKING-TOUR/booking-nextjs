@@ -13,6 +13,7 @@ export interface IResponseAuthLogout {
 }
 
 export interface IUserAuth {
+    id: number,
     uuid: string,
     username: string,
     full_name: string,

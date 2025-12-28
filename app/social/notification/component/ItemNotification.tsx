@@ -8,33 +8,35 @@ import {
     Avatar,
     Icon,
 } from '@chakra-ui/react';
-import { FaCheck, FaHeart, FaCommentDots, FaUserPlus } from 'react-icons/fa6';
+import { FaCheck, FaHeart, FaCommentDots, FaUserPlus, FaBell } from 'react-icons/fa6';
 import { FiFileText } from "react-icons/fi";
 
 export const ItemNotification = ({ type, data }: { type: string, data: any }) => {
     let bg = 'white';
-    let iconComp = undefined;
-    let iconColor = 'gray.500';
-    let iconBg = 'gray.100';
+    let iconComp = FaBell;
+    let iconColor = 'white';
+    let iconBg = 'gray.500';
 
     if (type === 'booking') {
-        bg = '#E0F7FA'; // Light teal
+        bg = 'blue.50';
         iconComp = FaCheck;
-        iconColor = 'white';
         iconBg = 'green.500';
-    } else if (type === 'like') {
-        bg = '#E0F7FA';
+    } else if (type === 'like' || type === 'reward') {
+        bg = type === 'reward' ? 'orange.50' : 'white';
         iconComp = FaHeart;
-        iconColor = 'white';
         iconBg = 'red.500';
     } else if (type === 'comment') {
+        bg = 'white';
         iconComp = FaCommentDots;
-        iconColor = 'white';
         iconBg = 'blue.500';
     } else if (type === 'follow') {
+        bg = 'white';
         iconComp = FaUserPlus;
-        iconColor = 'white';
         iconBg = 'purple.500';
+    } else if (type === 'welcome' || type === 'update') {
+        bg = 'blue.50';
+        iconComp = FaBell;
+        iconBg = 'blue.400';
     }
 
     return (
@@ -130,18 +132,16 @@ export const ItemNotification = ({ type, data }: { type: string, data: any }) =>
                     </Text>
                 </VStack>
                 {/* Blue dot for unread */}
-                {type !== 'comment' && type !== 'follow' && (
-                    <Box
-                        w={2}
-                        h={2}
-                        bg="#00cec9"
-                        borderRadius="full"
-                        position="absolute"
-                        right={4}
-                        top="50%"
-                        transform="translateY(-50%)"
-                    />
-                )}
+                <Box
+                    w={2}
+                    h={2}
+                    bg="#00cec9"
+                    borderRadius="full"
+                    position="absolute"
+                    right={4}
+                    top="50%"
+                    transform="translateY(-50%)"
+                />
             </Flex>
         </Box>
     );

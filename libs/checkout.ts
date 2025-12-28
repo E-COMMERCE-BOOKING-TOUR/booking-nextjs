@@ -6,7 +6,7 @@ const STEP_ORDER: Record<string, number> = {
     "pending_info": 1,
     "pending_payment": 2,
     "pending_confirm": 3,
-    "confirmed": 4,
+    "waiting_supplier": 4,
 };
 
 /**
@@ -21,7 +21,7 @@ export function getCheckoutPath(status: string): string {
             return "/checkout/payment";
         case "pending_confirm":
             return "/checkout/confirm";
-        case "confirmed":
+        case "waiting_supplier":
             return "/checkout/complete";
         default:
             return "/checkout";
@@ -32,12 +32,12 @@ export function getCheckoutPath(status: string): string {
  * Check if user can access a step based on booking status
  * User can go back to previous steps, but cannot skip forward
  */
-export function canAccessStep(status: string, step: "info" | "payment" | "confirm" | "complete"): boolean {
+export function canAccessStep(status: string, step: "info" | "payment" | "confirm" | "waiting_supplier"): boolean {
     const stepRequirements: Record<string, number> = {
         info: 1,      // Can access if step >= 1 
         payment: 2,   // Can access if step >= 2
         confirm: 3,   // Can access if step >= 3
-        complete: 4,  // Can access only if confirmed
+        waiting_supplier: 4,  // Can access only if confirmed
     };
 
     const currentStepOrder = STEP_ORDER[status] ?? 1;
@@ -45,12 +45,7 @@ export function canAccessStep(status: string, step: "info" | "payment" | "confir
 
     // If confirmed, ONLY allow complete page
     if (status === "confirmed") {
-        return step === "complete";
-    }
-
-    // For complete page, must be exactly confirmed (handled above, but keeping for clarity)
-    if (step === "complete") {
-        return status === "confirmed";
+        return step === "waiting_supplier";
     }
 
     // For other pages: allow if current progress >= required step
@@ -62,7 +57,7 @@ export function canAccessStep(status: string, step: "info" | "payment" | "confir
  * Check if user should be redirected to a different step
  * Returns redirect path if needed, null if current step is valid
  */
-export function getRedirectIfNeeded(status: string, currentStep: "info" | "payment" | "confirm" | "complete"): string | null {
+export function getRedirectIfNeeded(status: string, currentStep: "info" | "payment" | "confirm" | "waiting_supplier"): string | null {
     // If can access current step, no redirect needed
     if (canAccessStep(status, currentStep)) {
         return null;

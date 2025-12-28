@@ -6,8 +6,6 @@ import { IUser } from "./user.type";
 export type TourStatus = 'draft' | 'active' | 'inactive';
 export type TourVariantStatus = 'active' | 'inactive';
 export type TourSessionStatus = 'open' | 'closed' | 'full' | 'cancelled';
-export type PriceType = 'absolute' | 'delta';
-
 
 export interface ISupplier {
   id: number;
@@ -57,7 +55,6 @@ export interface ITourVariant {
   tour_sessions: ITourSession[];
   tour_policy: ITourPolicy[];
   tour_variant_pax_type_prices: ITourVariantPaxTypePrice[];
-  tour_price_rules: ITourPriceRule[];
   booking_items: IBookingItem[];
   created_at?: Date;
   updated_at?: Date;
@@ -98,27 +95,6 @@ export interface ITourPolicyRule {
   created_at?: Date;
   updated_at?: Date;
   deleted_at?: Date;
-}
-
-export interface ITourPriceRule {
-  id: number;
-  start_date: Date;
-  end_date: Date;
-  weekday_mask: number;
-  price_type: PriceType;
-  priority: number;
-  tour_variant: ITourVariant;
-  tour_rule_pax_type_prices: ITourRulePaxTypePrice[];
-  created_at?: Date;
-  updated_at?: Date;
-  deleted_at?: Date;
-}
-
-export interface ITourRulePaxTypePrice {
-  id: number;
-  price: number;
-  tour_price_rule: ITourPriceRule;
-  pax_type: ITourPaxType;
 }
 
 export interface ITourVariantPaxTypePrice {

@@ -1,7 +1,7 @@
 import { Box, Container, Grid, Text, VStack } from '@chakra-ui/react';
 import { SearchInput, TourItem, TravelList, HeaderList } from '@/components/ui/user';
 import Header from './components/header';
-// import RecentSearch from './components/recentSearch';
+import Recommendation from './components/recommendation';
 import BannerHeader from './components/bannerHeader';
 import { Diagonal } from '@/components/layout/user';
 import tour from '@/apis/tour';
@@ -28,7 +28,7 @@ export default async function TopPage() {
       <Container maxW="xl" mx="auto">
         <Header />
         <SearchInput lng={lng} />
-        {/* <RecentSearch /> */}
+        <Recommendation />
         <BannerHeader
           banners_square={settings?.banners_square}
           banners_rectangle={settings?.banners_rectangle}

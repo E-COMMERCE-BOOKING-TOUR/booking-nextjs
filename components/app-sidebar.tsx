@@ -92,10 +92,11 @@ const sections = [
   },
   {
     title: "Contents",
-    base: "/admin/static-pages",
+    base: ["/admin/static-pages", "/admin/social"],
     icon: GalleryVerticalEnd,
     children: [
       { title: "Static Pages", url: "/admin/static-pages" },
+      { title: "Social Management", url: "/admin/social" },
     ],
   },
   {
