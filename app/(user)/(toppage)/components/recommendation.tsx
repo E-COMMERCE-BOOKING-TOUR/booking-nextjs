@@ -1,27 +1,137 @@
+"use client";
 import { HeaderList } from "@/components/ui/user";
-import { Box, HStack, Image, SimpleGrid, Text, VStack } from "@chakra-ui/react";
+import { Box, HStack, Image, SimpleGrid, Text, VStack, Skeleton, Badge, Icon, Flex } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
+import tourApi from "@/apis/tour";
+import { ITourPopular } from "@/apis/tour";
+import { getGuestId } from "@/utils/guest";
+import { useSession } from "next-auth/react";
+import { FaFire } from "react-icons/fa";
+import Link from "next/link";
 
 export default function Recommendation() {
-  return <Box>
-    <HeaderList
-      title="Recommend for you"
-    />
-    <SimpleGrid columns={4} gap={4} mb={4}>
-      <RecentSearchItem image="/assets/images/icon.png" title="Hanoi" description="14 Nov-16 Nov, 2 people" />
-      <RecentSearchItem image="/assets/images/icon.png" title="Hanoi" description="14 Nov-16 Nov, 2 people" />
-      <RecentSearchItem image="/assets/images/icon.png" title="Hanoi" description="14 Nov-16 Nov, 2 people" />
-    </SimpleGrid>
-  </Box>;
+  const [tours, setTours] = useState<ITourPopular[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { data: session } = useSession();
+
+  useEffect(() => {
+    const fetchTours = async () => {
+      try {
+        const guestId = getGuestId();
+        const data = await tourApi.recommended(guestId || undefined, (session as any)?.accessToken);
+        setTours(data);
+      } catch (error) {
+        console.error("Failed to fetch recommendations", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTours();
+  }, [session]);
+
+  if (!loading && tours.length === 0) return null;
+
+  return (
+    <Box my={12}>
+      <HeaderList
+        title="Dành riêng cho bạn"
+        description="Dựa trên những tour bạn đã xem và quan tâm gần đây"
+      />
+      <SimpleGrid columns={{ base: 1, sm: 2, lg: 4 }} gap={4} mb={4}>
+        {loading ? (
+          [1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} height="320px" borderRadius="30px" />
+          ))
+        ) : (
+          tours.slice(0, 4).map((tour) => (
+            <RecommendationCard
+              key={tour.id}
+              tour={tour}
+            />
+          ))
+        )}
+      </SimpleGrid>
+    </Box>
+  );
 }
 
-const RecentSearchItem = ({ image, title, description }: { image: string; title: string; description: string }) => {
-  return <HStack bg="gray.100" borderRadius="25px" p="10px" gap={4}>
-    <Box width="80px" height="80px" borderRadius="15px" overflow="hidden">
-      <Image src={image} alt={title} />
-    </Box>
-    <VStack alignItems="flex-start" gap={0}>
-      <Text fontSize="lg" fontWeight="bold">{title}</Text>
-      <Text>{description}</Text>
-    </VStack>
-  </HStack>
-}
+const RecommendationCard = ({ tour }: { tour: ITourPopular }) => {
+  return (
+    <Link href={`/tour/${tour.slug}`}>
+      <Box
+        role="group"
+        bg="white"
+        borderRadius="xl"
+        overflow="hidden"
+        transition="all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+        _hover={{
+          boxShadow: "0 20px 40px rgba(0,0,0,0.12)",
+        }}
+        boxShadow="0 10px 30px rgba(0,0,0,0.05)"
+        h="100%"
+        display="flex"
+        flexDirection="column"
+        position="relative"
+      >
+        {/* Badge "Hot" or "Match" */}
+        <Badge
+          position="absolute"
+          top="15px"
+          left="15px"
+          zIndex={1}
+          bg="rgba(255, 255, 255, 0.9)"
+          backdropFilter="xl"
+          color="orange.500"
+          px={3}
+          py={1}
+          borderRadius="full"
+          display="flex"
+          alignItems="center"
+          fontSize="xs"
+          fontWeight="bold"
+          boxShadow="sm"
+        >
+          <Icon as={FaFire} mr={1} /> Gợi ý cao
+        </Badge>
+
+        <Box position="relative" h="180px" overflow="hidden">
+          <Image
+            src={tour.image || "/assets/images/travel.jpg"}
+            alt={tour.title}
+            w="100%"
+            h="100%"
+            objectFit="cover"
+            transition="transform 0.6s ease"
+            _groupHover={{ transform: "scale(1.1)" }}
+          />
+          {/* Subtle gradient overlay */}
+          <Box
+            position="absolute"
+            bottom={0}
+            left={0}
+            right={0}
+            h="40%"
+            bgGradient="linear(to-t, blackAlpha.400, transparent)"
+          />
+        </Box>
+
+        <VStack p={5} alignItems="flex-start" flex={1} gap={2} justifyContent="space-between">
+          <VStack alignItems="flex-start" gap={1} w="100%">
+            <Text
+              fontSize="md"
+              fontWeight="800"
+              lineClamp={2}
+              lineHeight="tight"
+              color="gray.800"
+            >
+              {tour.title}
+            </Text>
+            <Text fontSize="xs" color="gray.500" fontWeight="500">
+              {tour.location}
+            </Text>
+          </VStack>
+        </VStack>
+      </Box>
+    </Link>
+  );
+};

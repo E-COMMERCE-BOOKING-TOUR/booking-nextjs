@@ -12,6 +12,7 @@ import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { cookieName, fallbackLng } from "@/libs/i18n/settings";
 import { useTranslation } from "@/libs/i18n";
+import { auth } from "@/libs/auth/auth";
 
 type TourData = {
     id: number;
@@ -94,9 +95,9 @@ const safeGet = async <T,>(fn: () => Promise<T>, fallback: T) => {
     }
 };
 
-const getTourData = async (slug: string): Promise<TourData> => {
+const getTourData = async (slug: string, guestId?: string, token?: string): Promise<TourData> => {
     try {
-        const tourDetailResponse = await tourApi.detail(slug);
+        const tourDetailResponse = await tourApi.detail(slug, guestId, token);
         const tourDetail = normalizeDetail(tourDetailResponse);
         if (!tourDetail) notFound();
 
@@ -159,11 +160,15 @@ const getTourData = async (slug: string): Promise<TourData> => {
 export default async function TourDetailPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     const cookieStore = await cookies();
+    const session = await auth();
+    const token = session?.user?.accessToken;
+    const guestId = undefined; // Cookies for guestId not yet implemented for server-side
+
     const lng = cookieStore.get(cookieName)?.value || fallbackLng;
     const { t } = await useTranslation(lng);
 
     const [tour, relatedTours, reviewCategories] = await Promise.all([
-        getTourData(slug),
+        getTourData(slug, guestId, token),
         safeGet(() => tourApi.related(slug), [] as RelatedTour[]),
         safeGet(() => tourApi.reviewCategories(slug), [] as ReviewCategory[]),
     ]);

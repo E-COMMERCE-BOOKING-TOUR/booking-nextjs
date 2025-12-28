@@ -31,5 +31,15 @@ export const adminChatboxApi = {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.patch(`/admin/chatbox/conversation/${conversationId}/hide`, { isHidden }, { headers: authHeaders.headers });
+    },
+    toggleAi: async (conversationId: string, isAiEnabled: boolean, token?: string) => {
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+        return fetchC.patch(`/admin/chatbox/conversation/${conversationId}/ai`, { isAiEnabled }, { headers: authHeaders.headers });
+    },
+    toggleHumanTakeover: async (conversationId: string, isHumanTakeover: boolean, token?: string) => {
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+        return fetchC.patch(`/admin/chatbox/conversation/${conversationId}/human`, { isHumanTakeover }, { headers: authHeaders.headers });
     }
 }

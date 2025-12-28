@@ -3,10 +3,10 @@ import { ICreateRegister } from "@/types/auth.type";
 import { IResponseAuth } from "@/types/response/auth.type";
 
 const authApi = {
-    login: async (username: string, password: string) => {
+    login: async (username: string, password: string, guestId?: string) => {
         const url = "/auth/login";
         const res: IResponseAuth = await fetchC.post(url, {
-            username, password
+            username, password, guest_id: guestId
         }, {
             cache: "no-store"
         });

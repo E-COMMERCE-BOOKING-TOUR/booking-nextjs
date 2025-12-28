@@ -7,7 +7,7 @@ import { io, Socket } from 'socket.io-client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, MessageCircle, Send, User, Loader2, Tag, Filter, EyeOff, Eye } from 'lucide-react';
+import { Search, MessageCircle, Send, User, Loader2, Tag, Filter, EyeOff, Eye, Bot, Brain, UserCheck } from 'lucide-react';
 import { adminChatboxApi } from '@/apis/admin/chatbox';
 import { IConversation, IMessage, IConversationListResponse } from '@/apis/chatbox';
 import { cn } from '@/libs/utils';
@@ -20,6 +20,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { toast } from 'sonner';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 const CATEGORIES = [
     { value: 'all', label: 'All Categories' },
@@ -184,6 +186,30 @@ export default function AdminMessagePage() {
         }
     };
 
+    const handleToggleAi = async (checked: boolean) => {
+        if (!selectedConvo || !token) return;
+        try {
+            await adminChatboxApi.toggleAi(selectedConvo._id, checked, token);
+            toast.success(checked ? 'AI Assistant enabled' : 'AI Assistant disabled');
+            setSelectedConvo({ ...selectedConvo, isAiEnabled: checked });
+            refetch();
+        } catch (error) {
+            toast.error('Failed to update AI status');
+        }
+    };
+
+    const handleToggleHuman = async (checked: boolean) => {
+        if (!selectedConvo || !token) return;
+        try {
+            await adminChatboxApi.toggleHumanTakeover(selectedConvo._id, checked, token);
+            toast.success(checked ? 'Human takeover active (AI paused)' : 'Human intervention ended');
+            setSelectedConvo({ ...selectedConvo, isHumanTakeover: checked });
+            refetch();
+        } catch (error) {
+            toast.error('Failed to update takeover status');
+        }
+    };
+
     // Show loading while session is loading
     if (sessionStatus === 'loading') {
         return (
@@ -333,32 +359,55 @@ export default function AdminMessagePage() {
                                                 <p className="text-xs text-muted-foreground">Active conversation</p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={handleToggleHide}
-                                                className="text-muted-foreground hover:text-foreground"
-                                                title={selectedConvo.isHidden ? 'Unhide' : 'Hide Spam/Spam'}
-                                            >
-                                                {selectedConvo.isHidden ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
-                                            </Button>
-                                            <Tag className="size-4 text-muted-foreground" />
-                                            <Select
-                                                value={selectedConvo.category || 'general'}
-                                                onValueChange={handleUpdateCategory}
-                                            >
-                                                <SelectTrigger className="w-[140px] h-8 text-xs">
-                                                    <SelectValue placeholder="Category" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {CATEGORIES.filter(cat => cat.value !== 'all').map(cat => (
-                                                        <SelectItem key={cat.value} value={cat.value}>
-                                                            {cat.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                        <div className="flex items-center gap-4">
+                                            {/* AI Control Toggles */}
+                                            <div className="flex items-center gap-6 border-x border-white/10 px-4">
+                                                <div className="flex items-center space-x-2">
+                                                    <Brain className={cn("size-4", selectedConvo.isAiEnabled ? "text-primary" : "text-muted-foreground")} />
+                                                    <Label htmlFor="ai-toggle" className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">AI Asst</Label>
+                                                    <Switch
+                                                        id="ai-toggle"
+                                                        checked={!!selectedConvo.isAiEnabled}
+                                                        onCheckedChange={handleToggleAi}
+                                                    />
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                    <UserCheck className={cn("size-4", selectedConvo.isHumanTakeover ? "text-orange-500" : "text-muted-foreground")} />
+                                                    <Label htmlFor="human-toggle" className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Human</Label>
+                                                    <Switch
+                                                        id="human-toggle"
+                                                        checked={!!selectedConvo.isHumanTakeover}
+                                                        onCheckedChange={handleToggleHuman}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={handleToggleHide}
+                                                    className="text-muted-foreground hover:text-foreground h-8"
+                                                    title={selectedConvo.isHidden ? 'Unhide' : 'Hide Spam'}
+                                                >
+                                                    {selectedConvo.isHidden ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
+                                                </Button>
+                                                <Select
+                                                    value={selectedConvo.category || 'general'}
+                                                    onValueChange={handleUpdateCategory}
+                                                >
+                                                    <SelectTrigger className="w-[120px] h-8 text-[10px] uppercase font-bold tracking-wider">
+                                                        <SelectValue placeholder="Category" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {CATEGORIES.filter(cat => cat.value !== 'all').map(cat => (
+                                                            <SelectItem key={cat.value} value={cat.value} className="text-xs">
+                                                                {cat.label}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -394,6 +443,11 @@ export default function AdminMessagePage() {
                                                                 </p>
                                                             )}
                                                             <p className="text-sm">{msg.content}</p>
+                                                            {msg.senderRole === 'AI' && (
+                                                                <Badge variant="outline" className="mt-1 text-[9px] h-4 bg-white/10 border-none text-primary-foreground/60">
+                                                                    AI Generated
+                                                                </Badge>
+                                                            )}
                                                             <div className="flex justify-between items-center gap-4 mt-1">
                                                                 <p className={cn(
                                                                     "text-[10px]",

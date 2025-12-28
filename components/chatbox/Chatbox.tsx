@@ -232,7 +232,7 @@ export default function Chatbox({ lng, isOpen, onClose }: { lng: string; isOpen:
                                         >
                                             {!isUser && msg.senderName && (
                                                 <Text fontSize="10px" fontWeight="bold" opacity={0.6} mb={0.5} letterSpacing="wider">
-                                                    {msg.senderName}
+                                                    {msg.senderRole === 'AI' ? '🚀 AI Assistant' : msg.senderName}
                                                 </Text>
                                             )}
                                             <Text fontSize="sm" lineHeight="tall">{msg.content}</Text>

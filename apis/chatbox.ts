@@ -15,6 +15,8 @@ export interface IConversation {
     unreadCount: number;
     category?: string;
     isHidden?: boolean;
+    isAiEnabled?: boolean;
+    isHumanTakeover?: boolean;
 }
 
 export interface IMessage {

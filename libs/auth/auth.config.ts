@@ -64,13 +64,15 @@ export default {
                 const validatedFields = LoginSchema.safeParse(credentials)
                 if (validatedFields.success) {
                     const { username, password } = validatedFields.data;
+                    const guestId = credentials.guest_id as string | undefined;
                     try {
-                        const loginResponse = await authApi.login(username, password);
+                        const loginResponse = await authApi.login(username, password, guestId);
                         const accessToken = loginResponse.token.access_token;
                         const refreshToken = loginResponse.token.refresh_token;
                         const userInfoResponse = await userApi.info(accessToken);
                         const userData = {
                             ...userInfoResponse,
+                            id: userInfoResponse.id.toString(),
                             accessToken: accessToken,
                             refreshToken: refreshToken,
                             accessTokenExpires: getAccessTokenExpiry(accessToken),

@@ -132,9 +132,14 @@ export const tourApi = {
         const res = await fetchC.get(url, { next: { revalidate: 3600 } });
         return Array.isArray(res) ? res : (res?.data || []);
     },
-    detail: async (slug: string): Promise<ITour> => {
-        const url = `/user/tour/${slug}`;
-        const res = await fetchC.get(url);
+    detail: async (slug: string, guestId?: string, token?: string): Promise<ITour> => {
+        let headers = {};
+        if (token) {
+            const authHeaders = await getAuthHeaders(token);
+            if (authHeaders.ok) headers = authHeaders.headers;
+        }
+        const url = `/user/tour/${slug}${guestId ? `?guest_id=${guestId}` : ''}`;
+        const res = await fetchC.get(url, { headers });
         return res;
     },
     search: async (params?: ITourSearchParams): Promise<ITourSearchResponse> => {
@@ -204,6 +209,25 @@ export const tourApi = {
         const url = `/user/tour/${slug}/sessions?${query.toString()}`;
         const res = await fetchC.get(url, { cache: 'no-store' });
         return Array.isArray(res) ? res : (res?.data || []);
+    },
+    recommended: async (guestId?: string, token?: string): Promise<ITourPopular[]> => {
+        let headers = {};
+        if (token) {
+            const authHeaders = await getAuthHeaders(token);
+            if (authHeaders.ok) headers = authHeaders.headers;
+        }
+        const url = `/user/tour/recommend/list${guestId ? `?guest_id=${guestId}` : ''}`;
+        const res = await fetchC.get(url, { headers, cache: 'no-store' });
+        return Array.isArray(res) ? res : (res?.data || []);
+    },
+    toggleFavorite: async (tourId: number, guestId?: string, token?: string) => {
+        let headers = {};
+        if (token) {
+            const authHeaders = await getAuthHeaders(token);
+            if (authHeaders.ok) headers = authHeaders.headers;
+        }
+        const url = `/user/tour/favorite/toggle`;
+        return fetchC.post(url, { tour_id: tourId, guest_id: guestId }, { headers });
     }
 };
 

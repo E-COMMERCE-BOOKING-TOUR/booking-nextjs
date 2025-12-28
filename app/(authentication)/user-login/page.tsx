@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { getGuestId } from "@/utils/guest";
 
 export default function LoginPage() {
   const [isLoading, startTransition] = useTransition();
@@ -35,7 +36,8 @@ export default function LoginPage() {
   const onSubmit = (values: z.infer<typeof LoginSchema>) => {
     startTransition(async () => {
       try {
-        const response = await login(values);
+        const guestId = getGuestId();
+        const response = await login(values, guestId || undefined);
         if (response.type === "error") {
           toaster.create({
             description: response.message,
