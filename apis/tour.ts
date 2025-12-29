@@ -131,7 +131,7 @@ export const tourApi = {
             if (authHeaders.ok) headers = authHeaders.headers;
         }
         const url = `/user/tour/${slug}${guestId ? `?guest_id=${guestId}` : ''}`;
-        const res = await fetchC.get(url, { headers });
+        const res = await fetchC.get(url, { headers, next: { revalidate: 300 } }); // 5min
         return res;
     },
     search: async (params?: IUserTourSearchParams): Promise<IUserTourSearchResponse> => {
@@ -144,7 +144,7 @@ export const tourApi = {
     },
     reviews: async (slug: string): Promise<IUserTourReview[]> => {
         const url = `/user/tour/${slug}/reviews`;
-        const res = await fetchC.get(url);
+        const res = await fetchC.get(url, { next: { revalidate: 300 } }); // 5min
         return Array.isArray(res) ? res : (res?.data || []);
     },
     getReviewsByTourId: async (tourId: number, token?: string): Promise<IReview[]> => {
@@ -179,12 +179,12 @@ export const tourApi = {
     },
     reviewCategories: async (slug: string): Promise<IUserTourReviewCategory[]> => {
         const url = `/user/tour/${slug}/review-categories`;
-        const res = await fetchC.get(url);
+        const res = await fetchC.get(url, { next: { revalidate: 3600 } }); // 1h
         return Array.isArray(res) ? res : (res?.data || []);
     },
     related: async (slug: string, limit: number = 8): Promise<IUserTourRelated[]> => {
         const url = `/user/tour/${slug}/related?limit=${limit}`;
-        const res = await fetchC.get(url);
+        const res = await fetchC.get(url, { next: { revalidate: 3600 } }); // 1h
         return Array.isArray(res) ? res : (res?.data || []);
     },
     getPrices: async (slug: string): Promise<unknown[]> => {

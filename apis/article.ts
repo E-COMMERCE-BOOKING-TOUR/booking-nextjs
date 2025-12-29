@@ -5,7 +5,7 @@ import { IArticlePopular } from "@/types/response/article";
 const article = {
     popular: async (limit: number = 5, page: number = 1): Promise<IArticlePopular[]> => {
         const url = `/user/article/popular?limit=${limit}&page=${page}`;
-        const res = await fetchC.get(url);
+        const res = await fetchC.get(url, { next: { revalidate: 1800 } }); // 30min
         return Array.isArray(res) ? res : (res?.data || []);
     },
     create: async (data: { title: string; content: string; images?: { image_url: string }[]; tags?: string[]; tour_id?: number }, token?: string) => {
@@ -16,12 +16,12 @@ const article = {
     },
     getList: async (): Promise<IArticlePopular[]> => {
         const url = `/user/article/list`;
-        const res = await fetchC.get(url);
+        const res = await fetchC.get(url, { next: { revalidate: 1800 } }); // 30min
         return Array.isArray(res) ? res : (res?.data || []);
     },
     getByTag: async (tag: string, limit: number = 10, page: number = 1): Promise<IArticlePopular[]> => {
         const url = `/user/article/tag/${tag}?limit=${limit}&page=${page}`;
-        const res = await fetchC.get(url);
+        const res = await fetchC.get(url, { next: { revalidate: 1800 } }); // 30min
         return Array.isArray(res) ? res : (res?.data || []);
     },
     getMyArticles: async (token?: string): Promise<IArticlePopular[]> => {
@@ -40,7 +40,7 @@ const article = {
     },
     getTrendingTags: async (limit: number = 4): Promise<{ _id: string; count: number }[]> => {
         const url = `/user/article/trending-tags?limit=${limit}`;
-        const res = await fetchC.get(url);
+        const res = await fetchC.get(url, { next: { revalidate: 3600 } }); // 1h
         return Array.isArray(res) ? res : (res?.data || []);
     },
     addComment: async (articleId: string, content: string, token?: string, parentId?: string | number) => {

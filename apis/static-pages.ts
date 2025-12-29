@@ -3,6 +3,6 @@ import { StaticPage } from "./admin/static-pages";
 
 export const staticPagesApi = {
     getBySlug: async (slug: string): Promise<StaticPage> => {
-        return fetchC.get(`/settings/pages/${slug}`);
+        return fetchC.get(`/settings/pages/${slug}`, { next: { revalidate: 86400 } }); // 24h
     },
 };
