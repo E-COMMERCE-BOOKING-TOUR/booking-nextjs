@@ -39,7 +39,7 @@ export default function BannerHeader({ banners_square, banners_rectangle }: Bann
   );
 }
 
-const SwiperBanner = ({ items, height }: { items: string[], height: any }) => {
+const SwiperBanner = ({ items, height }: { items: string[], height: string | Record<string, string> }) => {
   return (
     <Box
       width="100%"

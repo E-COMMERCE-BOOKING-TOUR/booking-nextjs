@@ -3,21 +3,18 @@
 import {
     Box,
     Badge,
-    Textarea,
     HStack,
     VStack,
     Heading,
     Text,
     Button,
-    Input,
     Grid,
     Progress,
     Flex,
     Avatar,
-    Select,
     NativeSelect,
 } from "@chakra-ui/react";
-import { FaStar, FaSearch, FaCheckCircle, FaThumbsUp, FaFlag } from "react-icons/fa";
+import { FaStar, FaCheckCircle, FaThumbsUp, FaFlag } from "react-icons/fa";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
@@ -26,8 +23,7 @@ import { toaster } from "@/components/chakra/toaster";
 import { useSearchParams } from "next/navigation";
 import ReviewForm from "./ReviewForm";
 import { useTranslation } from "@/libs/i18n/client";
-import { cookieName, fallbackLng } from "@/libs/i18n/settings";
-import Cookies from "js-cookie";
+import { fallbackLng } from "@/libs/i18n/settings";
 
 interface Review {
     id: string;

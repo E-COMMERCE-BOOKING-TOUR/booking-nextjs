@@ -13,8 +13,7 @@ import {
     Badge,
 } from "@chakra-ui/react";
 import { useTranslation } from "@/libs/i18n/client";
-import { cookieName, fallbackLng } from "@/libs/i18n/settings";
-import Cookies from "js-cookie";
+import { fallbackLng } from "@/libs/i18n/settings";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";

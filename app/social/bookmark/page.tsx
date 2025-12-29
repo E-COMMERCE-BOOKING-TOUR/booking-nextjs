@@ -1,21 +1,17 @@
 "use client";
-import { Box, VStack, List, Spinner, Center, Heading, Text, Image, Button, HStack, Card, Avatar, Icon } from "@chakra-ui/react";
+import { Box, VStack, Spinner, Center, Heading, Text, Image, Button, HStack, Card, Avatar, Icon } from "@chakra-ui/react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import type { IArticlePopular } from "@/types/response/article";
 import article from "@/apis/article";
-import { Suspense, Fragment } from "react";
+import { Suspense } from "react";
 import { useSession } from "next-auth/react";
-import { useTranslation } from "@/libs/i18n/client";
 import { FiBookmark, FiHeart, FiMessageCircle, FiTrash2 } from "react-icons/fi";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { toaster } from "@/components/chakra/toaster";
 import Link from "next/link";
 
 const BookmarkContent = () => {
     const { data: session } = useSession();
-    const { t } = useTranslation('en');
-    const queryClient = useQueryClient();
-
     const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useInfiniteQuery<IArticlePopular[]>({
         queryKey: ['bookmarked-articles-infinite', session?.user?.uuid],
         initialPageParam: 1,

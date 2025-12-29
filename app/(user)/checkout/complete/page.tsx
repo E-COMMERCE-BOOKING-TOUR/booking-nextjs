@@ -5,14 +5,14 @@ import CheckoutCompleteClient from "./CheckoutCompleteClient";
 import bookingApi from "@/apis/booking";
 import { cookies } from "next/headers";
 import { cookieName, fallbackLng } from "@/libs/i18n/settings";
-import { useTranslation } from "@/libs/i18n";
+import { createTranslation } from "@/libs/i18n";
 
 export default async function CheckoutCompletePage() {
     const result = await bookingApi.getCurrent();
 
     const cookieStore = await cookies();
     const lng = cookieStore.get(cookieName)?.value || fallbackLng;
-    const { t } = await useTranslation(lng);
+    const { t } = await createTranslation(lng);
 
     if (!result.ok && result.redirectTo) {
         redirect(result.redirectTo);

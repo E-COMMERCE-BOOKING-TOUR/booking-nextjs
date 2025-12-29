@@ -28,14 +28,14 @@ const MyPost = () => {
     if (!articles || articles.length === 0) {
         return (
             <Box p={8} textAlign="center" w="full">
-                <Text color="gray.500">You haven't posted any articles yet.</Text>
+                <Text color="gray.500">You haven&apos;t posted any articles yet.</Text>
             </Box>
         );
     }
 
     return (
         <SimpleGrid columns={{ base: 2, md: 3 }} gap={4} w="full">
-            {articles.map((item: IArticlePopular,index: number) => (
+            {articles.map((item: IArticlePopular, index: number) => (
                 <ProfilePostCard key={index} article={item} />
             ))}
         </SimpleGrid>

@@ -41,11 +41,9 @@ import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from "@/libs/i18n/client";
-import { useSearchParams } from "next/navigation";
 import { toaster } from '@/components/chakra/toaster';
 
 export default function BookingDetailPageClient({ lng }: { lng: string }) {
-    const searchParams = useSearchParams();
     const { t } = useTranslation(lng);
     const params = useParams();
     const id = Number(params.id);

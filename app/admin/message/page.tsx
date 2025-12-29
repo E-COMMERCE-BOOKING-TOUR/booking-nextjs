@@ -7,7 +7,7 @@ import { io, Socket } from 'socket.io-client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, MessageCircle, Send, User, Loader2, Tag, Filter, EyeOff, Eye, Bot, Brain, UserCheck } from 'lucide-react';
+import { Search, MessageCircle, Send, User, Loader2, EyeOff, Eye, Brain, UserCheck } from 'lucide-react';
 import { adminChatboxApi } from '@/apis/admin/chatbox';
 import { IConversation, IMessage, IConversationListResponse } from '@/apis/chatbox';
 import { cn } from '@/libs/utils';
@@ -70,7 +70,7 @@ export default function AdminMessagePage() {
         const socketUrl = process.env.NEXT_PUBLIC_CHATBOX_WS_URL;
         if (!socketUrl || !token) return;
 
-        setIsSocketConnecting(true);
+        Promise.resolve().then(() => setIsSocketConnecting(true));
         const s = io(socketUrl, {
             transports: ['websocket'],
             auth: { token: token } // Pass token for authentication
@@ -82,11 +82,11 @@ export default function AdminMessagePage() {
             setIsSocketConnecting(false);
         });
 
-        s.on('authenticated', (data: any) => {
+        s.on('authenticated', (data: { user?: { full_name: string } }) => {
             console.log('Admin authenticated as:', data.user?.full_name);
         });
 
-        s.on('error', (err: any) => {
+        s.on('error', (err: unknown) => {
             console.error('Admin socket error:', err);
             setIsSocketConnecting(false);
             setIsSocketConnected(false);
@@ -101,7 +101,7 @@ export default function AdminMessagePage() {
             refetch(); // Refresh conversation list on new message
         });
 
-        setSocket(s);
+        Promise.resolve().then(() => setSocket(s));
         return () => {
             s.disconnect();
             setSocket(null);
@@ -109,11 +109,17 @@ export default function AdminMessagePage() {
         };
     }, [token, refetch]);
 
+    const scrollToBottom = () => {
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    };
+
     // Handle conversation selection
     useEffect(() => {
         if (selectedConvo && socket && isSocketConnected && token) {
-            setMessages([]);
-            setIsLoadingMessages(true);
+            Promise.resolve().then(() => {
+                setMessages([]);
+                setIsLoadingMessages(true);
+            });
 
             // Mark as read
             if (selectedConvo.unreadCount > 0) {
@@ -124,7 +130,7 @@ export default function AdminMessagePage() {
             socket.emit('joinRoom', { conversationId: selectedConvo._id });
 
             adminChatboxApi.getConversationDetails(selectedConvo._id, token)
-                .then((msgs: any) => {
+                .then((msgs: unknown) => {
                     setMessages(msgs as IMessage[]);
                     setIsLoadingMessages(false);
                     scrollToBottom();
@@ -142,11 +148,8 @@ export default function AdminMessagePage() {
                 socket.off('newMessage', msgListener);
             };
         }
-    }, [selectedConvo, socket, isSocketConnected, token]);
+    }, [selectedConvo, socket, isSocketConnected, token, refetch]);
 
-    const scrollToBottom = () => {
-        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-    };
 
     const handleSend = () => {
         if (!input.trim() || !selectedConvo || !token || !isSocketConnected) return;
@@ -156,7 +159,7 @@ export default function AdminMessagePage() {
     };
 
     function getParticipantName(c: IConversation) {
-        const p = c.participants.find((p: any) => p.role !== 'ADMIN' && p.role !== 'admin');
+        const p = c.participants.find((p: { role: string; name?: string; userId?: string }) => p.role !== 'ADMIN' && p.role !== 'admin');
         return p?.name || p?.userId || 'Unknown User';
     }
 
@@ -168,7 +171,7 @@ export default function AdminMessagePage() {
             // Update local state so UI reflects it immediately
             setSelectedConvo({ ...selectedConvo, category });
             refetch();
-        } catch (error) {
+        } catch {
             toast.error('Failed to update category');
         }
     };
@@ -181,7 +184,7 @@ export default function AdminMessagePage() {
             toast.success(newHiddenStatus ? 'Conversation hidden' : 'Conversation unhidden');
             setSelectedConvo({ ...selectedConvo, isHidden: newHiddenStatus });
             refetch();
-        } catch (error) {
+        } catch {
             toast.error('Failed to update visibility');
         }
     };
@@ -193,7 +196,7 @@ export default function AdminMessagePage() {
             toast.success(checked ? 'AI Assistant enabled' : 'AI Assistant disabled');
             setSelectedConvo({ ...selectedConvo, isAiEnabled: checked });
             refetch();
-        } catch (error) {
+        } catch {
             toast.error('Failed to update AI status');
         }
     };
@@ -205,7 +208,7 @@ export default function AdminMessagePage() {
             toast.success(checked ? 'Human takeover active (AI paused)' : 'Human intervention ended');
             setSelectedConvo({ ...selectedConvo, isHumanTakeover: checked });
             refetch();
-        } catch (error) {
+        } catch {
             toast.error('Failed to update takeover status');
         }
     };

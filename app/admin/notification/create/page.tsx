@@ -61,8 +61,8 @@ export default function AdminNotificationCreatePage() {
                 toast.error(res.error || 'Error creating notification');
             }
         },
-        onError: (error: any) => {
-            toast.error(error.message || 'System error');
+        onError: (error: unknown) => {
+            toast.error((error as Error)?.message || 'System error');
         }
     });
 

@@ -55,6 +55,12 @@ export interface ITourVariant {
   tour_sessions: ITourSession[];
   tour_policy: ITourPolicy[];
   tour_variant_pax_type_prices: ITourVariantPaxTypePrice[];
+  prices: {
+    id: number;
+    pax_type_id: number;
+    price: number;
+    pax_type_name: string;
+  }[];
   booking_items: IBookingItem[];
   created_at?: Date;
   updated_at?: Date;
@@ -135,6 +141,8 @@ export interface ITour {
   summary: string;
   map_url: string;
   slug: string;
+  price: number;
+  old_price?: number;
   address: string;
   score_rating?: number | null;
   tax: number;
@@ -147,12 +155,12 @@ export interface ITour {
   max_pax?: number | null;
   country: ICountry;
   division: IDivision;
-  currency: ICurrency;
+  currencySymbol: string;
   users_favorites: IUser[];
   reviews: IReview[];
   tour_categories: ITourCategory[];
   supplier: ISupplier;
-  images: ITourImage[];
+  images: string[];
   variants: ITourVariant[];
   meeting_point?: string;
   included?: string[];

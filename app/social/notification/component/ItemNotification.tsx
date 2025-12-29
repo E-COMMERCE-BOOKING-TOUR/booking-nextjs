@@ -11,10 +11,10 @@ import {
 import { FaCheck, FaHeart, FaCommentDots, FaUserPlus, FaBell } from 'react-icons/fa6';
 import { FiFileText } from "react-icons/fi";
 
-export const ItemNotification = ({ type, data }: { type: string, data: any }) => {
+export const ItemNotification = ({ type, data }: { type: string, data: { user: string, content: string, time: string, [key: string]: unknown } }) => {
     let bg = 'white';
     let iconComp = FaBell;
-    let iconColor = 'white';
+    const iconColor = 'white';
     let iconBg = 'gray.500';
 
     if (type === 'booking') {

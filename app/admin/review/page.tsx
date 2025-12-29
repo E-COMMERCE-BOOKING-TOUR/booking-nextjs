@@ -1,12 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { Card, CardTitle, CardHeader, CardDescription, CardContent, CardAction } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Star, MoreVertical, Trash2, Eye, EyeOff, ThumbsUp, Flag } from "lucide-react";
@@ -19,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { adminReviewApi } from "@/apis/admin/review";
 import { Separator } from "@/components/ui/separator";
+import { IReview } from "@/types/response/review.type";
 
 export default function AdminReview() {
   const { data: session } = useSession();
@@ -37,7 +36,7 @@ export default function AdminReview() {
       queryClient.invalidateQueries({ queryKey: ['admin-reviews'] });
       toast.success("Review deleted successfully");
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error?.message || "Failed to delete review");
     }
   });
@@ -50,7 +49,7 @@ export default function AdminReview() {
       queryClient.invalidateQueries({ queryKey: ['admin-reviews'] });
       toast.success("Review visibility updated");
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error?.message || "Failed to update visibility");
     }
   });
@@ -83,19 +82,10 @@ export default function AdminReview() {
     ];
   };
 
-  const getStatusChartData = () => {
-    if (!stats) return [];
-    const breakdown = stats.status_breakdown || {};
-    return [
-      { name: 'Approved', value: breakdown['approved'] || 0, fill: '#22c55e' },
-      { name: 'Pending', value: breakdown['pending'] || 0, fill: '#f59e0b' },
-      { name: 'Rejected', value: breakdown['rejected'] || 0, fill: '#ef4444' },
-    ];
-  };
+
 
 
   const chartData = getStatsChartData();
-  const statusData = getStatusChartData();
 
   if (isLoading) return <div>Loading...</div>;
 
@@ -172,13 +162,13 @@ export default function AdminReview() {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {isLoading ? (
               <div>Loading reviews...</div>
-            ) : filteredReviews.map((f: any) => (
+            ) : filteredReviews.map((f: IReview) => (
               <Card key={f.id} className={f.status === 'rejected' ? 'opacity-60 bg-gray-800' : ''}>
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-3">
                     <UserAvatar
                       name={f.user?.full_name}
-                      image={f.user?.avatar}
+                      image={f.user?.avatar || undefined}
                       className="size-10 border"
                     />
                     <div className="flex-1">
@@ -226,7 +216,7 @@ export default function AdminReview() {
 
                       <div className="mt-3 flex items-center justify-between">
                         <div className="text-xs text-muted-foreground">
-                          {new Date(f.created_at).toLocaleDateString()}
+                          {f.created_at ? new Date(f.created_at).toLocaleDateString() : 'N/A'}
                         </div>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <ThumbsUp className="size-3" /> {f.helpful_count || 0} Helpful

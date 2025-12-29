@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: StaticPageProps): Promise<Met
             title: page.meta_title || `${page.title} - TripConnect`,
             description: page.meta_description || undefined,
         };
-    } catch (error) {
+    } catch {
         return {
             title: 'Trang không tồn tại',
         };
@@ -28,7 +28,7 @@ export default async function StaticPageDetail({ params }: StaticPageProps) {
 
     try {
         page = await staticPagesApi.getBySlug(slug);
-    } catch (error) {
+    } catch {
         return notFound();
     }
 

@@ -24,10 +24,8 @@ import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import { IBookingDetail } from "@/types/booking";
 
 import { useTranslation } from "@/libs/i18n/client";
-import { useSearchParams } from "next/navigation";
 
 export default function BookingsPageClient({ lng }: { lng: string }) {
-    const searchParams = useSearchParams();
     const { t } = useTranslation(lng);
     const { data: session } = useSession();
     const token = session?.user?.accessToken;

@@ -18,7 +18,7 @@ export interface IArticlePopular {
     tour_id?: number | string;
     tour?: { id: number; title: string; slug: string };
     is_visible?: boolean;
-    comments?: any[];
+    comments?: unknown[];
     users_like?: string[];
     users_bookmark?: string[];
 }

@@ -41,9 +41,9 @@ export default function VariantSchedulingEditor({
         onChange({ ...value, ...updates });
     };
 
-    const startTimeSlots = value.timeSlots || [];
-    const excludedDates = value.excluded || [];
-    const ranges = value.ranges || [];
+    const startTimeSlots = useMemo(() => value.timeSlots || [], [value.timeSlots]);
+    const excludedDates = useMemo(() => value.excluded || [], [value.excluded]);
+    const ranges = useMemo(() => value.ranges || [], [value.ranges]);
 
     const handleAddTimeSlot = () => {
         if (!newTimeSlot) return;

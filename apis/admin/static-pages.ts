@@ -23,7 +23,7 @@ export interface CreateStaticPageDTO {
     is_active?: boolean;
 }
 
-export interface UpdateStaticPageDTO extends Partial<CreateStaticPageDTO> { }
+export type UpdateStaticPageDTO = Partial<CreateStaticPageDTO>;
 
 export const adminStaticPagesApi = {
     getAll: async (token?: string): Promise<StaticPage[]> => {

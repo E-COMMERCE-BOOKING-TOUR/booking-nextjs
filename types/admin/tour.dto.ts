@@ -86,6 +86,7 @@ export interface IAdminTour {
     duration_hours: number;
     status: string;
     slug: string;
+    is_visible?: boolean;
     tour_categories?: { name: string }[];
 }
 
@@ -137,3 +138,9 @@ export interface IAdminTourDetail extends Omit<CreateTourDTO, "tour_category_ids
     supplier?: { id: number; name: string };
 }
 
+export interface IVisibilityReport {
+    isVisiblePublic: boolean;
+    title: string;
+    checks: Record<string, boolean>;
+    issues: string[];
+}

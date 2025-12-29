@@ -36,9 +36,10 @@ export default function ForgetPasswordPage() {
                     description: response.message || "Request sent successfully!",
                     type: "success",
                 });
-            } catch (error: any) {
+            } catch (error: unknown) {
+                const message = error instanceof Error ? error.message : "An error occurred during password recovery";
                 toaster.create({
-                    description: error.message || "An error occurred during password recovery",
+                    description: message,
                     type: "error",
                 });
             }

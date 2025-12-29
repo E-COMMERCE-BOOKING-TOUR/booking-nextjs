@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminStaticPagesApi, CreateStaticPageDTO } from '@/apis/admin/static-pages';
 import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,7 +21,7 @@ import {
     Settings as SettingsIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import Link from 'next/link';
 
 type StaticPageFormData = CreateStaticPageDTO;
@@ -35,7 +35,7 @@ export default function StaticPageEditPage() {
     const router = useRouter();
     const queryClient = useQueryClient();
 
-    const { register, handleSubmit, setValue, watch, reset, control } = useForm<StaticPageFormData>({
+    const { register, handleSubmit, setValue, reset, control } = useForm<StaticPageFormData>({
         defaultValues: {
             is_active: true,
             title: '',
@@ -46,8 +46,8 @@ export default function StaticPageEditPage() {
         }
     });
 
-    const isActive = watch('is_active');
-    const title = watch('title');
+    const isActive = useWatch({ control, name: 'is_active' });
+    const title = useWatch({ control, name: 'title' });
 
     // Auto-generate slug from title for new pages
     useEffect(() => {
@@ -94,8 +94,8 @@ export default function StaticPageEditPage() {
             toast.success(isEdit ? 'Page updated successfully' : 'Page created successfully');
             router.push('/admin/static-pages');
         },
-        onError: (error: any) => {
-            toast.error(error.message || 'An error occurred');
+        onError: (error: unknown) => {
+            toast.error(error instanceof Error ? error.message : 'An error occurred');
         }
     });
 

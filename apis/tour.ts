@@ -164,7 +164,7 @@ export const tourApi = {
         const res = await fetchC.get(url, { headers });
         return Array.isArray(res) ? res : (res?.data || []);
     },
-    createReview: async (data: Record<string, any>, token?: string) => {
+    createReview: async (data: Record<string, unknown>, token?: string) => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.post('/user/review/create', data, { headers: authHeaders.headers });

@@ -15,7 +15,7 @@ import Cookies from 'js-cookie'
 import { cookieName } from "@/libs/i18n/settings"
 
 export const LanguageSwitcher = ({ lng }: { lng: string }) => {
-    const { t, i18n } = useTranslation(lng)
+    const { i18n } = useTranslation(lng)
 
     const handleLanguageChange = (newLng: string) => {
         i18n.changeLanguage(newLng)

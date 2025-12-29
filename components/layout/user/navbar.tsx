@@ -1,11 +1,11 @@
-import { Button, Flex, Image, Menu, VStack, HStack, Box } from '@chakra-ui/react';
+import { Button, Flex, Menu, HStack, Box } from '@chakra-ui/react';
 import { NotificationBell } from './notificationBell';
 import { Header } from './header';
 import NextLink from 'next/link';
 import bookingApi from '@/apis/booking';
 import { IBookingDetail } from '@/types/booking';
 import { ResumeBookingButton } from './resumeBookingButton';
-import { NavItem } from './navItem';
+
 import { auth } from '@/libs/auth/auth';
 import { IUserAuth } from '@/types/response/auth.type';
 import { MobileDrawer } from './navMobileDrawer';
@@ -13,7 +13,7 @@ import { LogoutButton } from './logoutButton';
 import { SiteSettings } from '@/apis/admin/settings';
 import { cookies } from 'next/headers';
 import { cookieName, fallbackLng } from '@/libs/i18n/settings';
-import { useTranslation } from '@/libs/i18n';
+import { createTranslation } from '@/libs/i18n';
 import { LanguageSwitcher } from '@/components/ui/user/LanguageSwitcher';
 import { Logo, MenuLinks } from './navCommon';
 
@@ -24,9 +24,9 @@ interface NavbarProps {
 export default async function UserNavbar({ settings }: NavbarProps) {
   const cookieStore = await cookies();
   const lng = cookieStore.get(cookieName)?.value || fallbackLng;
-  const { t } = await useTranslation(lng);
+  const { t } = await createTranslation(lng);
 
-  const navItems = [
+  const navItems: { name: string, link: string }[] = [
     {
       name: t('home', { defaultValue: 'Home' }),
       link: '/',
@@ -105,7 +105,7 @@ export default async function UserNavbar({ settings }: NavbarProps) {
 }
 
 // UserMenu needs to be a client component due to Menu's auto-generated IDs
-const UserMenu = ({ user, t, lng }: { user: IUserAuth, t: any, lng: string }) => {
+const UserMenu = ({ user, t, lng }: { user: IUserAuth, t: (key: string, options?: Record<string, unknown>) => string, lng: string }) => {
   return (
     <Menu.Root lazyMount unmountOnExit id="user-menu">
       <Menu.Trigger asChild>

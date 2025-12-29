@@ -28,7 +28,7 @@ const PostLike = () => {
     if (!articles || articles.length === 0) {
         return (
             <Box p={8} textAlign="center" w="full">
-                <Text color="gray.500">You haven't liked any articles yet.</Text>
+                <Text color="gray.500">You haven&apos;t liked any articles yet.</Text>
             </Box>
         );
     }

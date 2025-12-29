@@ -3,7 +3,6 @@
 import { useSession } from "next-auth/react";
 import {
     Box,
-    Flex,
     Text,
     Heading,
     VStack,
@@ -12,19 +11,16 @@ import {
     Button,
     Spinner,
     Center,
-    Card,
     Image,
     Icon,
     List
 } from "@chakra-ui/react";
-import { FiHeart, FiMessageCircle, FiUserPlus, FiUserMinus, FiEdit } from "react-icons/fi";
+import { FiUserPlus, FiUserMinus, FiEdit } from "react-icons/fi";
 import { useRouter, useParams } from "next/navigation";
-import { Suspense, Fragment } from "react";
-import article from "@/apis/article";
+import { Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userApi } from "@/apis/user";
 import type { IArticlePopular } from "@/types/response/article";
-import Link from "next/link";
 import { toaster } from "@/components/chakra/toaster";
 import ItemBlog from "@/app/social/component/ItemBlog";
 
@@ -36,7 +32,7 @@ const ProfileContent = () => {
     const queryClient = useQueryClient();
 
     // Determine if viewing own profile
-    const isOwnProfile = (session?.user as any)?.uuid === profileUuid;
+    const isOwnProfile = (session?.user as { uuid?: string })?.uuid === profileUuid;
 
     // Fetch profile user data
     const { data: profileUser, isLoading: isLoadingUser } = useQuery({
@@ -72,7 +68,7 @@ const ProfileContent = () => {
         enabled: !!session?.user?.accessToken && !isOwnProfile,
     });
 
-    const isFollowing = myFollowing?.some((f: any) => f.id === profileUser?.id || f === profileUser?.id);
+    const isFollowing = myFollowing?.some((f: { id: number } | number) => (typeof f === 'object' ? f.id : f) === profileUser?.id);
 
     // Follow/unfollow mutations
     const followMutation = useMutation({

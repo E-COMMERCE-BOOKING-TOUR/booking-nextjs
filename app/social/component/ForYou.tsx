@@ -1,18 +1,20 @@
 "use client";
 import { Box, VStack, HStack, Button, Icon, Textarea, Image, Input, List, Spinner, Center, Avatar, Text as ChakraText } from "@chakra-ui/react";
 import { useState } from "react";
-import { FiEdit, FiX, FiImage, FiSmile, FiCalendar, FiMapPin } from "react-icons/fi";
+import { FiEdit, FiX, FiImage, FiMapPin } from "react-icons/fi";
 import ItemBlog from "./ItemBlog";
 import { useMutation, useQueryClient, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import type { IArticlePopular } from "@/types/response/article";
 import article from "@/apis/article";
 import { toaster } from "@/components/chakra/toaster";
+import { Session } from "next-auth";
 import { useSession } from "next-auth/react";
 import bookingApi from "@/apis/booking";
+import { IBookingDetail } from "@/types/booking";
 import { Menu, Portal, createListCollection } from "@chakra-ui/react";
 import { useTranslation } from "@/libs/i18n/client";
 import { userApi } from "@/apis/user";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
@@ -23,10 +25,10 @@ const postSchema = z.object({
 
 type PostFormValues = z.infer<typeof postSchema>;
 
-const CreatePost = ({ lng, session, bookedTours, onSuccess, onPostCreated }: { lng: string, session: any, bookedTours: any[] | undefined, onSuccess: () => void, onPostCreated?: (post: IArticlePopular) => void }) => {
+const CreatePost = ({ lng, session, bookedTours, onSuccess, onPostCreated }: { lng: string, session: Session | null, bookedTours: IBookingDetail[] | undefined, onSuccess: () => void, onPostCreated?: (post: IArticlePopular) => void }) => {
     const { t } = useTranslation(lng);
     const [images, setImages] = useState<string[]>([]);
-    const { control, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<PostFormValues>({
+    const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<PostFormValues>({
         resolver: zodResolver(postSchema),
         defaultValues: {
             content: "",
@@ -34,20 +36,20 @@ const CreatePost = ({ lng, session, bookedTours, onSuccess, onPostCreated }: { l
         }
     });
 
-    const content = watch("content");
+    const content = useWatch({ control, name: "content" });
 
     const tourList = createListCollection({
         items: Array.from(new Map(
-            bookedTours?.map((t: any) => [t.tour_id, {
+            (bookedTours)?.map((t) => [t.tour_id, {
                 label: t.tour_title,
                 value: t.tour_id?.toString() || ""
-            }])
-        ).values()) || [],
+            }]) || []
+        ).values()),
     });
 
     const createMutation = useMutation({
         mutationFn: (vars: { data: Parameters<typeof article.create>[0], token?: string }) => article.create(vars.data, vars.token),
-        onSuccess: (response: any) => {
+        onSuccess: (response: { data?: IArticlePopular } | IArticlePopular) => {
             toaster.create({
                 title: "Post created successfully",
                 type: "success",
@@ -56,7 +58,7 @@ const CreatePost = ({ lng, session, bookedTours, onSuccess, onPostCreated }: { l
             setImages([]);
             onSuccess();
             // Handle both direct response and wrapped response.data
-            const postData = response?.data || response;
+            const postData = (response as { data?: IArticlePopular }).data || (response as IArticlePopular);
             if (postData && onPostCreated) {
                 // Add optimistic user data for immediate display
                 const enrichedPost = {
@@ -65,18 +67,18 @@ const CreatePost = ({ lng, session, bookedTours, onSuccess, onPostCreated }: { l
                         name: session?.user?.name,
                         avatar: null,
                     },
-                    user_id: postData.user_id || (session?.user as any)?.id,
+                    user_id: postData.user_id || session?.user?.id?.toString() || "",
                     created_at: postData.created_at || new Date().toISOString(),
                     count_likes: postData.count_likes || 0,
                     count_comments: postData.count_comments || 0,
                     count_views: postData.count_views || 0,
                 };
-                onPostCreated(enrichedPost);
+                onPostCreated(enrichedPost as IArticlePopular);
             }
         },
-        onError: (error: Error | any) => {
+        onError: (error: unknown) => {
             console.error("Post create error:", error);
-            const msg = error?.response?.data?.message || error?.message || "Failed to create post";
+            const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || (error as Error)?.message || "Failed to create post";
             toaster.create({
                 title: typeof msg === 'string' ? msg : JSON.stringify(msg),
                 type: "error",
@@ -104,7 +106,7 @@ const CreatePost = ({ lng, session, bookedTours, onSuccess, onPostCreated }: { l
                 tags,
                 tour_id: parseInt(values.tour_id[0])
             },
-            token: session.user.accessToken
+            token: session?.user?.accessToken as string | undefined
         });
     };
 
@@ -196,7 +198,7 @@ const CreatePost = ({ lng, session, bookedTours, onSuccess, onPostCreated }: { l
                                 name="tour_id"
                                 control={control}
                                 render={({ field }) => {
-                                    const selectedTour = tourList.items.find((item: any) => item.value === field.value[0]);
+                                    const selectedTour = (tourList.items as { label: string, value: string }[]).find((item) => item.value === field.value[0]);
                                     return (
                                         <Menu.Root
                                             onSelect={(details) => field.onChange([details.value])}
@@ -229,7 +231,7 @@ const CreatePost = ({ lng, session, bookedTours, onSuccess, onPostCreated }: { l
                                             <Portal>
                                                 <Menu.Positioner>
                                                     <Menu.Content bg="white" borderRadius="xl" shadow="2xl" borderColor="gray.100" minW="220px" zIndex="popover">
-                                                        {tourList.items.map((tour: any) => (
+                                                        {(tourList.items as { label: string, value: string }[]).map((tour) => (
                                                             <Menu.Item key={tour.value} value={tour.value} _hover={{ bg: "blue.50" }}>
                                                                 {tour.label}
                                                             </Menu.Item>
@@ -271,7 +273,7 @@ const CreatePost = ({ lng, session, bookedTours, onSuccess, onPostCreated }: { l
 };
 
 const ForYou = ({ lng, mode = 'foryou' }: { lng: string, mode?: 'foryou' | 'following' }) => {
-    const { t } = useTranslation(lng);
+    useTranslation(lng);
     const { data: session } = useSession();
     const [newPosts, setNewPosts] = useState<IArticlePopular[]>([]);
 
@@ -323,9 +325,7 @@ const ForYou = ({ lng, mode = 'foryou' }: { lng: string, mode?: 'foryou' | 'foll
         setNewPosts(prev => [post, ...prev]);
     };
 
-    const handleFollowChange = () => {
-        refetchFollowing();
-    };
+
 
     return (
         <VStack align="stretch" gap={3} >

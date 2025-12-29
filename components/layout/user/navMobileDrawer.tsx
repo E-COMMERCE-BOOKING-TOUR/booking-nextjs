@@ -7,7 +7,7 @@ import { ResumeBookingButton } from "./resumeBookingButton";
 
 interface MobileDrawerProps {
     activeBooking?: IBookingDetail | null;
-    navItems?: any[];
+    navItems?: { name: string, link: string }[];
 }
 
 export const MobileDrawer = ({ activeBooking, navItems }: MobileDrawerProps) => {

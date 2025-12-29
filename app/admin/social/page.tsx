@@ -16,6 +16,7 @@ import {
     MoreHorizontal
 } from "lucide-react";
 import { adminArticleApi } from "@/apis/admin/article";
+import type { IArticlePopular } from "@/types/response/article";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const StatCard = ({ title, value, icon, colorClass }: { title: string, value: number, icon: any, colorClass: string }) => (
+const StatCard = ({ title, value, icon, colorClass }: { title: string, value: number, icon: React.ReactNode, colorClass: string }) => (
     <Card className="border-white/5 bg-card/20 backdrop-blur-xl transition-all hover:bg-card/30">
         <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -188,7 +189,7 @@ const AdminSocialPage = () => {
                                         </td>
                                     </tr>
                                 ) : (
-                                    articles.map((article: any) => (
+                                    articles.map((article: IArticlePopular) => (
                                         <tr key={article._id} className="group hover:bg-white/[0.05] transition-all">
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex flex-col">
@@ -217,7 +218,7 @@ const AdminSocialPage = () => {
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <Switch
                                                     checked={article.is_visible}
-                                                    onCheckedChange={() => toggleVisibilityMutation.mutate(article._id)}
+                                                    onCheckedChange={() => article._id && toggleVisibilityMutation.mutate(article._id)}
                                                     className="data-[state=checked]:bg-primary"
                                                 />
                                             </td>
@@ -238,7 +239,7 @@ const AdminSocialPage = () => {
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem
-                                                            onClick={() => setDeleteId(article._id)}
+                                                            onClick={() => article._id && setDeleteId(article._id)}
                                                             className="text-rose-500 cursor-pointer"
                                                         >
                                                             <Trash2 className="mr-2 size-4" />

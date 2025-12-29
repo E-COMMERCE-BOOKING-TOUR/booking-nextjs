@@ -16,8 +16,8 @@ import { BookingSummaryCard } from "@/components/ui/user/BookingSummaryCard";
 import { useBookingExpiry } from "@/hooks/useBookingExpiry";
 import { BookingExpiryManager } from "@/components/ui/user/BookingExpiryManager";
 import { useTranslation } from "@/libs/i18n/client";
-import { cookieName, fallbackLng } from "@/libs/i18n/settings";
-import Cookies from "js-cookie";
+import { fallbackLng } from "@/libs/i18n/settings";
+
 import { useSearchParams } from "next/navigation";
 
 interface Props {

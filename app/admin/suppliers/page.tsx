@@ -89,7 +89,7 @@ export default function AdminSupplierPage() {
   const totalItems = supplierResponse?.total_items || 0;
 
   const createMutation = useMutation({
-    mutationFn: (data: ICreateSupplierPayload) => adminSupplierApi.create(data, token),
+    mutationFn: (data: ICreateSupplierPayload) => adminSupplierApi.create(data as unknown as Record<string, unknown>, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-suppliers'] });
       toast.success('Supplier added successfully');
@@ -342,7 +342,7 @@ export default function AdminSupplierPage() {
             <div className="space-y-2">
               <Label>Status</Label>
               <Select
-                onValueChange={(val) => setValue('status', val as any)}
+                onValueChange={(val) => setValue('status', val as ICreateSupplierPayload['status'])}
                 defaultValue={editingSupplier?.status || 'active'}
               >
                 <SelectTrigger>

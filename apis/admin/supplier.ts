@@ -12,12 +12,12 @@ export const adminSupplierApi = {
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.get(`/admin/supplier/getById/${id}`, { headers: authHeaders.headers });
     },
-    create: async (data: Record<string, any>, token?: string) => {
+    create: async (data: Record<string, unknown>, token?: string) => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.post("/admin/supplier/create", data, { headers: authHeaders.headers });
     },
-    update: async (id: number | string, data: Record<string, any>, token?: string) => {
+    update: async (id: number | string, data: Record<string, unknown>, token?: string) => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.put(`/admin/supplier/update/${id}`, data, { headers: authHeaders.headers });

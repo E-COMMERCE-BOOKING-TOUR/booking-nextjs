@@ -17,12 +17,11 @@ import {
     Span,
 } from "@chakra-ui/react";
 import { useState, useCallback, memo } from "react";
-import { FaSearch, FaFilter, FaChevronDown, FaChevronUp, FaStar, FaCheck, FaSlidersH } from "react-icons/fa";
+import { FaSearch, FaFilter, FaStar, FaCheck, FaSlidersH } from "react-icons/fa";
 import { ITourSearchParams } from "@/apis/tour";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "@/libs/i18n/client";
-import { cookieName, fallbackLng } from "@/libs/i18n/settings";
-import Cookies from "js-cookie";
+import { fallbackLng } from "@/libs/i18n/settings";
 import { useSearchParams } from "next/navigation";
 
 interface FilterSidebarProps {
@@ -42,7 +41,7 @@ const RatingItem = memo(({
     isSelected: boolean;
     isOther: boolean;
     onClick: () => void;
-    t: any;
+    t: (key: string) => string;
 }) => (
     <HStack
         cursor="pointer"

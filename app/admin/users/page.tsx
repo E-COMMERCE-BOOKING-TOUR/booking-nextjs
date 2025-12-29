@@ -40,7 +40,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from 'sonner';
@@ -79,7 +78,7 @@ export default function AdminUserListPage() {
   const [page, setPage] = useState(1);
   const limit = 10;
 
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<ICreateUserPayload>({
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<ICreateUserPayload>({
     defaultValues: {
       status: 1,
       login_type: 0 // account
@@ -120,7 +119,7 @@ export default function AdminUserListPage() {
 
   // Mutations
   const createMutation = useMutation({
-    mutationFn: (data: ICreateUserPayload) => adminUserApi.create(data, token),
+    mutationFn: (data: ICreateUserPayload) => adminUserApi.create(data as unknown as Record<string, unknown>, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       toast.success('User created successfully');

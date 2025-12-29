@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import adminNotificationApi from '@/apis/adminNotification';
 import { useSession } from 'next-auth/react';
@@ -14,7 +14,6 @@ import {
     Eye,
     Trash2,
     Plus,
-    Bell,
     Users,
     ShieldCheck,
     User,
@@ -158,8 +157,8 @@ export default function AdminNotificationListPage() {
             toast.success('Notification deleted successfully');
             setDeleteId(null);
         },
-        onError: (error: any) => {
-            toast.error(error.message || 'Failed to delete notification');
+        onError: (error: unknown) => {
+            toast.error(error instanceof Error ? error.message : 'Failed to delete notification');
         }
     });
 

@@ -4,8 +4,7 @@ import { Box, Button, Icon, Image } from "@chakra-ui/react";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import { useState } from "react";
 import { useTranslation } from "@/libs/i18n/client";
-import { cookieName, fallbackLng } from "@/libs/i18n/settings";
-import Cookies from "js-cookie";
+import { fallbackLng } from "@/libs/i18n/settings";
 import { useSearchParams } from "next/navigation";
 
 interface TourMapSectionProps {

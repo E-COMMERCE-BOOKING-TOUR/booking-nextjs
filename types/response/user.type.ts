@@ -71,10 +71,10 @@ export interface IPaymentInformation {
   id: number;
   is_default: boolean;
   expiry_date: string;
-  account_number: string;      
-  account_number_hint: string; 
+  account_number: string;
+  account_number_hint: string;
   account_holder: string;
-  ccv: string;                
+  ccv: string;
   user: IUser;
   bookings: IBooking[];
   created_at?: Date;
@@ -100,6 +100,7 @@ export interface IUser {
   uuid: string;
   username: string;
   full_name: string;
+  avatar?: string | null;
   email?: string | null;
   phone?: string | null;
   status: UserStatus;

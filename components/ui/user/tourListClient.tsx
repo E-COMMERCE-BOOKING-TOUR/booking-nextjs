@@ -3,10 +3,9 @@
 import { useEffect, Fragment, useState, useMemo, useCallback, memo } from "react";
 import { Box, Container, Grid, SimpleGrid, Spinner, Text, VStack, Button, HStack, NativeSelect } from "@chakra-ui/react";
 import { useSearchParams } from "next/navigation";
-import { ITourPopular, ITourSearchParams } from "@/apis/tour";
+import { ITourSearchParams } from "@/apis/tour";
 import { useTranslation } from "@/libs/i18n/client";
-import { cookieName, fallbackLng } from "@/libs/i18n/settings";
-import Cookies from "js-cookie";
+import { fallbackLng } from "@/libs/i18n/settings";
 import tourApi from "@/apis/tour";
 import TourItem from "@/components/ui/user/tourItem";
 import { FilterSidebar, MobileFilterDrawer } from "./filterSidebar";
@@ -38,7 +37,7 @@ export const TourListClient = ({ lng: propLng }: { lng?: string }) => {
         rooms: searchParams.get("rooms") ? Number(searchParams.get("rooms")) : undefined,
         country_ids: searchParams.get("country_ids") ? searchParams.get("country_ids")?.split(",").map(Number) : [],
         division_ids: searchParams.get("division_ids") ? searchParams.get("division_ids")?.split(",").map(Number) : [],
-        sort: (searchParams.get("sort") as any) || "popular",
+        sort: (searchParams.get("sort") as ITourSearchParams['sort']) || "popular",
         limit: 12,
         offset: 0,
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -125,7 +124,7 @@ export const TourListClient = ({ lng: propLng }: { lng?: string }) => {
         const rooms = searchParams.get("rooms") ? Number(searchParams.get("rooms")) : undefined;
         const countryIds = searchParams.get("country_ids") ? searchParams.get("country_ids")?.split(",").map(Number) : [];
         const divisionIds = searchParams.get("division_ids") ? searchParams.get("division_ids")?.split(",").map(Number) : [];
-        const sort = (searchParams.get("sort") as any) || "popular";
+        const sort = (searchParams.get("sort") as ITourSearchParams['sort']) || "popular";
 
         setAppliedFilters({
             keyword,
@@ -249,7 +248,7 @@ export const TourListClient = ({ lng: propLng }: { lng?: string }) => {
                                 <Text color="gray.500" mt={4}>{t('finding_adventures', { defaultValue: 'Finding the best adventures for you...' })}</Text>
                             </VStack>
                         ) : status === 'error' ? (
-                            <Text color="red.500">Error loading tours: {(error as any).message}</Text>
+                            <Text color="red.500">Error loading tours: {error instanceof Error ? error.message : String(error)}</Text>
                         ) : (
                             <>
                                 {total > 0 ? (

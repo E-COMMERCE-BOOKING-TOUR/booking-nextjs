@@ -51,9 +51,10 @@ export default function LoginPage() {
           router.push("/");
           router.refresh();
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "An error occurred during login";
         toaster.create({
-          description: error.message || "An error occurred during login",
+          description: message,
           type: "error",
         });
       }
@@ -167,7 +168,7 @@ export default function LoginPage() {
 
         <Center mt={4}>
           <Stack direction="row" gap={1} fontSize="sm" color="gray.600">
-            <Box>Don't have an account?</Box>
+            <Box>Don&apos;t have an account?</Box>
             <Link href="/user-register">
               <Box as="span" color="blue.600" fontWeight="bold" _hover={{ textDecoration: "underline" }}>
                 Sign up now

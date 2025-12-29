@@ -24,6 +24,8 @@ export interface IReview {
   user: IUser;
   images: IReviewImage[];
   tour: ITour;
+  is_reported?: boolean;
+  helpful_count?: number;
   created_at?: Date;
   updated_at?: Date;
   deleted_at?: Date;

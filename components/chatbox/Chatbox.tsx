@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { MessageCircle, X, Compass, Send, Loader2 } from 'lucide-react';
+import { X, Compass, Send, Loader2 } from 'lucide-react';
 import {
     Box,
     Button,
@@ -11,14 +11,12 @@ import {
     Text,
     HStack,
     Flex,
-    Spinner,
-    Icon,
     Circle
 } from '@chakra-ui/react';
 import chatboxApi, { IMessage, IStartChatResponse } from '@/apis/chatbox';
 import { useTranslation } from '@/libs/i18n/client';
 import { useSession } from 'next-auth/react';
-import { cn } from '@/libs/utils';
+
 
 export default function Chatbox({ lng, isOpen, onClose }: { lng: string; isOpen: boolean; onClose: () => void }) {
     const { t } = useTranslation(lng);
@@ -33,13 +31,17 @@ export default function Chatbox({ lng, isOpen, onClose }: { lng: string; isOpen:
     const [conversationId, setConversationId] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    const scrollToBottom = () => {
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    };
+
     useEffect(() => {
-        if (status === 'authenticated' && token && isOpen) {
-            setIsConnecting(true);
+        if (status === 'authenticated' && token && isOpen && !socket) {
+            Promise.resolve().then(() => setIsConnecting(true));
             let s: Socket | null = null;
 
             chatboxApi.startChatAdmin(token)
-                .then((data: any) => {
+                .then((data: unknown) => {
                     const convoData = data as IStartChatResponse;
                     setConversationId(convoData._id);
                     const socketUrl = process.env.NEXT_PUBLIC_CHATBOX_WS_URL;
@@ -55,11 +57,11 @@ export default function Chatbox({ lng, isOpen, onClose }: { lng: string; isOpen:
                         setIsConnecting(false);
                     });
 
-                    s.on('authenticated', (data: any) => {
+                    s.on('authenticated', (data: { user?: { full_name: string } }) => {
                         console.log('Authenticated as:', data.user?.full_name);
                     });
 
-                    s.on('error', (err: any) => {
+                    s.on('error', (err: unknown) => {
                         console.error('Socket error:', err);
                         setIsConnecting(false);
                         setIsConnected(false);
@@ -77,12 +79,12 @@ export default function Chatbox({ lng, isOpen, onClose }: { lng: string; isOpen:
                     setSocket(s);
 
                     chatboxApi.getMessages(convoData._id, token)
-                        .then((msgs: any) => {
+                        .then((msgs: unknown) => {
                             setMessages(msgs as IMessage[]);
                             scrollToBottom();
                         });
                 })
-                .catch((err: any) => {
+                .catch((err: unknown) => {
                     console.error('Failed to start chat', err);
                     setIsConnecting(false);
                 });
@@ -93,15 +95,14 @@ export default function Chatbox({ lng, isOpen, onClose }: { lng: string; isOpen:
                 }
             };
         } else if (!isOpen && socket) {
+            Promise.resolve().then(() => {
+                setSocket(null);
+                setIsConnected(false);
+            });
             socket.disconnect();
-            setSocket(null);
-            setIsConnected(false);
         }
-    }, [status, token, isOpen]);
+    }, [status, token, isOpen, socket]);
 
-    const scrollToBottom = () => {
-        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-    };
 
     const handleSend = () => {
         if (!input.trim() || !socket || !conversationId || !isConnected) return;

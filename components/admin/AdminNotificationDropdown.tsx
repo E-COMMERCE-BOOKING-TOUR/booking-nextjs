@@ -1,11 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Bell, Check, CheckCircle2, Info, AlertCircle } from "lucide-react";
+import { Bell, CheckCircle2, Info, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { formatDistanceToNow } from "date-fns";
-import { vi, enUS } from "date-fns/locale";
+import { enUS } from "date-fns/locale";
 import notificationApi from "@/apis/notification";
 import { INotification } from "@/types/notification";
 import { Button } from "@/components/ui/button";
@@ -14,15 +14,11 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/libs/utils";
 import Link from "next/link";
-import Cookies from "js-cookie";
-import { cookieName } from "@/libs/i18n/settings";
 
 export function AdminNotificationDropdown() {
     const { data: session } = useSession();
@@ -30,10 +26,9 @@ export function AdminNotificationDropdown() {
     const [readIds, setReadIds] = React.useState<number[]>([]);
     const [isOpen, setIsOpen] = React.useState(false);
 
-    // Get current language for date formatting
-    const lng = Cookies.get(cookieName) || 'vi';
 
-    const { data: response, isLoading, refetch } = useQuery({
+
+    const { data: response, isLoading } = useQuery({
         queryKey: ["notifications", token, "admin-dropdown"],
         queryFn: async () => {
             if (!token) return { data: [], total: 0 };

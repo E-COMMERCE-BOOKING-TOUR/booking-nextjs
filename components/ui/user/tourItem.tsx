@@ -5,8 +5,7 @@ import Link from "next/link";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import { formatPriceValue } from '@/utils/currency';
 import { useTranslation } from "@/libs/i18n/client";
-import { cookieName, fallbackLng } from "@/libs/i18n/settings";
-import Cookies from "js-cookie";
+import { fallbackLng } from "@/libs/i18n/settings";
 import { useSearchParams } from "next/navigation";
 
 interface TourItemProps {
@@ -26,7 +25,7 @@ interface TourItemProps {
   lng?: string;
 }
 
-const TourRating = ({ rating, ratingText, reviews, t }: { rating: number; ratingText: string; reviews: number; t: any }) => (
+const TourRating = ({ rating, ratingText, reviews, t }: { rating: number; ratingText: string; reviews: number; t: (key: string, options?: Record<string, unknown>) => string }) => (
   <HStack gap={2}>
     <Box bg="main" color="white" px={2} py={1} borderRadius="10px 10px 10px 0" fontWeight="bold" fontSize="lg">
       {parseFloat(rating.toString()).toFixed(1)}

@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { Box, Button, Grid, GridItem, HStack, Icon, Image, Input, Text, VStack, Dialog, CloseButton, Portal, Flex, Avatar } from "@chakra-ui/react";
-import { FiMessageCircle, FiSend, FiChevronLeft, FiChevronRight, FiHeart, FiShare2, FiBookmark } from "react-icons/fi";
+import { FiMessageCircle, FiChevronLeft, FiChevronRight, FiHeart, FiShare2, FiBookmark } from "react-icons/fi";
 import { HiDotsHorizontal } from "react-icons/hi";
 import { useSession } from "next-auth/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -26,7 +26,7 @@ export interface CommentParams {
 // Extended for tree structure
 type CommentNode = CommentParams & { children: CommentNode[] };
 
-function buildTree(data: any[]) {
+function buildTree(data: CommentParams[]) {
     if (!data) return [];
 
     // Create a map for quick lookup
@@ -35,9 +35,9 @@ function buildTree(data: any[]) {
     // Normalize data and initialize map
     const normalizedData = data.map(c => ({
         ...c,
-        id: c.id ?? c._id, // Handle both id and _id
+        id: c.id ?? (c as unknown as Record<string, unknown>)._id, // Handle both id and _id
         children: []
-    })).filter(c => c.id != null);
+    })).filter(c => c.id != null) as CommentNode[];
 
     normalizedData.forEach(c => map.set(c.id, c));
 
@@ -93,7 +93,7 @@ export function PopUpComment({
     const [expanded, setExpanded] = useState<Record<string | number, boolean>>({});
     const [text, setText] = useState("");
     const [replyingTo, setReplyingTo] = useState<CommentParams | null>(null);
-    const [users, setUsers] = useState<Record<number, any>>({});
+    const [users, setUsers] = useState<Record<number, { name: string; avatar?: string }>>({});
 
     const nodes = useMemo(() => buildTree(comments), [comments]);
 
@@ -104,18 +104,18 @@ export function PopUpComment({
     useEffect(() => {
         const fetchUsers = async () => {
             const userIds = Array.from(new Set(comments.map(c => c.user_id)));
-            const newUsers: Record<number, any> = { ...users };
+            const newUsers: Record<number, { name: string; avatar?: string }> = { ...users };
             let hasNew = false;
 
             for (const id of userIds) {
                 if (!newUsers[id]) {
                     try {
-                        const res = await userApi.getById(id);
+                        const res = await userApi.getById(id) as { name: string; avatar?: string };
                         if (res) {
                             newUsers[id] = res;
                             hasNew = true;
                         }
-                    } catch (error) {
+                    } catch (error: unknown) {
                         console.error(`Failed to fetch user ${id}`, error);
                     }
                 }
@@ -129,7 +129,7 @@ export function PopUpComment({
         if (comments.length > 0) {
             fetchUsers();
         }
-    }, [comments]);
+    }, [comments, users]);
 
 
     const postCommentMutation = useMutation({

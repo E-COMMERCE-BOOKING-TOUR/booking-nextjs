@@ -9,13 +9,11 @@ import {
   VStack,
   Heading,
   Icon,
-  IconButton,
 } from "@chakra-ui/react";
 import { FaFacebookF, FaTwitter, FaInstagram, FaYoutube, FaCcVisa, FaCcMastercard, FaCcPaypal, FaGooglePay, FaApplePay } from "react-icons/fa";
 import { SiteSettings } from "@/apis/admin/settings";
 import { useTranslation } from "@/libs/i18n/client";
-import { cookieName, fallbackLng } from "@/libs/i18n/settings";
-import Cookies from "js-cookie";
+import { fallbackLng } from "@/libs/i18n/settings";
 import { useSearchParams } from "next/navigation";
 
 const FooterLink = ({ children, href = "#" }: { children: React.ReactNode; href?: string }) => (

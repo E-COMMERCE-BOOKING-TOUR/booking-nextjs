@@ -10,8 +10,8 @@ import bookingApi from "@/apis/booking";
 import { toaster } from "@/components/chakra/toaster";
 import { useSession } from "next-auth/react";
 import { useTranslation } from "@/libs/i18n/client";
-import { cookieName, fallbackLng } from "@/libs/i18n/settings";
-import Cookies from "js-cookie";
+import { fallbackLng } from "@/libs/i18n/settings";
+
 import { useSearchParams } from "next/navigation";
 
 interface Props {

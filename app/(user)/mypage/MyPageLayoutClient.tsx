@@ -33,7 +33,7 @@ export default function MyPageLayoutClient({ children, lng }: { children: React.
     const pathname = usePathname();
     const { t } = useTranslation(lng);
 
-    const user = session?.user as any;
+    const user = session?.user as { accessToken?: string; name?: string; username?: string; email?: string } | undefined;
     const token = user?.accessToken;
 
     const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
@@ -189,7 +189,15 @@ export default function MyPageLayoutClient({ children, lng }: { children: React.
     );
 }
 
-function SidebarItem({ icon, label, isActive, onClick, color }: any) {
+interface SidebarItemProps {
+    icon: React.ComponentType;
+    label: string;
+    isActive?: boolean;
+    onClick?: () => void;
+    color?: string;
+}
+
+function SidebarItem({ icon, label, isActive, onClick, color }: SidebarItemProps) {
     return (
         <HStack
             p={4}

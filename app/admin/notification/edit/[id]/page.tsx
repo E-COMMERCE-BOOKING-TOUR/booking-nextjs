@@ -51,7 +51,7 @@ export default function AdminNotificationEditPage() {
         enabled: !!token && !!id,
     });
 
-    const { register, handleSubmit, control, setValue, reset, formState: { errors } } = useForm<NotificationFormValues>({
+    const { register, handleSubmit, control, reset, formState: { errors } } = useForm<NotificationFormValues>({
         defaultValues: {
             title: '',
             description: '',
@@ -89,8 +89,8 @@ export default function AdminNotificationEditPage() {
                 toast.error(res.error || 'Error updating notification');
             }
         },
-        onError: (error: any) => {
-            toast.error(error.message || 'System error');
+        onError: (error: unknown) => {
+            toast.error((error as Error)?.message || 'System error');
         }
     });
 

@@ -14,7 +14,6 @@ import {
   Package,
   CheckCircle2,
   XCircle,
-  Clock,
   User,
   Mail,
   Phone,
@@ -137,7 +136,6 @@ export default function AdminBookingDetailPage() {
     );
   }
 
-  /* const b = booking as any; */
   const b = booking!;
 
   return (

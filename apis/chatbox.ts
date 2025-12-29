@@ -25,7 +25,7 @@ export interface IMessage {
     senderName?: string;
     content: string;
     createdAt: string;
-    items?: any;
+    items?: unknown;
 }
 
 export interface IConversationListResponse {

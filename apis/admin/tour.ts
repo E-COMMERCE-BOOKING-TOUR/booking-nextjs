@@ -1,6 +1,6 @@
 import fetchC from "@/libs/fetchC";
 import { getAuthHeaders } from "@/libs/auth/authHeaders";
-import { CreateTourDTO, AdminTourSearchParams, IAdminTour, ICountry, IDivision, ICurrency, IAdminTourDetail, ITourPolicy } from "@/types/admin/tour.dto";
+import { CreateTourDTO, AdminTourSearchParams, IAdminTour, ICountry, IDivision, ICurrency, IAdminTourDetail, ITourPolicy, IVisibilityReport } from "@/types/admin/tour.dto";
 
 export const adminTourApi = {
     // Metadata
@@ -59,7 +59,7 @@ export const adminTourApi = {
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.delete(`/admin/tour/remove/${id}`, { headers: authHeaders.headers });
     },
-    getVisibilityReport: async (id: number | string, token?: string) => {
+    getVisibilityReport: async (id: number | string, token?: string): Promise<IVisibilityReport> => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.get(`/admin/tour/visibility-check/${id}`, { headers: authHeaders.headers });

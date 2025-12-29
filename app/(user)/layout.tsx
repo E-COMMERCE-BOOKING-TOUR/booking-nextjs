@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
         icon: settings.favicon_url || '/favicon.ico',
       },
     };
-  } catch (error) {
+  } catch {
     return {
       title: 'TripConnect',
       description: 'TripConnect',

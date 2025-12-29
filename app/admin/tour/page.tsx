@@ -35,6 +35,7 @@ import {
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { cn } from '@/libs/utils';
+import Image from 'next/image';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,9 +65,14 @@ export default function AdminTourListPage() {
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [checkingVisibilityId, setCheckingVisibilityId] = useState<number | null>(null);
-  const [report, setReport] = useState<any>(null);
-  const [isChecking, setIsChecking] = useState(false);
+
+  const [report, setReport] = useState<{
+    isVisiblePublic: boolean;
+    title: string;
+    checks: Record<string, boolean>;
+    issues: string[];
+  } | null>(null);
+
 
   const { data: tourResponse, isLoading } = useQuery({
     queryKey: ['admin-tours', keyword, statusFilter, currentPage, sortBy, sortOrder],
@@ -123,15 +129,11 @@ export default function AdminTourListPage() {
   });
 
   const checkVisibility = async (id: number) => {
-    setCheckingVisibilityId(id);
-    setIsChecking(true);
     try {
       const data = await adminTourApi.getVisibilityReport(id, token);
       setReport(data);
-    } catch (err: any) {
-      toast.error('Error checking visibility: ' + err.message);
-    } finally {
-      setIsChecking(false);
+    } catch (err: unknown) {
+      toast.error('Error checking visibility: ' + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -243,7 +245,7 @@ export default function AdminTourListPage() {
                       <div className="flex items-center gap-3">
                         <div className="size-10 rounded-md bg-muted overflow-hidden flex-shrink-0 border">
                           {tour.images?.[0] ? (
-                            <img src={tour.images[0].image_url} alt="" className="w-full h-full object-cover" />
+                            <Image src={tour.images[0].image_url} alt="" width={40} height={40} className="w-full h-full object-cover" />
                           ) : (
                             <Tag className="size-5 m-2.5 text-muted-foreground" />
                           )}
@@ -289,9 +291,9 @@ export default function AdminTourListPage() {
                             <Edit className="size-4" />
                           </Button>
                         </Link>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           className={cn(
                             "size-8",
                             tour.is_visible ? "text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50" : "text-amber-500 hover:text-amber-600 hover:bg-amber-50"
@@ -467,13 +469,13 @@ export default function AdminTourListPage() {
               </ul>
             </div>
 
-            {report?.issues?.length > 0 && (
+            {report?.issues && report.issues.length > 0 && (
               <div className="pt-4 border-t border-white/5">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-red-400 mb-2 flex items-center gap-1">
                   <AlertCircle className="size-3" /> Issues to fix:
                 </h4>
                 <ul className="space-y-1">
-                  {report.issues.map((issue: string, i: number) => (
+                  {report?.issues?.map((issue: string, i: number) => (
                     <li key={i} className="text-xs text-slate-300 flex items-start gap-2">
                       <span className="mt-1 size-1 rounded-full bg-red-400 flex-shrink-0" />
                       {issue}
@@ -483,7 +485,7 @@ export default function AdminTourListPage() {
               </div>
             )}
           </div>
-          
+
           <div className="flex justify-end pt-4">
             <Button onClick={() => setReport(null)} className="w-full sm:w-auto">
               Close Diagnostic

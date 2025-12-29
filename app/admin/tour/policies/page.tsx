@@ -7,7 +7,6 @@ import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, ShieldCheck, Clock, Percent, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { ITourPolicy, ITourPolicyRule } from '@/types/admin/tour.dto';
@@ -51,7 +50,7 @@ export default function AdminTourPoliciesPage() {
             toast.success('Policy created successfully');
             setIsDialogOpen(false);
         },
-        onError: (err: any) => toast.error(err.message || 'Error creating policy')
+        onError: (err: unknown) => toast.error(err instanceof Error ? err.message : 'Error creating policy')
     });
 
     const updateMutation = useMutation({
@@ -62,7 +61,7 @@ export default function AdminTourPoliciesPage() {
             toast.success('Policy updated successfully');
             setIsDialogOpen(false);
         },
-        onError: (err: any) => toast.error(err.message || 'Error updating policy')
+        onError: (err: unknown) => toast.error(err instanceof Error ? err.message : 'Error updating policy')
     });
 
     const deleteMutation = useMutation({
@@ -71,7 +70,7 @@ export default function AdminTourPoliciesPage() {
             queryClient.invalidateQueries({ queryKey: ['admin-policies'] });
             toast.success('Policy deleted successfully');
         },
-        onError: (err: any) => toast.error(err.message || 'Error deleting policy')
+        onError: (err: unknown) => toast.error(err instanceof Error ? err.message : 'Error deleting policy')
     });
 
     const handleOpenDialog = (policy?: ITourPolicy) => {

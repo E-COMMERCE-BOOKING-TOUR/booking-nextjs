@@ -1,6 +1,5 @@
 import { Container, Grid, GridItem, VStack, Heading, Box } from "@chakra-ui/react";
 import { SearchInput, TourReviews } from "@/components/ui/user";
-import Breadcrumb from "@/components/ui/user/breadcrumb";
 import TourHeader from "@/components/ui/user/tourHeader";
 import TourGalleryWithThumbnails from "@/components/ui/user/tourGalleryWithThumbnails";
 import TourSidebar from "@/components/ui/user/tourSidebar";
@@ -11,8 +10,11 @@ import tourApi, { ITourSession } from "@/apis/tour";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { cookieName, fallbackLng } from "@/libs/i18n/settings";
-import { useTranslation } from "@/libs/i18n";
+import { createTranslation } from "@/libs/i18n";
 import { auth } from "@/libs/auth/auth";
+import { ITour, ITourVariant, ITourCategory, TourVariantStatus } from "@/types/response/tour.type";
+
+import { ITourPopular } from "@/types/response/tour";
 
 type TourData = {
     id: number;
@@ -52,7 +54,7 @@ type TourData = {
     variants: {
         id: number;
         name: string;
-        status: string;
+        status: TourVariantStatus;
         tour_variant_pax_type_prices: {
             id: number;
             pax_type_id: number;
@@ -66,18 +68,15 @@ type TourData = {
     }[];
 };
 
-const normalizeDetail = (response: unknown): any | null => {
-    if (!response || typeof response !== "object" || Array.isArray(response)) return null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const payload = "data" in response ? (response as any).data : response;
+const normalizeDetail = (response: ITour): ITour | null => {
+    if (!response || typeof response !== "object") return null;
+    const payload = "data" in response ? (response as { data: ITour }).data : (response as ITour);
     if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return typeof (payload as any).title === "string" ? payload : null;
+    return typeof (payload as ITour).title === "string" ? (payload as ITour) : null;
 };
 
-type RelatedTour = any;
-type Review = any;
-type ReviewCategory = any;
+type RelatedTour = ITourPopular;
+type ReviewCategory = ITourCategory & { score?: number; count?: number; average_rating?: number };
 
 const statusCodeOf = (error: unknown): number | undefined => {
     if (typeof error === "object" && error !== null) {
@@ -104,50 +103,58 @@ const getTourData = async (slug: string, guestId?: string, token?: string): Prom
         return {
             id: tourDetail.id,
             title: tourDetail.title,
-            location: tourDetail.location,
-            price: tourDetail.price ?? 0,
-            oldPrice: tourDetail.oldPrice,
+            location: tourDetail.address || tourDetail.division?.name || "",
+            price: tourDetail.price,
+            oldPrice: tourDetail.old_price ?? undefined,
             currencySymbol: tourDetail.currencySymbol,
-            rating: tourDetail.rating ?? 0,
-            reviewCount: tourDetail.reviewCount ?? 0,
-            score: tourDetail.score ?? 0,
-            scoreLabel: tourDetail.scoreLabel ?? "",
-            staffScore: tourDetail.staffScore ?? 0,
+            rating: tourDetail.score_rating ?? 0,
+            reviewCount: tourDetail.reviews?.length ?? 0,
+            score: tourDetail.score_rating ?? 0,
+            scoreLabel: tourDetail.score_rating && tourDetail.score_rating >= 4 ? "Excellent" : "Good",
+            staffScore: tourDetail.staff_score ?? 0,
             images: tourDetail.images ?? [],
-            durationDays: tourDetail.durationDays ?? 1,
+            durationDays: tourDetail.duration_days ?? 1,
             slug: tourDetail.slug || slug,
             testimonial: tourDetail.testimonial ?? {
                 name: "",
                 country: "",
                 text: "",
             },
-            mapUrl: tourDetail.mapUrl ?? "",
-            mapPreview: tourDetail.mapPreview,
+            mapUrl: tourDetail.map_url ?? "",
+            mapPreview: tourDetail.map_preview,
             description: tourDetail.description ?? "",
-            activity: tourDetail.activity ?? { title: "", items: [] },
+            activity: tourDetail.highlights ?? { title: "", items: [] },
             included: tourDetail.included ?? [],
-            notIncluded: tourDetail.notIncluded ?? [],
-            details: tourDetail.details ?? {
-                language: [],
-                duration: "",
-                capacity: "",
+            notIncluded: tourDetail.not_included ?? [],
+            details: {
+                language: tourDetail.languages ?? [],
+                duration: tourDetail.duration_days ? `${tourDetail.duration_days} days` : "",
+                capacity: tourDetail.max_pax ? tourDetail.max_pax.toString() : "",
             },
-            meetingPoint: tourDetail.meetingPoint ?? "",
+            meetingPoint: tourDetail.meeting_point ?? "",
             variants:
-                tourDetail.variants?.map((v: { id: number; name: string; status: string; tour_variant_pax_type_prices?: any[]; prices?: any[]; tour_sessions?: any[] }) => ({
+                tourDetail.variants?.map((v: ITourVariant) => ({
                     id: v.id,
                     name: v.name,
                     status: v.status,
-                    tour_variant_pax_type_prices: (v.tour_variant_pax_type_prices || v.prices || []).map((p: { id: number; pax_type_id: number; price: number; pax_type_name?: string; pax_type?: { id: number; name: string } }) => ({
+                    tour_variant_pax_type_prices: v.prices.map((p) => ({
                         id: p.id,
                         pax_type_id: p.pax_type_id,
                         price: p.price,
                         pax_type: {
                             id: p.pax_type_id,
-                            name: p.pax_type_name || p.pax_type?.name || '',
+                            name: p.pax_type_name,
                         },
                     })),
-                    tour_sessions: v.tour_sessions || [],
+                    tour_sessions: (v.tour_sessions || []).map(s => ({
+                        id: s.id,
+                        date: s.session_date.toString(),
+                        start_time: s.start_time?.toString(),
+                        end_time: s.end_time?.toString(),
+                        status: s.status as 'open' | 'full' | 'closed',
+                        capacity_available: s.capacity || 0,
+                        price: 0, // price not directly on session in ITour
+                    })),
                 })) || [],
         };
     } catch (error) {
@@ -165,7 +172,7 @@ export default async function TourDetailPage({ params }: { params: Promise<{ slu
     const guestId = undefined; // Cookies for guestId not yet implemented for server-side
 
     const lng = cookieStore.get(cookieName)?.value || fallbackLng;
-    const { t } = await useTranslation(lng);
+    const { t } = await createTranslation(lng);
 
     const [tour, relatedTours, reviewCategories] = await Promise.all([
         getTourData(slug, guestId, token),
@@ -176,7 +183,7 @@ export default async function TourDetailPage({ params }: { params: Promise<{ slu
     if (!tour) {
         notFound();
     }
-
+    console.log(tour.price, tour)
     return (
         <>
             <VStack borderBottomRadius="calc(100vw / 16)" backgroundColor="white" paddingBottom="calc(100vw / 24)" position="relative" zIndex={2}>
@@ -249,7 +256,7 @@ export default async function TourDetailPage({ params }: { params: Promise<{ slu
                         <Heading as="h2" size="2xl" fontWeight="black" mb={8} letterSpacing="tight">
                             {t("related_tours")}
                         </Heading>
-                        <RelatedToursSwiper tours={relatedTours} lng={lng} />
+                        <RelatedToursSwiper tours={relatedTours.map(t => ({ ...t, id: t.id.toString() }))} lng={lng} />
                     </Box>
 
                     <Box id="reviews" pt={10} borderTop="1px solid" borderColor="gray.100">
@@ -257,7 +264,10 @@ export default async function TourDetailPage({ params }: { params: Promise<{ slu
                             tourId={tour.id}
                             averageRating={tour.rating}
                             totalReviews={tour.reviewCount}
-                            categories={reviewCategories}
+                            categories={reviewCategories.map((c: ReviewCategory) => ({
+                                name: c.name,
+                                score: c.average_rating || 0
+                            }))}
                             lng={lng}
                         />
                     </Box>

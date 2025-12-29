@@ -21,8 +21,8 @@ import getStripe from "@/libs/stripe";
 import { StripeCardForm } from "@/components/ui/user/StripeCardForm";
 import { useState } from "react";
 import { useTranslation } from "@/libs/i18n/client";
-import { cookieName, fallbackLng } from "@/libs/i18n/settings";
-import Cookies from "js-cookie";
+import { fallbackLng } from "@/libs/i18n/settings";
+
 import { useSearchParams } from "next/navigation";
 
 const stripePromise = getStripe();

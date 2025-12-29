@@ -22,12 +22,12 @@ export const adminUserApi = {
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.get(`/admin/user/getById/${id}`, { headers: authHeaders.headers });
     },
-    create: async (data: Record<string, any>, token?: string) => {
+    create: async (data: Record<string, unknown>, token?: string) => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.post("/admin/user/create", data, { headers: authHeaders.headers });
     },
-    update: async (id: number | string, data: Record<string, any>, token?: string) => {
+    update: async (id: number | string, data: Record<string, unknown>, token?: string) => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.put(`/admin/user/update/${id}`, data, { headers: authHeaders.headers });

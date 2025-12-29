@@ -10,12 +10,12 @@ import { settingsApi } from '@/apis/settings';
 
 import { cookies } from 'next/headers';
 import { cookieName, fallbackLng } from '@/libs/i18n/settings';
-import { useTranslation } from '@/libs/i18n';
+import { createTranslation } from '@/libs/i18n';
 
 export default async function TopPage() {
   const cookieStore = await cookies();
   const lng = cookieStore.get(cookieName)?.value || fallbackLng;
-  const { t } = await useTranslation(lng);
+  const { t } = await createTranslation(lng);
 
   const [popularTours, trendingDestinations, settings] = await Promise.all([
     tour.popular(8),

@@ -12,8 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import Breadcrumb from "./breadcrumb";
 import { formatPriceValue } from '@/utils/currency';
 import { useTranslation } from "@/libs/i18n/client";
-import { cookieName, fallbackLng } from "@/libs/i18n/settings";
-import Cookies from "js-cookie";
+import { fallbackLng } from "@/libs/i18n/settings";
 
 interface TourVariant {
     id: number;
@@ -128,8 +127,8 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
 
     const availableSessions = useMemo(() => {
         if (!startDate || !selectedVariantId || !sessions) return [];
-        return sessions.filter((s: ITourSession) => {
-            return s.status === 'open' && s.capacity_available > 0;
+        return (sessions as ITourSession[]).filter((s: ITourSession) => {
+            return s.status === 'open' && (s.capacity_available || 0) > 0;
         }).sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
     }, [startDate, selectedVariantId, sessions]);
 

@@ -4,7 +4,6 @@ import {
     VStack,
     Heading,
     Button,
-    Stack,
     Box,
     Grid,
     Spinner,
@@ -30,10 +29,8 @@ interface ProfileFormData {
 }
 
 import { useTranslation } from "@/libs/i18n/client";
-import { useSearchParams } from "next/navigation";
 
 export default function SettingsPageClient({ lng }: { lng: string }) { // Changed component name
-    const searchParams = useSearchParams();
     const { t } = useTranslation(lng);
     const { data: session, update: updateSession } = useSession();
     const queryClient = useQueryClient();

@@ -6,8 +6,7 @@ import NextLink from 'next/link';
 import { IBookingDetail } from '@/types/booking';
 import { useEffect, useState } from 'react';
 import { useTranslation } from "@/libs/i18n/client";
-import { cookieName, fallbackLng } from "@/libs/i18n/settings";
-import Cookies from "js-cookie";
+import { fallbackLng } from "@/libs/i18n/settings";
 import { useSearchParams } from "next/navigation";
 
 export const ResumeBookingButton = ({ booking, lng: propLng, ...props }: { booking: IBookingDetail | null, lng?: string } & ButtonProps) => {
@@ -55,7 +54,7 @@ export const ResumeBookingButton = ({ booking, lng: propLng, ...props }: { booki
         updateTimer();
         const interval = setInterval(updateTimer, 1000);
         return () => clearInterval(interval);
-    }, [booking?.hold_expires_at, pathname]);
+    }, [booking, pathname]);
 
     // Format time: MM:SS
     const formatTime = (ms: number) => {

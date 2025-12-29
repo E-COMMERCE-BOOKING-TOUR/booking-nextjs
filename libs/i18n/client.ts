@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import i18next from 'i18next'
 import { initReactI18next, useTranslation as useTranslationOrg } from 'react-i18next'
 import resourcesToBackend from 'i18next-resources-to-backend'
@@ -32,7 +32,7 @@ i18next
         preload: runsOnServerSide ? languages : []
     })
 
-export function useTranslation(lng: string, ns: string = 'common', options: any = {}) {
+export function useTranslation(lng: string, ns: string = 'common', options: { keyPrefix?: string } = {}) {
     // Pass lng to react-i18next hook to ensure correct language translation
     // independent of global i18next instance state
     const ret = useTranslationOrg(ns, { ...options, lng })
@@ -49,9 +49,9 @@ export function useTranslation(lng: string, ns: string = 'common', options: any 
             t: i18n.getFixedT(lng, ns, options.keyPrefix)
         }
     } else {
-        // eslint-disable-next-line react-hooks/rules-of-hooks
+         
 
-        // eslint-disable-next-line react-hooks/rules-of-hooks
+         
 
         // eslint-disable-next-line react-hooks/rules-of-hooks
         useEffect(() => {

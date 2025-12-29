@@ -12,12 +12,12 @@ export const adminRoleApi = {
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.get(`/admin/role/getById/${id}`, { headers: authHeaders.headers });
     },
-    create: async (data: Record<string, any>, token?: string) => {
+    create: async (data: object, token?: string) => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.post("/admin/role/create", data, { headers: authHeaders.headers });
     },
-    update: async (id: number | string, data: Record<string, any>, token?: string) => {
+    update: async (id: number | string, data: object, token?: string) => {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.put(`/admin/role/update/${id}`, data, { headers: authHeaders.headers });

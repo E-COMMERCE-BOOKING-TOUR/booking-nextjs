@@ -54,7 +54,7 @@ export default function AdminSettingsPage() {
     const squareBannerRef = useRef<HTMLInputElement>(null);
     const rectBannerRef = useRef<HTMLInputElement>(null);
 
-    const { register, handleSubmit, setValue, watch, reset } = useForm<SettingsFormData>();
+    const { register, handleSubmit, setValue } = useForm<SettingsFormData>();
 
     const { data: settings, isLoading } = useQuery({
         queryKey: ['admin-settings', token],
@@ -68,7 +68,7 @@ export default function AdminSettingsPage() {
             Object.keys(settings).forEach(key => {
                 const value = settings[key as keyof SiteSettings];
                 if (value !== null && value !== undefined) {
-                    setValue(key as keyof SettingsFormData, value as any);
+                    setValue(key as keyof SettingsFormData, value as Parameters<typeof setValue>[1]);
                 }
             });
         }
@@ -156,7 +156,7 @@ export default function AdminSettingsPage() {
     };
 
     const onSubmit = async (data: SettingsFormData) => {
-        let finalData = { ...data };
+        const finalData = { ...data };
         const uploadToastId = toast.loading('Preparing data...');
 
         try {
@@ -190,7 +190,7 @@ export default function AdminSettingsPage() {
 
             toast.dismiss(uploadToastId);
             updateMutation.mutate(finalData);
-        } catch (error) {
+        } catch {
             toast.error('Image upload failed');
             toast.dismiss(uploadToastId);
         }

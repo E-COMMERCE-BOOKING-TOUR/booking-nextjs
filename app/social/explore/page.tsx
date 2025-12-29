@@ -1,5 +1,5 @@
 "use client";
-import { Box, VStack, List, Spinner, Center, Heading, Text, HStack, Image, Button } from "@chakra-ui/react";
+import { Box, VStack, List, Spinner, Center, Heading, Text, Image, Button } from "@chakra-ui/react";
 import ItemBlog from "@/app/social/component/ItemBlog";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import type { IArticlePopular } from "@/types/response/article";
@@ -12,15 +12,16 @@ import { useTranslation } from "@/libs/i18n/client";
 
 const ExploreContent = () => {
     const searchParams = useSearchParams();
-    const tag = searchParams.get('tag');
     const { data: session } = useSession();
     const { t } = useTranslation(searchParams.get('lng') || 'en');
+    const tag = searchParams.get('tag');
 
     const { data: followingIds, refetch: refetchFollowing } = useQuery({
         queryKey: ['following-ids', session?.user?.uuid],
-        queryFn: async () => {
+        queryFn: async (): Promise<string[]> => {
             if (!session?.user?.accessToken) return [];
-            return await userApi.getFollowing(session.user.accessToken);
+            const ids = await userApi.getFollowing(session.user.accessToken);
+            return (ids as (string | number)[]).map(id => id.toString());
         },
         enabled: !!session?.user?.accessToken
     });

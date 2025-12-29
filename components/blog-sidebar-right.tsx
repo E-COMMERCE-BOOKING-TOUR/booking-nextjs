@@ -47,7 +47,7 @@ export default function BlogSidebarRight() {
           </Flex>
         ) : (
           <VStack align="stretch" gap={0}>
-            {trendingTags?.map((tag, index, arr) => (
+            {trendingTags?.map((tag) => (
               <Link href={`/social/explore?tag=${tag._id}`} key={tag._id}>
                 <HStack
                   justify="space-between"

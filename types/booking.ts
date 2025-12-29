@@ -25,6 +25,7 @@ export interface IBookingDetail {
     status: string;
     payment_status: string;
     currency: string;
+    tour_id: number;
     tour_title: string;
     tour_image: string;
     tour_location: string;

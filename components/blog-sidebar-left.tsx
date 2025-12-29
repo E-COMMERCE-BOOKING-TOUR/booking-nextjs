@@ -7,7 +7,6 @@ import {
     Bell,
     Bookmark,
     User,
-    MoreHorizontal,
 } from "lucide-react"
 import { useSession } from "next-auth/react";
 import { useMemo } from "react";
@@ -36,7 +35,7 @@ export default function BlogSidebarLeft({
 
     // Generate items with dynamic profile link
     const menuItems = useMemo(() => {
-        const userUuid = (session?.user as any)?.uuid;
+        const userUuid = (session?.user as { uuid?: string })?.uuid;
         return [
             { key: "home", label: "Home", href: "/social", icon: Home },
             { key: "explore", label: "Explore", href: "/social/explore", icon: Search },
@@ -61,7 +60,7 @@ export default function BlogSidebarLeft({
             h="fit-content"
         >
             {session?.user?.name ?
-                <a href={(session?.user as any)?.uuid ? `/social/profile/${(session?.user as any)?.uuid}` : "/social"}>
+                <a href={(session?.user as { uuid?: string })?.uuid ? `/social/profile/${(session?.user as { uuid?: string })?.uuid}` : "/social"}>
                     <Button
                         w="full"
                         paddingEnd={3}

@@ -1,18 +1,18 @@
 "use client";
 import { Box, HStack, VStack, Text, Image, Button, Icon, Avatar, Grid, useDisclosure, Menu, Portal } from "@chakra-ui/react";
 import Link from "next/link";
-import { FiMessageCircle, FiEye, FiThumbsUp, FiMapPin, FiCalendar, FiCloud, FiShare2, FiBookmark, FiArrowRight, FiFlag } from "react-icons/fi";
+import { FiMessageCircle, FiEye, FiThumbsUp, FiMapPin, FiCalendar, FiCloud, FiBookmark, FiFlag } from "react-icons/fi";
 import { HiDotsHorizontal } from "react-icons/hi";
 import type { IArticlePopular } from "@/types/response/article";
 import { dateFormat } from "@/libs/function";
-import { PopUpComment } from "./comments";
+import { PopUpComment, CommentParams } from "./comments";
 import { useTranslation } from "@/libs/i18n/client";
 import { useSession } from "next-auth/react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { userApi } from "@/apis/user";
 import { toaster } from "@/components/chakra/toaster";
 import article from "@/apis/article";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 type ItemBlogProps = IArticlePopular & {
     href?: string;
@@ -20,9 +20,9 @@ type ItemBlogProps = IArticlePopular & {
     authorAvatar?: string;
     tagLabel?: string;
     articleId?: string;
-    comments?: any[];
+    comments?: unknown[];
     lng?: string;
-    followingIds?: number[];
+    followingIds?: string[];
     onFollowChange?: () => void;
 }
 
@@ -112,18 +112,18 @@ const ImagesGrid = ({ data, title }: { data: string[]; title: string }) => {
 };
 
 export default function ItemBlog(props: ItemBlogProps) {
-    const { images, title, tags, created_at, count_views, count_likes, count_comments, comments, user, user_id, tour, lng, followingIds, onFollowChange } = props;
+    const { images, title, tags, created_at, count_likes, count_comments, comments, user, user_id, tour, lng, followingIds, onFollowChange } = props;
     const { t } = useTranslation(lng || 'en');
     const { data: session } = useSession();
     const { open, onOpen, onClose } = useDisclosure();
     const imageUrls = images?.map(img => img.image_url) || [];
 
     const isFollowing = followingIds?.includes(user_id);
-    const isMe = session?.user && (Number((session.user as any).id) === user_id);
+    const isMe = session?.user && ((session.user as { uuid?: string }).uuid === user_id || (session.user as { id: number }).id.toString() === user_id);
     // Note: uuid or id comparison depends on how user_id is stored. In backend-booking-tour it's 'id'.
 
     const followMutation = useMutation({
-        mutationFn: () => userApi.follow(session?.user?.accessToken || '', user_id),
+        mutationFn: () => userApi.follow(session?.user?.accessToken || '', user_id as unknown as number),
         onSuccess: () => {
             toaster.create({ title: "Followed successfully", type: "success" });
             onFollowChange?.();
@@ -134,7 +134,7 @@ export default function ItemBlog(props: ItemBlogProps) {
     });
 
     const unfollowMutation = useMutation({
-        mutationFn: () => userApi.unfollow(session?.user?.accessToken || '', user_id),
+        mutationFn: () => userApi.unfollow(session?.user?.accessToken || '', user_id as unknown as number),
         onSuccess: () => {
             toaster.create({ title: "Unfollowed successfully", type: "success" });
             onFollowChange?.();
@@ -145,22 +145,15 @@ export default function ItemBlog(props: ItemBlogProps) {
     });
 
     // Like state & mutations
-    const userUuid = (session?.user as any)?.uuid as string | undefined;
-    const [isLiked, setIsLiked] = useState(false);
+    const userUuid = (session?.user as { uuid?: string })?.uuid;
+    const [localLiked, setLocalLiked] = useState<boolean | null>(null);
+    const isLiked = localLiked !== null ? localLiked : (userUuid && props.users_like?.includes(userUuid) || false);
     const [likeCount, setLikeCount] = useState(count_likes || 0);
-
-    // Update isLiked when session loads or users_like changes
-    useEffect(() => {
-        if (userUuid && props.users_like) {
-            const liked = props.users_like.includes(userUuid);
-            setIsLiked(liked);
-        }
-    }, [userUuid, props.users_like]);
 
     const likeMutation = useMutation({
         mutationFn: () => article.like(props.id?.toString() || '', session?.user?.accessToken),
         onSuccess: () => {
-            setIsLiked(true);
+            setLocalLiked(true);
             setLikeCount(prev => prev + 1);
         },
         onError: () => {
@@ -171,7 +164,7 @@ export default function ItemBlog(props: ItemBlogProps) {
     const unlikeMutation = useMutation({
         mutationFn: () => article.unlike(props.id?.toString() || '', session?.user?.accessToken),
         onSuccess: () => {
-            setIsLiked(false);
+            setLocalLiked(false);
             setLikeCount(prev => Math.max(0, prev - 1));
         },
         onError: () => {
@@ -202,23 +195,18 @@ export default function ItemBlog(props: ItemBlogProps) {
     };
 
     // Bookmark state & mutations
-    const [isBookmarked, setIsBookmarked] = useState(false);
-
-    useEffect(() => {
-        if (userUuid && props.users_bookmark) {
-            setIsBookmarked(props.users_bookmark.includes(userUuid));
-        }
-    }, [userUuid, props.users_bookmark]);
+    const [localBookmarked, setLocalBookmarked] = useState<boolean | null>(null);
+    const isBookmarked = localBookmarked !== null ? localBookmarked : (userUuid && props.users_bookmark?.includes(userUuid) || false);
 
     const bookmarkMutation = useMutation({
         mutationFn: () => article.bookmark(props.id?.toString() || '', session?.user?.accessToken),
-        onSuccess: () => setIsBookmarked(true),
+        onSuccess: () => setLocalBookmarked(true),
         onError: () => toaster.create({ title: "Failed to bookmark", type: "error" })
     });
 
     const unbookmarkMutation = useMutation({
         mutationFn: () => article.unbookmark(props.id?.toString() || '', session?.user?.accessToken),
-        onSuccess: () => setIsBookmarked(false),
+        onSuccess: () => setLocalBookmarked(false),
         onError: () => toaster.create({ title: "Failed to unbookmark", type: "error" })
     });
 
@@ -354,7 +342,7 @@ export default function ItemBlog(props: ItemBlogProps) {
                 {/* Tags */}
                 {tags?.length > 0 && (
                     <HStack wrap="wrap" gap={2}>
-                        {tags.map((tag: any, i) => (
+                        {tags.map((tag, i) => (
                             <Text
                                 key={i}
                                 fontSize="sm"
@@ -368,7 +356,7 @@ export default function ItemBlog(props: ItemBlogProps) {
                                 transition="all 0.2s"
                                 _hover={{ bg: "main", color: "white", transform: "translateY(-1px)" }}
                             >
-                                #{tag._id || tag}
+                                #{typeof tag === 'object' ? (tag as { _id?: string })._id || i : tag}
                             </Text>
                         ))}
                     </HStack>
@@ -457,7 +445,7 @@ export default function ItemBlog(props: ItemBlogProps) {
                     onClose={onClose}
                     articleId={props.id ? props.id.toString() : undefined}
                     images={imageUrls}
-                    comments={comments || []}
+                    comments={comments as CommentParams[] || []}
                     author={user ? { name: user.name, avatar: user.avatar } : undefined}
                     caption={title}
                     createdAt={created_at}
@@ -471,7 +459,7 @@ export default function ItemBlog(props: ItemBlogProps) {
 }
 
 export function ItemBlogLarge(props: ItemBlogProps) {
-    const { images, title, content, tags, created_at, count_views, count_likes, count_comments, comments, href } = props;
+    const { images, title, content, tags, created_at, count_views, count_likes, count_comments } = props;
     const imageUrls = images?.map(img => img.image_url) || [];
 
     const cardContent = (

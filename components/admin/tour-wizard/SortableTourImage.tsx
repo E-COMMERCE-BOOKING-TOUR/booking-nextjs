@@ -2,6 +2,7 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Image as ImageIcon, GripVertical } from 'lucide-react';
+import Image from 'next/image';
 import { cn } from '@/libs/utils';
 
 interface SortableTourImageProps {
@@ -39,10 +40,11 @@ const SortableTourImage: React.FC<SortableTourImageProps> = ({ id, image, onRemo
                 isDragging ? "opacity-30 scale-95 shadow-none" : "hover:shadow-primary/5 hover:border-primary/20"
             )}
         >
-            <img
+            <Image
                 src={image.image_url}
                 alt="Tour"
-                className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
+                fill
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
 
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">

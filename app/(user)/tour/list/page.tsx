@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { Box, Spinner, Center } from '@chakra-ui/react';
+import { Spinner, Center } from '@chakra-ui/react';
 import { TourListClient } from '@/components/ui/user/tourListClient';
 import { cookies } from 'next/headers';
 import { cookieName, fallbackLng } from '@/libs/i18n/settings';

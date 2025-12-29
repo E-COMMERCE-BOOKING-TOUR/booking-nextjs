@@ -16,8 +16,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import SearchCalendar from "./SearchCalendar";
 import { useTranslation } from "@/libs/i18n/client";
-import { cookieName, fallbackLng } from "@/libs/i18n/settings";
-import Cookies from "js-cookie";
+import { fallbackLng } from "@/libs/i18n/settings";
 import { FaCalendarAlt, FaMapMarkerAlt, FaMinus, FaPlus, FaSearch, FaUsers } from "react-icons/fa";
 
 interface ChildrenData {

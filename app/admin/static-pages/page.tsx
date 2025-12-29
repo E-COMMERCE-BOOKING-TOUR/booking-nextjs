@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminStaticPagesApi, StaticPage } from '@/apis/admin/static-pages';
+import { adminStaticPagesApi } from '@/apis/admin/static-pages';
 import { useSession } from 'next-auth/react';
 import {
     DropdownMenu,
@@ -54,8 +54,8 @@ export default function StaticPagesListPage() {
             toast.success('Static page deleted successfully');
             setDeleteId(null);
         },
-        onError: (error: any) => {
-            toast.error(error.message || 'Failed to delete static page');
+        onError: (error: unknown) => {
+            toast.error(error instanceof Error ? error.message : 'Failed to delete static page');
         }
     });
 

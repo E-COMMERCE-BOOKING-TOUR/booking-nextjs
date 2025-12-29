@@ -22,11 +22,10 @@ import tourApi from "@/apis/tour";
 import { useSession } from "next-auth/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "@/libs/i18n/client";
-import { cookieName, fallbackLng } from "@/libs/i18n/settings";
-import Cookies from "js-cookie";
+import { fallbackLng } from "@/libs/i18n/settings";
 import { useMemo } from "react";
 
-const createSchema = (t: any) => z.object({
+const createSchema = (t: (key: string) => string) => z.object({
     rating: z.number().min(1, t("rating_required")).max(5),
     title: z.string().min(2, t("title_min_length")).max(255),
     content: z.string().min(10, t("content_min_length")),
@@ -87,7 +86,7 @@ export default function ReviewForm({ tourId, onSuccess, onCancel, lng: propLng }
             queryClient.invalidateQueries({ queryKey: ["reviews", tourId] });
             onSuccess?.();
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             toaster.create({
                 title: "Error",
                 description: error?.message || t("review_submit_error"),

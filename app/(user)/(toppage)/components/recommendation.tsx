@@ -1,6 +1,6 @@
 "use client";
 import { HeaderList } from "@/components/ui/user";
-import { Box, HStack, Image, SimpleGrid, Text, VStack, Skeleton, Badge, Icon, Flex } from "@chakra-ui/react";
+import { Box, Image, SimpleGrid, Text, VStack, Skeleton, Badge, Icon } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import tourApi from "@/apis/tour";
 import { ITourPopular } from "@/apis/tour";
@@ -18,7 +18,7 @@ export default function Recommendation() {
     const fetchTours = async () => {
       try {
         const guestId = getGuestId();
-        const data = await tourApi.recommended(guestId || undefined, (session as any)?.accessToken);
+        const data = await tourApi.recommended(guestId || undefined, (session as { accessToken?: string } | null)?.accessToken);
         setTours(data);
       } catch (error) {
         console.error("Failed to fetch recommendations", error);

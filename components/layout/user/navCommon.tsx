@@ -1,7 +1,7 @@
 import { HStack, Image } from "@chakra-ui/react";
 import { NavItem } from "./navItem";
 
-export const MenuLinks = ({ items = [] }: { items?: any[], isMobile?: boolean }) => {
+export const MenuLinks = ({ items = [] }: { items?: { name: string, link: string }[], isMobile?: boolean }) => {
     const LinkComponent = HStack;
 
     return (

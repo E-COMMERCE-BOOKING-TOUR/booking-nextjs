@@ -16,15 +16,14 @@ import {
     Settings2,
     CalendarDays,
     Save,
-    ListChecks,
-    MessageSquareQuote,
     Trash2,
     Plus,
     Info,
     Image as ImageIcon,
-    CheckCircle2
+    CheckCircle2,
+    ListChecks
 } from 'lucide-react';
-import Image from 'next/image';
+
 import { cn } from '@/libs/utils';
 import VariantSchedulingEditor from './VariantSchedulingEditor';
 import SortableTourImage from './SortableTourImage';
@@ -37,6 +36,7 @@ import {
     useSensors,
     DragEndEvent,
 } from '@dnd-kit/core';
+import { CreateTourDTO } from '@/types/admin/tour.dto';
 import { adminTourApi } from '@/apis/admin/tour';
 import {
     arrayMove,
@@ -45,7 +45,7 @@ import {
     rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { useSession } from 'next-auth/react';
-import { useForm, useFieldArray, Resolver, useWatch } from 'react-hook-form';
+import { useForm, useFieldArray, Resolver, useWatch, Control } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -127,6 +127,41 @@ interface TourWizardProps {
     tourId?: number | string;
     initialData?: IAdminTourDetail;
 }
+
+const VariantPricing = ({ control, index }: { control: Control<TourFormValues>, index: number }) => {
+    const prices = useWatch({
+        control,
+        name: `variants.${index}.prices`
+    }) || [];
+
+    return (
+        <div className="flex gap-4">
+            {prices.map((price: { pax_type_name: string }, pIdx: number) => (
+                <FormField
+                    key={pIdx}
+                    control={control}
+                    name={`variants.${index}.prices.${pIdx}.price`}
+                    render={({ field }) => (
+                        <FormItem className="flex-1">
+                            <FormLabel className="text-xs">{price.pax_type_name}</FormLabel>
+                            <FormControl>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                                    <Input
+                                        type="number"
+                                        {...field}
+                                        onChange={e => field.onChange(parseFloat(e.target.value))}
+                                        className="pl-8 bg-background/50"
+                                    />
+                                </div>
+                            </FormControl>
+                        </FormItem>
+                    )}
+                />
+            ))}
+        </div>
+    );
+};
 
 export default function TourWizard({ tourId, initialData }: TourWizardProps) {
     const router = useRouter();
@@ -271,19 +306,18 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
     }>>(initialScheduling);
 
     // Watch form values for reactive UI
-    const watchedImages = useWatch({ control: form.control, name: 'images' });
+    const watchedImages = useWatch({ control: form.control, name: 'images' }) || [];
     const watchedCountryId = useWatch({ control: form.control, name: 'country_id' });
     const watchedDurationDays = useWatch({ control: form.control, name: 'duration_days' });
-    const watchedDurationHours = useWatch({ control: form.control, name: 'duration_hours' });
-    const watchedTax = useWatch({ control: form.control, name: 'tax' });
-    const watchedStatus = useWatch({ control: form.control, name: 'status' });
-    const watchedTitle = useWatch({ control: form.control, name: 'title' });
-    const watchedAddress = useWatch({ control: form.control, name: 'address' });
-    const watchedVariants = useWatch({ control: form.control, name: 'variants' });
+
+    const watchedStatus = useWatch({ control: form.control, name: 'status' }) || 'active';
+    const watchedTitle = useWatch({ control: form.control, name: 'title' }) || '';
+    const watchedAddress = useWatch({ control: form.control, name: 'address' }) || '';
+    const watchedVariants = useWatch({ control: form.control, name: 'variants' }) || [];
     const watchedHighlights = useWatch({ control: form.control, name: 'highlights' });
-    const watchedInclusions = useWatch({ control: form.control, name: 'included' });
-    const watchedExclusions = useWatch({ control: form.control, name: 'not_included' });
-    const watchedLanguages = useWatch({ control: form.control, name: 'languages' });
+    const watchedInclusions = useWatch({ control: form.control, name: 'included' }) || [];
+    const watchedExclusions = useWatch({ control: form.control, name: 'not_included' }) || [];
+    const watchedLanguages = useWatch({ control: form.control, name: 'languages' }) || [];
 
     useEffect(() => {
         if (initialData) {
@@ -421,7 +455,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
         e.target.value = '';
     };
 
-    const onSubmit = async (data: TourFormValues) => {
+    const onSubmit = React.useCallback(async (data: TourFormValues) => {
         if (currentStep < STEPS.length) return;
         if (isSubmittingRef.current) return;
         isSubmittingRef.current = true;
@@ -449,7 +483,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
             // 2. Prepare Nested Variants, Prices, and Sessions
             const nestedVariants = data.variants.map((v, i) => {
                 const vSched = scheduling[i];
-                const sessions: unknown[] = [];
+                const sessions: NonNullable<NonNullable<CreateTourDTO['variants']>[number]['sessions']> = [];
                 if (vSched && vSched.ranges.length > 0) {
                     const timeSlots = vSched.timeSlots || ['08:00'];
 
@@ -518,7 +552,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                         price: p.price
                     })),
                     tour_policy_id: v.tour_policy_id,
-                    sessions: sessions as any[]
+                    sessions: sessions
                 };
             });
 
@@ -549,6 +583,10 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
             isSubmittingRef.current = false;
             setIsSubmitting(false);
         }
+    }, [currentStep, token, tourId, isEdit, router, scheduling]);
+
+    const handleFinalSubmit = () => {
+        form.handleSubmit(onSubmit)();
     };
 
     return (
@@ -1079,11 +1117,11 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                     strategy={rectSortingStrategy}
                                 >
                                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                                        {watchedImages.map((image, index) => (
+                                        {watchedImages.map((img, index) => (
                                             <SortableTourImage
-                                                key={image.image_url}
-                                                id={image.image_url}
-                                                image={image}
+                                                key={img.image_url}
+                                                id={img.image_url}
+                                                image={img}
                                                 onRemove={() => {
                                                     const newImages = watchedImages.filter((_, i) => i !== index);
                                                     form.setValue('images', newImages);
@@ -1169,26 +1207,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                             </div>
                                             <div>
                                                 <Label className="mb-2 block">Pricing</Label>
-                                                <div className="flex gap-4">
-                                                    {form.watch(`variants.${index}.prices`).map((price, pIdx) => (
-                                                        <FormField
-                                                            key={pIdx}
-                                                            control={form.control}
-                                                            name={`variants.${index}.prices.${pIdx}.price`}
-                                                            render={({ field }) => (
-                                                                <FormItem className="flex-1">
-                                                                    <FormLabel className="text-xs">{price.pax_type_name}</FormLabel>
-                                                                    <FormControl>
-                                                                        <div className="relative">
-                                                                            <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} className="pl-8 bg-background/50" />
-                                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-                                                                        </div>
-                                                                    </FormControl>
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    ))}
-                                                </div>
+                                                <VariantPricing control={form.control} index={index} />
                                             </div>
 
                                             <Separator className="bg-white/5 my-4" />
@@ -1337,7 +1356,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                         </Button>
                     ) : (
                         <Button
-                            onClick={form.handleSubmit(onSubmit)}
+                            onClick={handleFinalSubmit}
                             disabled={isSubmitting}
                             className="bg-emerald-500 hover:bg-emerald-600 text-white min-w-[150px] shadow-lg shadow-emerald-500/20"
                         >

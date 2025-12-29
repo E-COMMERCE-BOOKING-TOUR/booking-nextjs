@@ -59,9 +59,10 @@ export default function RegisterPage() {
         router.refresh();
       }
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : "An error occurred during registration";
       toaster.create({
-        description: error.message || "An error occurred during registration",
+        description: message,
         type: "error",
       });
     },
