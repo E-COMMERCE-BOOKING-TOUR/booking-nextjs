@@ -31,77 +31,108 @@ export default function Chatbox({ lng, isOpen, onClose }: { lng: string; isOpen:
     const [conversationId, setConversationId] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    const connectingRef = useRef(false);
+
     const scrollToBottom = () => {
-        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
     };
 
+    // Effect for Socket connection
     useEffect(() => {
-        if (status === 'authenticated' && token && isOpen && !socket) {
-            Promise.resolve().then(() => setIsConnecting(true));
-            let s: Socket | null = null;
+        if (status !== 'authenticated' || !token || !isOpen || socket || connectingRef.current) {
+            return;
+        }
 
-            chatboxApi.startChatAdmin(token)
-                .then((data: unknown) => {
-                    const convoData = data as IStartChatResponse;
-                    setConversationId(convoData._id);
-                    const socketUrl = process.env.NEXT_PUBLIC_CHATBOX_WS_URL;
-                    s = io(socketUrl as string, {
-                        transports: ['websocket'],
-                        auth: { token: token }
-                    });
+        const socketUrl = process.env.NEXT_PUBLIC_CHATBOX_WS_URL;
+        if (!socketUrl) {
+            console.error('NEXT_PUBLIC_CHATBOX_WS_URL is not defined');
+            return;
+        }
 
-                    s.on('connect', () => {
-                        console.log('Socket connected');
-                        s?.emit('joinRoom', { conversationId: convoData._id });
-                        setIsConnected(true);
-                        setIsConnecting(false);
-                    });
+        connectingRef.current = true;
+        setIsConnecting(true);
 
-                    s.on('authenticated', (data: { user?: { full_name: string } }) => {
-                        console.log('Authenticated as:', data.user?.full_name);
-                    });
+        chatboxApi.startChatAdmin(token)
+            .then((data: any) => {
+                if (!data?._id) {
+                    throw new Error('No conversation ID returned');
+                }
 
-                    s.on('error', (err: unknown) => {
-                        console.error('Socket error:', err);
-                        setIsConnecting(false);
-                        setIsConnected(false);
-                    });
+                setConversationId(data._id);
 
-                    s.on('disconnect', () => {
-                        setIsConnected(false);
-                    });
+                const newSocket = io(socketUrl, {
+                    transports: ['websocket'],
+                    auth: { token }
+                });
 
-                    s.on('newMessage', (msg: IMessage) => {
-                        setMessages((prev) => [...prev, msg]);
-                        scrollToBottom();
-                    });
-
-                    setSocket(s);
-
-                    chatboxApi.getMessages(convoData._id, token)
-                        .then((msgs: unknown) => {
-                            setMessages(msgs as IMessage[]);
-                            scrollToBottom();
-                        });
-                })
-                .catch((err: unknown) => {
-                    console.error('Failed to start chat', err);
+                newSocket.on('connect', () => {
+                    console.log('Socket connected');
+                    newSocket.emit('joinRoom', { conversationId: data._id });
+                    setIsConnected(true);
                     setIsConnecting(false);
                 });
 
-            return () => {
-                if (s) {
-                    s.disconnect();
-                }
-            };
-        } else if (!isOpen && socket) {
-            Promise.resolve().then(() => {
-                setSocket(null);
-                setIsConnected(false);
+                newSocket.on('authenticated', (authData: any) => {
+                    console.log('Authenticated as:', authData.user?.full_name);
+                });
+
+                newSocket.on('error', (err: any) => {
+                    console.error('Socket error:', err);
+                    setIsConnecting(false);
+                    setIsConnected(false);
+                });
+
+                newSocket.on('connect_error', (err: any) => {
+                    console.error('Connection error:', err);
+                    setIsConnecting(false);
+                    setIsConnected(false);
+                });
+
+                newSocket.on('disconnect', () => {
+                    setIsConnected(false);
+                });
+
+                newSocket.on('newMessage', (msg: IMessage) => {
+                    setMessages((prev) => [...prev, msg]);
+                    scrollToBottom();
+                });
+
+                setSocket(newSocket);
+
+                // Load initial messages
+                chatboxApi.getMessages(data._id, token)
+                    .then((msgs: any) => {
+                        setMessages(msgs || []);
+                        scrollToBottom();
+                    })
+                    .catch(err => console.error('Error loading messages:', err));
+            })
+            .catch((err: any) => {
+                console.error('Failed to start chat:', err);
+                setIsConnecting(false);
+            })
+            .finally(() => {
+                connectingRef.current = false;
             });
-            socket.disconnect();
+
+        return () => {
+            // No automatic disconnect here to allow keeping connection alive if needed,
+            // or we can disconnect if that's the desired behavior.
+            // Component stays mounted even when closed (display: none), so we only disconnect on unmount.
+        };
+    }, [status, token, isOpen, socket]); // Keep socket here to detect if it's already set
+
+    // Handle closing/disconnecting explicitly if desired
+    useEffect(() => {
+        if (!isOpen && socket) {
+            // If you want to disconnect when the box is closed:
+            // socket.disconnect();
+            // setSocket(null);
+            // setIsConnected(false);
         }
-    }, [status, token, isOpen, socket]);
+    }, [isOpen, socket]);
 
 
     const handleSend = () => {
