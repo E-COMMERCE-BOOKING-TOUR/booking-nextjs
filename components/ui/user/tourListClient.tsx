@@ -3,7 +3,7 @@
 import { useEffect, Fragment, useState, useMemo, useCallback, memo } from "react";
 import { Box, Container, Grid, SimpleGrid, Spinner, Text, VStack, Button, HStack, NativeSelect } from "@chakra-ui/react";
 import { useSearchParams } from "next/navigation";
-import { ITourSearchParams } from "@/apis/tour";
+import { IUserTourSearchParams } from "@/types/response/tour.type";
 import { useTranslation } from "@/libs/i18n/client";
 import { fallbackLng } from "@/libs/i18n/settings";
 import tourApi from "@/apis/tour";
@@ -21,7 +21,7 @@ export const TourListClient = ({ lng: propLng }: { lng?: string }) => {
     const { t } = useTranslation(lng as string);
 
     // Initial state from URL - computed ONCE on mount
-    const initialFilters = useMemo<ITourSearchParams>(() => ({
+    const initialFilters = useMemo<IUserTourSearchParams>(() => ({
         keyword: searchParams.get("keyword") || "",
         minPrice: searchParams.get("minPrice") ? Number(searchParams.get("minPrice")) : undefined,
         maxPrice: searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : undefined,
@@ -37,13 +37,13 @@ export const TourListClient = ({ lng: propLng }: { lng?: string }) => {
         rooms: searchParams.get("rooms") ? Number(searchParams.get("rooms")) : undefined,
         country_ids: searchParams.get("country_ids") ? searchParams.get("country_ids")?.split(",").map(Number) : [],
         division_ids: searchParams.get("division_ids") ? searchParams.get("division_ids")?.split(",").map(Number) : [],
-        sort: (searchParams.get("sort") as ITourSearchParams['sort']) || "popular",
+        sort: (searchParams.get("sort") as IUserTourSearchParams['sort']) || "popular",
         limit: 12,
         offset: 0,
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }), []); // Empty deps = only compute once on mount
 
-    const emptyFilters = useMemo<ITourSearchParams>(() => ({
+    const emptyFilters = useMemo<IUserTourSearchParams>(() => ({
         keyword: "",
         minPrice: undefined,
         maxPrice: undefined,
@@ -64,24 +64,24 @@ export const TourListClient = ({ lng: propLng }: { lng?: string }) => {
         offset: 0,
     }), []);
 
-    const methods = useForm<ITourSearchParams>({
+    const methods = useForm<IUserTourSearchParams>({
         defaultValues: initialFilters,
     });
 
     const { reset, handleSubmit, register } = methods;
 
     // State to hold the applied filters for the query
-    const [appliedFilters, setAppliedFilters] = useState<ITourSearchParams>(initialFilters);
+    const [appliedFilters, setAppliedFilters] = useState<IUserTourSearchParams>(initialFilters);
 
     // Memoized apply filters handler
-    const onApplyFilters = useCallback((data: ITourSearchParams) => {
+    const onApplyFilters = useCallback((data: IUserTourSearchParams) => {
         const sanitizedValue = {
             ...data,
             minPrice: data.minPrice ? Number(data.minPrice) : undefined,
             maxPrice: data.maxPrice ? Number(data.maxPrice) : undefined,
             minRating: data.minRating ? Number(data.minRating) : undefined,
         };
-        setAppliedFilters(sanitizedValue as ITourSearchParams);
+        setAppliedFilters(sanitizedValue as IUserTourSearchParams);
     }, []);
 
     const {
@@ -124,7 +124,7 @@ export const TourListClient = ({ lng: propLng }: { lng?: string }) => {
         const rooms = searchParams.get("rooms") ? Number(searchParams.get("rooms")) : undefined;
         const countryIds = searchParams.get("country_ids") ? searchParams.get("country_ids")?.split(",").map(Number) : [];
         const divisionIds = searchParams.get("division_ids") ? searchParams.get("division_ids")?.split(",").map(Number) : [];
-        const sort = (searchParams.get("sort") as ITourSearchParams['sort']) || "popular";
+        const sort = (searchParams.get("sort") as IUserTourSearchParams['sort']) || "popular";
 
         setAppliedFilters({
             keyword,

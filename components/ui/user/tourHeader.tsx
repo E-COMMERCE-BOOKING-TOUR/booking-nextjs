@@ -7,17 +7,22 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toaster } from "@/components/chakra/toaster";
 import { createBooking } from "@/actions/booking";
 import logout from "@/actions/logout";
-import { tourApi, ITourSession } from "@/apis/tour";
+import { tourApi } from "@/apis/tour";
+import { IUserTourSession, TourVariantStatus } from "@/types/response/tour.type";
 import { useQuery } from "@tanstack/react-query";
 import Breadcrumb from "./breadcrumb";
 import { formatPriceValue } from '@/utils/currency';
 import { useTranslation } from "@/libs/i18n/client";
 import { fallbackLng } from "@/libs/i18n/settings";
 
-interface TourVariant {
+/**
+ * Variant type for TourHeader component
+ * Uses centralized types for session and status
+ */
+export interface TourHeaderVariant {
     id: number;
     name: string;
-    status: string;
+    status: TourVariantStatus;
     tour_variant_pax_type_prices: {
         id: number;
         pax_type_id: number;
@@ -27,7 +32,7 @@ interface TourVariant {
             name: string;
         };
     }[];
-    tour_sessions: ITourSession[];
+    tour_sessions: IUserTourSession[];
 }
 
 interface TourHeaderProps {
@@ -37,7 +42,7 @@ interface TourHeaderProps {
     price: number;
     oldPrice?: number;
     slug: string;
-    variants: TourVariant[];
+    variants: TourHeaderVariant[];
     durationDays: number;
     breadcrumbItems: { label: string; href: string }[];
     currencySymbol?: string;
@@ -127,7 +132,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
 
     const availableSessions = useMemo(() => {
         if (!startDate || !selectedVariantId || !sessions) return [];
-        return (sessions as ITourSession[]).filter((s: ITourSession) => {
+        return (sessions as IUserTourSession[]).filter((s: IUserTourSession) => {
             return s.status === 'open' && (s.capacity_available || 0) > 0;
         }).sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
     }, [startDate, selectedVariantId, sessions]);

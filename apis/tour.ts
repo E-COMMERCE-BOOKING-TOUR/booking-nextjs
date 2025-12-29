@@ -1,44 +1,36 @@
 import fetchC from "@/libs/fetchC";
 import { getAuthHeaders } from "@/libs/auth/authHeaders";
-import { ITour } from "@/types/response/tour.type";
-import { ITourPopular, ITourSearchResponse } from "@/types/response/tour";
-export type { ITourPopular, ITourSearchResponse };
+import {
+    IUserTourDetail,
+    IUserTourPopular,
+    IUserTourSearchResponse,
+    IUserTourSession,
+    IUserTourSearchParams,
+    IUserTourReview,
+    IUserTourReviewCategory,
+    IUserTourRelated,
+    // Legacy exports for backward compatibility
+    ITourPopular,
+    ITourSearchResponse,
+} from "@/types/response/tour.type";
 import { IReview } from "@/types/response/review.type";
-import { ITourCategory } from "@/types/response/tour.type";
 
-export interface ITourSession {
-    id: number;
-    date: string;
-    start_time?: string;
-    end_time?: string;
-    status: 'open' | 'full' | 'closed';
-    capacity_available: number;
-    price: number;
-}
-
-export type ITourSearchParams = {
-    keyword?: string;
-    destinations?: string[];
-    country_ids?: number[];
-    division_ids?: number[];
-    minPrice?: number;
-    maxPrice?: number;
-    minRating?: number;
-    startDate?: string;
-    endDate?: string;
-    travelers?: number;
-    adults?: number;
-    seniors?: number;
-    youth?: number;
-    children?: number;
-    infants?: number;
-    rooms?: number;
-    limit?: number;
-    offset?: number;
-    sort?: 'popular' | 'price_asc' | 'price_desc' | 'rating_desc' | 'newest';
+// Re-export types for backward compatibility
+export type {
+    IUserTourPopular,
+    IUserTourSearchResponse,
+    IUserTourSession,
+    IUserTourSearchParams,
+    IUserTourDetail,
+    IUserTourReview,
+    IUserTourReviewCategory,
+    IUserTourRelated,
+    // Legacy
+    ITourPopular,
+    ITourSearchResponse
 };
 
-const toQueryRecord = (params?: ITourSearchParams): Record<string, string> | undefined => {
+const toQueryRecord = (params?: IUserTourSearchParams): Record<string, string> | undefined => {
     if (!params) {
         return undefined;
     }
@@ -127,12 +119,12 @@ const toQueryRecord = (params?: ITourSearchParams): Record<string, string> | und
 
 
 export const tourApi = {
-    popular: async (limit: number = 8): Promise<ITourPopular[]> => {
+    popular: async (limit: number = 8): Promise<IUserTourPopular[]> => {
         const url = `/user/tour/popular?limit=${limit}`;
         const res = await fetchC.get(url, { next: { revalidate: 3600 } });
         return Array.isArray(res) ? res : (res?.data || []);
     },
-    detail: async (slug: string, guestId?: string, token?: string): Promise<ITour> => {
+    detail: async (slug: string, guestId?: string, token?: string): Promise<IUserTourDetail> => {
         let headers = {};
         if (token) {
             const authHeaders = await getAuthHeaders(token);
@@ -142,7 +134,7 @@ export const tourApi = {
         const res = await fetchC.get(url, { headers });
         return res;
     },
-    search: async (params?: ITourSearchParams): Promise<ITourSearchResponse> => {
+    search: async (params?: IUserTourSearchParams): Promise<IUserTourSearchResponse> => {
         const url = `/user/tour/search/list`;
         const res = await fetchC.get(url, {
             params: toQueryRecord(params),
@@ -150,11 +142,12 @@ export const tourApi = {
         });
         return res;
     },
-    reviews: async (): Promise<IReview[]> => {
-        // Legacy support or fallback
-        return [];
+    reviews: async (slug: string): Promise<IUserTourReview[]> => {
+        const url = `/user/tour/${slug}/reviews`;
+        const res = await fetchC.get(url);
+        return Array.isArray(res) ? res : (res?.data || []);
     },
-    getReviewsByTourId: async (tourId: number, token?: string) => {
+    getReviewsByTourId: async (tourId: number, token?: string): Promise<IReview[]> => {
         let headers = {};
         if (token) {
             const authHeaders = await getAuthHeaders(token);
@@ -184,12 +177,12 @@ export const tourApi = {
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.post(`/user/review/report/${id}`, {}, { headers: authHeaders.headers });
     },
-    reviewCategories: async (slug: string): Promise<ITourCategory[]> => {
+    reviewCategories: async (slug: string): Promise<IUserTourReviewCategory[]> => {
         const url = `/user/tour/${slug}/review-categories`;
         const res = await fetchC.get(url);
         return Array.isArray(res) ? res : (res?.data || []);
     },
-    related: async (slug: string, limit: number = 8): Promise<ITourPopular[]> => {
+    related: async (slug: string, limit: number = 8): Promise<IUserTourRelated[]> => {
         const url = `/user/tour/${slug}/related?limit=${limit}`;
         const res = await fetchC.get(url);
         return Array.isArray(res) ? res : (res?.data || []);
@@ -199,7 +192,7 @@ export const tourApi = {
         const res = await fetchC.get(url, { cache: 'no-store' });
         return res;
     },
-    getSessions: async (slug: string, variantId: number, startDate?: string, endDate?: string): Promise<ITourSession[]> => {
+    getSessions: async (slug: string, variantId: number, startDate?: string, endDate?: string): Promise<IUserTourSession[]> => {
         const query = new URLSearchParams({
             variant_id: variantId.toString(),
         });
@@ -210,7 +203,7 @@ export const tourApi = {
         const res = await fetchC.get(url, { cache: 'no-store' });
         return Array.isArray(res) ? res : (res?.data || []);
     },
-    recommended: async (guestId?: string, token?: string): Promise<ITourPopular[]> => {
+    recommended: async (guestId?: string, token?: string): Promise<IUserTourPopular[]> => {
         let headers = {};
         if (token) {
             const authHeaders = await getAuthHeaders(token);

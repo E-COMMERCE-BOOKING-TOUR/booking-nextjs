@@ -1,21 +1,29 @@
 import { Container, Grid, GridItem, VStack, Heading, Box } from "@chakra-ui/react";
 import { SearchInput, TourReviews } from "@/components/ui/user";
-import TourHeader from "@/components/ui/user/tourHeader";
+import TourHeader, { TourHeaderVariant } from "@/components/ui/user/tourHeader";
 import TourGalleryWithThumbnails from "@/components/ui/user/tourGalleryWithThumbnails";
 import TourSidebar from "@/components/ui/user/tourSidebar";
 import TourMapSection from "@/components/ui/user/tourMapSection";
 import TourDescription from "@/components/ui/user/tourDescription";
 import RelatedToursSwiper from "@/components/ui/user/relatedToursSwiper";
-import tourApi, { ITourSession } from "@/apis/tour";
+import tourApi from "@/apis/tour";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { cookieName, fallbackLng } from "@/libs/i18n/settings";
 import { createTranslation } from "@/libs/i18n";
 import { auth } from "@/libs/auth/auth";
-import { ITour, ITourVariant, ITourCategory, TourVariantStatus } from "@/types/response/tour.type";
+import {
+    IUserTourDetail,
+    IUserTourRelated,
+    IUserTourReviewCategory,
+    ITourTestimonial,
+    ITourActivity,
+} from "@/types/response/tour.type";
 
-import { ITourPopular } from "@/types/response/tour";
-
+/**
+ * Local type for tour data used within this page
+ * Reuses TourHeaderVariant for variants to ensure type consistency with TourHeader component
+ */
 type TourData = {
     id: number;
     title: string;
@@ -30,18 +38,11 @@ type TourData = {
     images: string[];
     durationDays: number;
     slug: string;
-    testimonial?: {
-        name: string;
-        country: string;
-        text: string;
-    };
+    testimonial?: ITourTestimonial;
     mapUrl: string;
     mapPreview?: string;
     description: string;
-    activity?: {
-        title: string;
-        items: string[];
-    };
+    activity?: ITourActivity;
     included: string[];
     notIncluded: string[];
     details: {
@@ -51,32 +52,8 @@ type TourData = {
     };
     meetingPoint: string;
     currencySymbol?: string;
-    variants: {
-        id: number;
-        name: string;
-        status: TourVariantStatus;
-        tour_variant_pax_type_prices: {
-            id: number;
-            pax_type_id: number;
-            price: number;
-            pax_type: {
-                id: number;
-                name: string;
-            };
-        }[];
-        tour_sessions: ITourSession[]; // Add this
-    }[];
+    variants: TourHeaderVariant[];
 };
-
-const normalizeDetail = (response: ITour): ITour | null => {
-    if (!response || typeof response !== "object") return null;
-    const payload = "data" in response ? (response as { data: ITour }).data : (response as ITour);
-    if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
-    return typeof (payload as ITour).title === "string" ? (payload as ITour) : null;
-};
-
-type RelatedTour = ITourPopular;
-type ReviewCategory = ITourCategory & { score?: number; count?: number; average_rating?: number };
 
 const statusCodeOf = (error: unknown): number | undefined => {
     if (typeof error === "object" && error !== null) {
@@ -94,68 +71,60 @@ const safeGet = async <T,>(fn: () => Promise<T>, fallback: T) => {
     }
 };
 
+/**
+ * Transform API response to component-friendly format
+ */
 const getTourData = async (slug: string, guestId?: string, token?: string): Promise<TourData> => {
     try {
-        const tourDetailResponse = await tourApi.detail(slug, guestId, token);
-        const tourDetail = normalizeDetail(tourDetailResponse);
-        if (!tourDetail) notFound();
+        const tourDetail: IUserTourDetail = await tourApi.detail(slug, guestId, token);
+
+        if (!tourDetail) {
+            notFound();
+        }
 
         return {
             id: tourDetail.id,
             title: tourDetail.title,
-            location: tourDetail.address || tourDetail.division?.name || "",
+            location: tourDetail.location,
             price: tourDetail.price,
-            oldPrice: tourDetail.old_price ?? undefined,
+            oldPrice: tourDetail.oldPrice,
             currencySymbol: tourDetail.currencySymbol,
-            rating: tourDetail.score_rating ?? 0,
-            reviewCount: tourDetail.reviews?.length ?? 0,
-            score: tourDetail.score_rating ?? 0,
-            scoreLabel: tourDetail.score_rating && tourDetail.score_rating >= 4 ? "Excellent" : "Good",
-            staffScore: tourDetail.staff_score ?? 0,
-            images: tourDetail.images ?? [],
-            durationDays: tourDetail.duration_days ?? 1,
-            slug: tourDetail.slug || slug,
-            testimonial: tourDetail.testimonial ?? {
-                name: "",
-                country: "",
-                text: "",
-            },
-            mapUrl: tourDetail.map_url ?? "",
-            mapPreview: tourDetail.map_preview,
-            description: tourDetail.description ?? "",
-            activity: tourDetail.highlights ?? { title: "", items: [] },
-            included: tourDetail.included ?? [],
-            notIncluded: tourDetail.not_included ?? [],
+            rating: tourDetail.rating,
+            reviewCount: tourDetail.reviewCount,
+            score: tourDetail.score,
+            scoreLabel: tourDetail.scoreLabel,
+            staffScore: tourDetail.staffScore,
+            images: tourDetail.images,
+            durationDays: tourDetail.durationDays,
+            slug: tourDetail.slug,
+            testimonial: tourDetail.testimonial,
+            mapUrl: tourDetail.mapUrl,
+            mapPreview: tourDetail.mapPreview,
+            description: tourDetail.description,
+            activity: tourDetail.activity,
+            included: tourDetail.included,
+            notIncluded: tourDetail.notIncluded,
             details: {
-                language: tourDetail.languages ?? [],
-                duration: tourDetail.duration_days ? `${tourDetail.duration_days} days` : "",
-                capacity: tourDetail.max_pax ? tourDetail.max_pax.toString() : "",
+                language: tourDetail.details.language,
+                duration: tourDetail.details.duration,
+                capacity: tourDetail.details.capacity,
             },
-            meetingPoint: tourDetail.meeting_point ?? "",
-            variants:
-                tourDetail.variants?.map((v: ITourVariant) => ({
-                    id: v.id,
-                    name: v.name,
-                    status: v.status,
-                    tour_variant_pax_type_prices: v.prices.map((p) => ({
-                        id: p.id,
-                        pax_type_id: p.pax_type_id,
-                        price: p.price,
-                        pax_type: {
-                            id: p.pax_type_id,
-                            name: p.pax_type_name,
-                        },
-                    })),
-                    tour_sessions: (v.tour_sessions || []).map(s => ({
-                        id: s.id,
-                        date: s.session_date.toString(),
-                        start_time: s.start_time?.toString(),
-                        end_time: s.end_time?.toString(),
-                        status: s.status as 'open' | 'full' | 'closed',
-                        capacity_available: s.capacity || 0,
-                        price: 0, // price not directly on session in ITour
-                    })),
-                })) || [],
+            meetingPoint: tourDetail.meetingPoint || "",
+            variants: tourDetail.variants.map((v) => ({
+                id: v.id,
+                name: v.name,
+                status: v.status,
+                tour_variant_pax_type_prices: v.prices.map((p) => ({
+                    id: p.id,
+                    pax_type_id: p.pax_type_id,
+                    price: p.price,
+                    pax_type: {
+                        id: p.pax_type_id,
+                        name: p.pax_type_name,
+                    },
+                })),
+                tour_sessions: [], // Sessions are loaded separately via API
+            })),
         };
     } catch (error) {
         console.error("Error fetching tour data:", error);
@@ -176,14 +145,14 @@ export default async function TourDetailPage({ params }: { params: Promise<{ slu
 
     const [tour, relatedTours, reviewCategories] = await Promise.all([
         getTourData(slug, guestId, token),
-        safeGet(() => tourApi.related(slug), [] as RelatedTour[]),
-        safeGet(() => tourApi.reviewCategories(slug), [] as ReviewCategory[]),
+        safeGet(() => tourApi.related(slug), [] as IUserTourRelated[]),
+        safeGet(() => tourApi.reviewCategories(slug), [] as IUserTourReviewCategory[]),
     ]);
 
     if (!tour) {
         notFound();
     }
-    console.log(tour.price, tour)
+
     return (
         <>
             <VStack borderBottomRadius="calc(100vw / 16)" backgroundColor="white" paddingBottom="calc(100vw / 24)" position="relative" zIndex={2}>
@@ -264,9 +233,9 @@ export default async function TourDetailPage({ params }: { params: Promise<{ slu
                             tourId={tour.id}
                             averageRating={tour.rating}
                             totalReviews={tour.reviewCount}
-                            categories={reviewCategories.map((c: ReviewCategory) => ({
-                                name: c.name,
-                                score: c.average_rating || 0
+                            categories={reviewCategories.map((c: IUserTourReviewCategory) => ({
+                                name: c.label,
+                                score: c.score
                             }))}
                             lng={lng}
                         />

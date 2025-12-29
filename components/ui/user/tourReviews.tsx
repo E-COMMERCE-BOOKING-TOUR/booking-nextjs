@@ -24,24 +24,19 @@ import { useSearchParams } from "next/navigation";
 import ReviewForm from "./ReviewForm";
 import { useTranslation } from "@/libs/i18n/client";
 import { fallbackLng } from "@/libs/i18n/settings";
+import { IReview } from "@/types/response/review.type";
 
-interface Review {
-    id: string;
-    userName: string;
-    userAvatar: string;
-    rating: number;
-    date: string;
-    title: string;
-    content: string;
-    verified: boolean;
-    helpful_count: number;
-    is_reported: boolean;
-    is_helpful: boolean;
-    user?: {
-        full_name: string;
-        avatar: string;
-    }
-    created_at?: string;
+/**
+ * Extended Review type for component use
+ * Adds optional transformed fields while maintaining compatibility with IReview
+ */
+interface Review extends IReview {
+    // Transformed fields (from UserTourReviewDTO or computed)
+    userName?: string;
+    userAvatar?: string;
+    date?: string;
+    verified?: boolean;
+    is_helpful?: boolean;
 }
 
 interface ReviewCategory {
@@ -82,7 +77,7 @@ export default function TourReviews({
     });
 
     const markHelpfulMutation = useMutation({
-        mutationFn: (reviewId: string) => tourApi.markReviewHelpful(Number(reviewId), token),
+        mutationFn: (reviewId: number) => tourApi.markReviewHelpful(reviewId, token),
         onSuccess: () => {
             toaster.create({
                 title: t("confirm"),
@@ -101,7 +96,7 @@ export default function TourReviews({
     });
 
     const reportReviewMutation = useMutation({
-        mutationFn: (reviewId: string) => tourApi.reportReview(Number(reviewId), token),
+        mutationFn: (reviewId: number) => tourApi.reportReview(reviewId, token),
         onSuccess: () => {
             toaster.create({
                 title: t("report"),
@@ -128,7 +123,7 @@ export default function TourReviews({
             });
             return;
         }
-        markHelpfulMutation.mutate(reviewId);
+        markHelpfulMutation.mutate(Number(reviewId));
     };
 
     const handleReportReview = (review: Review) => {
@@ -148,7 +143,7 @@ export default function TourReviews({
             });
             return;
         }
-        reportReviewMutation.mutate(review.id);
+        reportReviewMutation.mutate(Number(review.id));
     };
 
     const renderStars = (rating: number) => {
@@ -188,8 +183,8 @@ export default function TourReviews({
                 return (b.helpful_count || 0) - (a.helpful_count || 0);
             }
             if (sortBy === "recent") {
-                const dateA = new Date(a.created_at || a.date).getTime();
-                const dateB = new Date(b.created_at || b.date).getTime();
+                const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+                const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
                 return dateB - dateA;
             }
             if (sortBy === "highest") {
@@ -353,7 +348,7 @@ export default function TourReviews({
                                                     )}
                                                 </HStack>
                                                 <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                                                    {new Date(review.created_at || review.date).toLocaleDateString(lng === 'vi' ? 'vi-VN' : 'en-US')}
+                                                    {review.created_at ? new Date(review.created_at).toLocaleDateString(lng === 'vi' ? 'vi-VN' : 'en-US') : ''}
                                                 </Text>
                                             </VStack>
                                         </HStack>
@@ -373,7 +368,7 @@ export default function TourReviews({
                                                     variant="ghost"
                                                     color={review.is_helpful ? "blue.500" : "gray.400"}
                                                     bg={review.is_helpful ? "blue.50" : "transparent"}
-                                                    onClick={() => handleMarkHelpful(review.id)}
+                                                    onClick={() => handleMarkHelpful(String(review.id))}
                                                     loading={markHelpfulMutation.isPending && markHelpfulMutation.variables === review.id}
                                                 >
                                                     <FaThumbsUp /> ({review.helpful_count || 0})

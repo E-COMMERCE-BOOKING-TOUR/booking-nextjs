@@ -18,14 +18,14 @@ import {
 } from "@chakra-ui/react";
 import { useState, useCallback, memo } from "react";
 import { FaSearch, FaFilter, FaStar, FaCheck, FaSlidersH } from "react-icons/fa";
-import { ITourSearchParams } from "@/apis/tour";
+import { IUserTourSearchParams } from "@/types/response/tour.type";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "@/libs/i18n/client";
 import { fallbackLng } from "@/libs/i18n/settings";
 import { useSearchParams } from "next/navigation";
 
 interface FilterSidebarProps {
-    onApply: (data: ITourSearchParams) => void;
+    onApply: (data: IUserTourSearchParams) => void;
     lng?: string;
 }
 
@@ -113,7 +113,7 @@ CheckboxItem.displayName = "CheckboxItem";
 
 // Inner Filter Content Component (shared between desktop and mobile drawer)
 interface FilterContentProps {
-    onApply: (data: ITourSearchParams) => void;
+    onApply: (data: IUserTourSearchParams) => void;
     onClose?: () => void; // Optional - only for mobile drawer
     lng?: string;
 }
@@ -125,7 +125,7 @@ const FilterContent = memo(({ onApply, onClose, lng: propLng }: FilterContentPro
     const searchParams = useSearchParams();
     const lng = propLng || searchParams?.get('lng') || fallbackLng;
     const { t } = useTranslation(lng as string);
-    const { register, setValue, getValues, reset, handleSubmit, watch } = useFormContext<ITourSearchParams>();
+    const { register, setValue, getValues, reset, handleSubmit, watch } = useFormContext<IUserTourSearchParams>();
 
     // Fetch countries and divisions
     const { data: countries = [] } = useQuery({
@@ -194,7 +194,7 @@ const FilterContent = memo(({ onApply, onClose, lng: propLng }: FilterContentPro
             sort: "popular",
             offset: 0,
             limit: 12
-        } as ITourSearchParams);
+        } as IUserTourSearchParams);
     }, [reset]);
 
     const handleApplyAndClose = useCallback(() => {
@@ -395,7 +395,7 @@ FilterSidebar.displayName = "FilterSidebar";
 
 // Mobile Filter Drawer Component
 interface MobileFilterDrawerProps {
-    onApply: (data: ITourSearchParams) => void;
+    onApply: (data: IUserTourSearchParams) => void;
 }
 
 export const MobileFilterDrawer = memo(({ onApply, lng: propLng }: MobileFilterDrawerProps & { lng?: string }) => {

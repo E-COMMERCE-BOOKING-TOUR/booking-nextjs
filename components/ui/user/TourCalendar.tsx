@@ -2,7 +2,8 @@
 
 import { Box, Button, Flex, Grid, Heading, HStack, Text, Spinner } from "@chakra-ui/react";
 import { useState, useMemo } from "react";
-import tour, { ITourSession } from "@/apis/tour";
+import tour from "@/apis/tour";
+import { IUserTourSession } from "@/types/response/tour.type";
 import { useQuery } from "@tanstack/react-query";
 import { BsChevronLeft, BsChevronRight } from "react-icons/bs";
 import { toaster } from "@/components/chakra/toaster";
@@ -61,8 +62,8 @@ export default function TourCalendar({ tourSlug, variantId, durationDays, onSele
     });
 
     const sessionMap = useMemo(() => {
-        const map = new Map<string, ITourSession[]>();
-        sessions?.forEach((s: ITourSession) => {
+        const map = new Map<string, IUserTourSession[]>();
+        sessions?.forEach((s: IUserTourSession) => {
             const dateStr = s.date;
             if (!map.has(dateStr)) {
                 map.set(dateStr, []);

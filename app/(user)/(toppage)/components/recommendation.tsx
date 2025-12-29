@@ -3,14 +3,14 @@ import { HeaderList } from "@/components/ui/user";
 import { Box, Image, SimpleGrid, Text, VStack, Skeleton, Badge, Icon } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import tourApi from "@/apis/tour";
-import { ITourPopular } from "@/apis/tour";
+import { IUserTourPopular } from "@/apis/tour";
 import { getGuestId } from "@/utils/guest";
 import { useSession } from "next-auth/react";
 import { FaFire } from "react-icons/fa";
 import Link from "next/link";
 
 export default function Recommendation() {
-  const [tours, setTours] = useState<ITourPopular[]>([]);
+  const [tours, setTours] = useState<IUserTourPopular[]>([]);
   const [loading, setLoading] = useState(true);
   const { data: session } = useSession();
 
@@ -55,7 +55,7 @@ export default function Recommendation() {
   );
 }
 
-const RecommendationCard = ({ tour }: { tour: ITourPopular }) => {
+const RecommendationCard = ({ tour }: { tour: IUserTourPopular }) => {
   return (
     <Link href={`/tour/${tour.slug}`}>
       <Box
