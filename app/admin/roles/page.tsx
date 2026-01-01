@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminRoleApi } from '@/apis/admin/role';
 import { adminPermissionApi } from '@/apis/admin/permission';
 import { useSession } from 'next-auth/react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -15,9 +15,11 @@ import {
     Pencil,
     Trash2,
     Plus,
+    ShieldAlert,
     Loader2,
-    Search,
 } from 'lucide-react';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { AdminFilterBar } from '@/components/admin/AdminFilterBar';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -171,51 +173,39 @@ export default function AdminRolePage() {
         setPage(1);
     };
 
-    const filteredRoles = (roles || []).filter((r: IAdminRole) =>
-        !searchTerm ||
-        r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.desciption?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
     return (
         <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* ... Header ... */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Roles & Permissions</h1>
-                    <p className="text-muted-foreground mt-1 text-lg">Define roles and assign access permissions to users.</p>
-                </div>
-                <div className="flex gap-2">
-                    <Link href="/admin/roles/permisions">
-                        <Button variant="outline">Manage Permissions</Button>
+            <AdminPageHeader
+                title="Roles & Permissions"
+                description="Define roles and assign access permissions to users."
+            >
+                <div className="flex items-center gap-3">
+                    <Link href="/admin/roles/permissions"> {/* Corrected typo: permisions -> permissions */}
+                        <Button variant="outline" className="border-white/10 hover:bg-white/5">
+                            <ShieldAlert className="mr-2 size-4 text-primary" />
+                            Manage Permissions
+                        </Button>
                     </Link>
-                    <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90">
+                    <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90 shadow-sm">
                         <Plus className="mr-2 size-4" />
                         Add Role
                     </Button>
                 </div>
-            </div>
+            </AdminPageHeader>
 
             <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
-                <CardHeader className="border-b border-white/5 pb-6">
-                    <div className="flex items-center gap-4">
-                        <div className="flex w-full max-w-sm items-center gap-2">
-                            <div className="relative flex-1">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search roles..."
-                                    className="pl-10 bg-white/5 border-white/10"
-                                    value={keyword}
-                                    onChange={(e) => setKeyword(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                />
-                            </div>
-                            <Button onClick={handleSearch} variant="secondary">
-                                Search
-                            </Button>
-                        </div>
-                    </div>
-                </CardHeader>
+                <AdminFilterBar
+                    searchPlaceholder="Search by role name or description..."
+                    searchTerm={keyword}
+                    onSearchChange={setKeyword}
+                    onSearch={handleSearch}
+                    onClear={() => {
+                        setKeyword('');
+                        setSearchTerm('');
+                        setPage(1);
+                    }}
+                    isFiltered={searchTerm !== ''}
+                />
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
@@ -235,8 +225,8 @@ export default function AdminRolePage() {
                                             <td colSpan={5} className="px-6 py-4 h-16 bg-white/5"></td>
                                         </tr>
                                     ))
-                                ) : filteredRoles.length > 0 ? (
-                                    filteredRoles.map((role: IAdminRole) => (
+                                ) : roles.length > 0 ? (
+                                    roles.map((role: IAdminRole) => (
                                         <tr key={role.id} className="group hover:bg-white/[0.05] transition-all">
                                             <td className="px-6 py-4 whitespace-nowrap text-muted-foreground font-mono">#{role.id}</td>
                                             <td className="px-6 py-4 whitespace-nowrap">

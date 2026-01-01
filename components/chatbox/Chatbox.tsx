@@ -52,10 +52,12 @@ export default function Chatbox({ lng, isOpen, onClose }: { lng: string; isOpen:
         }
 
         connectingRef.current = true;
-        setIsConnecting(true);
+        
+        // Use a timeout to move setState out of synchronous effect execution
+        setTimeout(() => setIsConnecting(true), 0);
 
         chatboxApi.startChatAdmin(token)
-            .then((data: any) => {
+            .then((data: IStartChatResponse) => {
                 if (!data?._id) {
                     throw new Error('No conversation ID returned');
                 }
@@ -74,17 +76,17 @@ export default function Chatbox({ lng, isOpen, onClose }: { lng: string; isOpen:
                     setIsConnecting(false);
                 });
 
-                newSocket.on('authenticated', (authData: any) => {
+                newSocket.on('authenticated', (authData: { user: { full_name: string } }) => {
                     console.log('Authenticated as:', authData.user?.full_name);
                 });
 
-                newSocket.on('error', (err: any) => {
+                newSocket.on('error', (err: Error) => {
                     console.error('Socket error:', err);
                     setIsConnecting(false);
                     setIsConnected(false);
                 });
 
-                newSocket.on('connect_error', (err: any) => {
+                newSocket.on('connect_error', (err: Error) => {
                     console.error('Connection error:', err);
                     setIsConnecting(false);
                     setIsConnected(false);
@@ -103,13 +105,13 @@ export default function Chatbox({ lng, isOpen, onClose }: { lng: string; isOpen:
 
                 // Load initial messages
                 chatboxApi.getMessages(data._id, token)
-                    .then((msgs: any) => {
+                    .then((msgs: IMessage[]) => {
                         setMessages(msgs || []);
                         scrollToBottom();
                     })
                     .catch(err => console.error('Error loading messages:', err));
             })
-            .catch((err: any) => {
+            .catch((err: Error) => {
                 console.error('Failed to start chat:', err);
                 setIsConnecting(false);
             })

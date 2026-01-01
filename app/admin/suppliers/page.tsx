@@ -4,12 +4,11 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminSupplierApi } from '@/apis/admin/supplier';
 import { useSession } from 'next-auth/react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
-  Search,
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -20,6 +19,8 @@ import {
   Phone,
   UserCog,
 } from 'lucide-react';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { AdminFilterBar } from '@/components/admin/AdminFilterBar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -174,37 +175,29 @@ export default function AdminSupplierPage() {
 
   return (
     <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Suppliers</h1>
-          <p className="text-muted-foreground mt-1 text-lg">Manage partners and service providers.</p>
-        </div>
-        <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90">
+      <AdminPageHeader
+        title="Supplier Management"
+        description="Manage tour providers, contact information, and cooperation status."
+      >
+        <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90 shadow-sm">
           <Plus className="mr-2 size-4" />
           Add Supplier
         </Button>
-      </div>
+      </AdminPageHeader>
 
       <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
-        <CardHeader className="border-b border-white/5 pb-6">
-          <div className="flex items-center gap-4">
-            <div className="flex w-full max-w-sm items-center gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search suppliers..."
-                  className="pl-10 bg-white/5 border-white/10"
-                  value={keyword}
-                  onChange={(e) => setKeyword(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                />
-              </div>
-              <Button onClick={handleSearch} variant="secondary">
-                Search
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
+        <AdminFilterBar
+          searchPlaceholder="Search by name, contact or address..."
+          searchTerm={keyword}
+          onSearchChange={setKeyword}
+          onSearch={handleSearch}
+          onClear={() => {
+            setKeyword('');
+            setSearchTerm('');
+            setPage(1);
+          }}
+          isFiltered={searchTerm !== ''}
+        />
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">

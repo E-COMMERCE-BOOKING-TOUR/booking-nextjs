@@ -4,12 +4,10 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import adminNotificationApi from '@/apis/adminNotification';
 import { useSession } from 'next-auth/react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
-    Search,
     MoreHorizontal,
     Eye,
     Trash2,
@@ -21,6 +19,9 @@ import {
     ChevronLeft,
     ChevronRight,
 } from 'lucide-react';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { AdminFilterBar } from '@/components/admin/AdminFilterBar';
+import { AdminSelect } from '@/components/admin/AdminSelect';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -29,13 +30,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 import { toast } from 'sonner';
 import Link from 'next/link';
 import {
@@ -48,8 +42,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useForm, Controller } from 'react-hook-form';
-import { TargetGroup, NotificationType } from '@/types/notification';
+import { TargetGroup, NotificationType, INotification } from '@/types/notification';
 
 const TargetBadge = ({ group }: { group: TargetGroup }) => {
     switch (group) {
@@ -90,57 +83,42 @@ const TypeBadge = ({ type }: { type: NotificationType }) => {
     );
 };
 
-interface FilterValues {
-    search: string;
-    type: string;
-    targetGroup: string;
-}
-
 export default function AdminNotificationListPage() {
     const { data: session, status: sessionStatus } = useSession();
     const token = session?.user?.accessToken;
     const queryClient = useQueryClient();
     const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [keyword, setKeyword] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [typeFilter, setTypeFilter] = useState('all');
+    const [groupFilter, setGroupFilter] = useState('all');
     const [page, setPage] = useState(1);
     const limit = 10;
 
-    const [appliedFilters, setAppliedFilters] = useState<FilterValues>({
-        search: '',
-        type: 'all_types',
-        targetGroup: 'all_groups',
-    });
+    const isFiltered = searchTerm !== '' || typeFilter !== 'all' || groupFilter !== 'all';
 
-    const { control, handleSubmit, reset } = useForm<FilterValues>({
-        defaultValues: appliedFilters
-    });
-
-    const onSearch = (values: FilterValues) => {
-        setAppliedFilters(values);
+    const handleSearch = () => {
+        setSearchTerm(keyword);
         setPage(1);
     };
 
-    const clearFilters = () => {
-        const defaultValues = {
-            search: '',
-            type: 'all_types',
-            targetGroup: 'all_groups',
-        };
-        reset(defaultValues);
-        setAppliedFilters(defaultValues);
+    const handleClear = () => {
+        setKeyword('');
+        setSearchTerm('');
+        setTypeFilter('all');
+        setGroupFilter('all');
         setPage(1);
     };
-
-    const isFiltered = appliedFilters.search !== '' || appliedFilters.type !== 'all_types' || appliedFilters.targetGroup !== 'all_groups';
 
     const { data, isLoading: isQueryLoading } = useQuery({
-        queryKey: ['admin-notifications', token, page, appliedFilters.search, appliedFilters.type, appliedFilters.targetGroup],
+        queryKey: ['admin-notifications', token, page, searchTerm, typeFilter, groupFilter],
         queryFn: () => adminNotificationApi.getAll(
             token!,
             page,
             limit,
-            appliedFilters.search,
-            appliedFilters.type === 'all_types' ? undefined : appliedFilters.type,
-            appliedFilters.targetGroup === 'all_groups' ? undefined : appliedFilters.targetGroup
+            searchTerm,
+            typeFilter === 'all' ? undefined : typeFilter,
+            groupFilter === 'all' ? undefined : groupFilter
         ),
         enabled: !!token,
     });
@@ -162,97 +140,57 @@ export default function AdminNotificationListPage() {
         }
     });
 
+    const typeOptions = [
+        { label: 'All Types', value: 'all' },
+        { label: 'General', value: 'general' },
+        { label: 'Promotion', value: 'promotion' },
+        { label: 'System', value: 'system' }
+    ];
+
+    const groupOptions = [
+        { label: 'All Audiences', value: 'all' },
+        { label: 'All Users', value: TargetGroup.all },
+        { label: 'Admin', value: TargetGroup.admin },
+        { label: 'Supplier', value: TargetGroup.supplier },
+        { label: 'Specific', value: TargetGroup.specific }
+    ];
+
     return (
         <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Notification Management</h1>
-                    <p className="text-muted-foreground mt-1 text-lg">Send and manage system notifications to users.</p>
-                </div>
-                <Button asChild className="bg-primary hover:bg-primary/90">
-                    <Link href="/admin/notification/create">
-                        <Plus className="mr-2 size-4" />
-                        Create Notification
-                    </Link>
-                </Button>
-            </div>
+            <AdminPageHeader
+                title="Notification Management"
+                description="Send and manage system notifications to users."
+            >
+                <Link href="/admin/notification/create">
+                    <Button className="bg-primary hover:bg-primary/90 shadow-sm">
+                        <Plus className="mr-2 size-4" /> Create Notification
+                    </Button>
+                </Link>
+            </AdminPageHeader>
 
             <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
-                <CardHeader className="border-b border-white/5 pb-6">
-                    <form onSubmit={handleSubmit(onSearch)} className="flex flex-col md:flex-row md:items-center gap-4">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                            <Controller
-                                name="search"
-                                control={control}
-                                render={({ field }) => (
-                                    <Input
-                                        {...field}
-                                        placeholder="Search title or content..."
-                                        className="pl-10 bg-white/5 border-white/10"
-                                    />
-                                )}
-                            />
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-3">
-                            <Controller
-                                name="type"
-                                control={control}
-                                render={({ field }) => (
-                                    <Select value={field.value} onValueChange={field.onChange}>
-                                        <SelectTrigger className="w-[160px] bg-white/5 border-white/10">
-                                            <SelectValue placeholder="Notification Type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all_types">All Types</SelectItem>
-                                            {Object.values(NotificationType).map((type) => (
-                                                <SelectItem key={type} value={type} className="capitalize">{type}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                )}
-                            />
-
-                            <Controller
-                                name="targetGroup"
-                                control={control}
-                                render={({ field }) => (
-                                    <Select value={field.value} onValueChange={field.onChange}>
-                                        <SelectTrigger className="w-[180px] bg-white/5 border-white/10">
-                                            <SelectValue placeholder="Audience" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all_groups">All Audiences</SelectItem>
-                                            <SelectItem value={TargetGroup.all}>All Users</SelectItem>
-                                            <SelectItem value={TargetGroup.admin}>Admin</SelectItem>
-                                            <SelectItem value={TargetGroup.supplier}>Supplier</SelectItem>
-                                            <SelectItem value={TargetGroup.specific}>Specific</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                )}
-                            />
-
-                            <div className="flex items-center gap-2">
-                                <Button type="submit" className="bg-primary hover:bg-primary/90">
-                                    <Search className="mr-2 size-4" />
-                                    Search
-                                </Button>
-
-                                {isFiltered && (
-                                    <Button
-                                        variant="ghost"
-                                        type="button"
-                                        onClick={clearFilters}
-                                        className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
-                                    >
-                                        Clear Filter
-                                    </Button>
-                                )}
-                            </div>
-                        </div>
-                    </form>
-                </CardHeader>
+                <AdminFilterBar
+                    searchPlaceholder="Search title or content..."
+                    searchTerm={keyword}
+                    onSearchChange={setKeyword}
+                    onSearch={handleSearch}
+                    onClear={handleClear}
+                    isFiltered={isFiltered}
+                >
+                    <AdminSelect
+                        value={typeFilter}
+                        onValueChange={setTypeFilter}
+                        placeholder="Notification Type"
+                        options={typeOptions}
+                    />
+                    <AdminSelect
+                        value={groupFilter}
+                        onValueChange={setGroupFilter}
+                        placeholder="Audience"
+                        options={groupOptions}
+                        width="w-[180px]"
+                    />
+                </AdminFilterBar>
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
@@ -273,7 +211,7 @@ export default function AdminNotificationListPage() {
                                             <td colSpan={6} className="px-6 py-4 h-16 bg-white/5"></td>
                                         </tr>
                                     ))
-                                ) : notifications.map((notification) => (
+                                ) : notifications.map((notification: INotification) => (
                                     <tr key={notification.id} className="group hover:bg-white/[0.05] transition-all">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="text-xs font-mono font-bold text-primary">#{notification.id}</span>

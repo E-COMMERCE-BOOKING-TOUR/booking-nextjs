@@ -11,16 +11,14 @@ import {
     MessageCircle,
     Eye,
     Trash2,
-    Search,
     ExternalLink,
     MoreHorizontal
 } from "lucide-react";
 import { adminArticleApi } from "@/apis/admin/article";
 import type { IArticlePopular } from "@/types/response/article";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
     AlertDialog,
@@ -32,6 +30,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle
 } from "@/components/ui/alert-dialog";
+import { AdminFilterBar } from '@/components/admin/AdminFilterBar';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -149,20 +148,17 @@ const AdminSocialPage = () => {
 
             {/* Article Management Table */}
             <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
-                <CardHeader className="border-b border-white/5 pb-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <h2 className="text-lg font-bold">User Articles</h2>
-                        <div className="relative w-full md:w-80">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search by title or content..."
-                                className="pl-10 bg-white/5 border-white/10"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                        </div>
-                    </div>
-                </CardHeader>
+                <AdminFilterBar
+                    searchPlaceholder="Search by title, username or content..."
+                    searchTerm={search}
+                    onSearchChange={setSearch}
+                    onSearch={() => setPage(1)}
+                    onClear={() => {
+                        setSearch('');
+                        setPage(1);
+                    }}
+                    isFiltered={search !== ''}
+                />
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse font-sans">

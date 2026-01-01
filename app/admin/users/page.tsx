@@ -6,18 +6,20 @@ import { adminUserApi } from '@/apis/admin/user';
 import { adminRoleApi } from '@/apis/admin/role';
 import { adminSupplierApi } from '@/apis/admin/supplier';
 import { useSession } from 'next-auth/react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
-  Search,
   MoreHorizontal,
   Pencil,
   Trash2,
   Plus,
   Loader2,
 } from 'lucide-react';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { AdminFilterBar } from '@/components/admin/AdminFilterBar';
+import { AdminSelect } from '@/components/admin/AdminSelect';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -219,71 +221,70 @@ export default function AdminUserListPage() {
   const filteredUsers = users;
 
 
-  return (
-    <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">User Management</h1>
-          <p className="text-muted-foreground mt-1 text-lg">Manage accounts, permissions, and user information.</p>
-        </div>
-        <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90">
-          <Plus className="mr-2 size-4" />
-          Add User
-        </Button>
-      </div>
+    const roleOptions = [
+        { label: 'All Roles', value: 'all' },
+        ...roles.map((role: IAdminRole) => ({ label: role.name, value: role.id.toString() }))
+    ];
 
-      <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
-        <CardHeader className="border-b border-white/5 pb-6">
-          <div className="flex flex-col md:flex-row gap-4 items-center">
-            <div className="relative flex-1 w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, email, username..."
-                className="pl-10 bg-white/5 border-white/10"
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              />
-            </div>
-            <Button onClick={handleSearch} variant="secondary">Search</Button>
+    const supplierOptions = [
+        { label: 'All Suppliers', value: 'all' },
+        ...suppliers.map((supplier: IAdminSupplier) => ({ label: supplier.name, value: supplier.id.toString() }))
+    ];
 
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-full md:w-[180px] bg-white/5 border-white/10">
-                <SelectValue placeholder="Filter by Role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                {roles.map((role: IAdminRole) => (
-                  <SelectItem key={role.id} value={role.id.toString()}>{role.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+    const statusOptions = [
+        { label: 'All Statuses', value: 'all' },
+        { label: 'Active', value: '1' },
+        { label: 'Inactive', value: '0' }
+    ];
 
-            <Select value={supplierFilter} onValueChange={setSupplierFilter}>
-              <SelectTrigger className="w-full md:w-[180px] bg-white/5 border-white/10">
-                <SelectValue placeholder="Supplier" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Suppliers</SelectItem>
-                {suppliers.map((supplier: IAdminSupplier) => (
-                  <SelectItem key={supplier.id} value={supplier.id.toString()}>{supplier.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+    return (
+        <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <AdminPageHeader 
+                title="User Management" 
+                description="Manage accounts, permissions, and user information."
+            >
+                <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90 shadow-sm">
+                    <Plus className="mr-2 size-4" />
+                    Add User
+                </Button>
+            </AdminPageHeader>
 
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-[180px] bg-white/5 border-white/10">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="1">Active</SelectItem>
-                <SelectItem value="0">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
+            <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
+                <AdminFilterBar
+                    searchPlaceholder="Search by name, email, username..."
+                    searchTerm={keyword}
+                    onSearchChange={setKeyword}
+                    onSearch={handleSearch}
+                    onClear={() => {
+                        setKeyword('');
+                        setSearchTerm('');
+                        setRoleFilter('all');
+                        setSupplierFilter('all');
+                        setStatusFilter('all');
+                        setPage(1);
+                    }}
+                    isFiltered={keyword !== '' || roleFilter !== 'all' || supplierFilter !== 'all' || statusFilter !== 'all'}
+                >
+                    <AdminSelect 
+                        value={roleFilter} 
+                        onValueChange={setRoleFilter} 
+                        placeholder="Role" 
+                        options={roleOptions} 
+                    />
+                    <AdminSelect 
+                        value={supplierFilter} 
+                        onValueChange={setSupplierFilter} 
+                        placeholder="Supplier" 
+                        options={supplierOptions} 
+                    />
+                    <AdminSelect 
+                        value={statusFilter} 
+                        onValueChange={setStatusFilter} 
+                        placeholder="Status" 
+                        options={statusOptions} 
+                    />
+                </AdminFilterBar>
+                <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -453,6 +454,7 @@ export default function AdminUserListPage() {
                 <Select
                   onValueChange={(val) => setValue('status', Number(val))}
                   defaultValue={editingUser ? String(editingUser.status) : "1"}
+                  key={editingUser ? `edit-${editingUser.id}` : 'create'}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Status" />
@@ -469,6 +471,7 @@ export default function AdminUserListPage() {
                 <Select
                   onValueChange={(val) => setValue('role_id', Number(val))}
                   defaultValue={editingUser?.role?.id ? String(editingUser.role.id) : undefined}
+                  key={editingUser ? `role-${editingUser.id}` : 'role-create'}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Role" />
@@ -486,6 +489,7 @@ export default function AdminUserListPage() {
                 <Select
                   onValueChange={(val) => setValue('supplier_id', Number(val))}
                   defaultValue={editingUser?.supplier?.id ? String(editingUser.supplier.id) : undefined}
+                  key={editingUser ? `supplier-${editingUser.id}` : 'supplier-create'}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select Supplier" />

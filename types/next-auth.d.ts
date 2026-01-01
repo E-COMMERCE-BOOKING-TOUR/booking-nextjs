@@ -27,3 +27,5 @@ declare module "next-auth/jwt" {
         error?: string
     }
 }
+
+declare module "next-auth/react";

@@ -4,12 +4,11 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminTourApi } from '@/apis/admin/tour';
 import { useSession } from 'next-auth/react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { IAdminTour } from '@/types/admin/tour.dto';
 import {
-  Search,
   Plus,
   MoreHorizontal,
   Edit,
@@ -24,6 +23,9 @@ import {
   X,
   AlertCircle
 } from 'lucide-react';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { AdminFilterBar } from '@/components/admin/AdminFilterBar';
+import { AdminSelect } from '@/components/admin/AdminSelect';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -92,11 +94,6 @@ export default function AdminTourListPage() {
     setCurrentPage(1);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
 
   const isInitialLoading = isLoading || sessionStatus === 'loading';
   const tours = tourResponse?.data || [];
@@ -146,72 +143,71 @@ export default function AdminTourListPage() {
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tour Management</h1>
-          <p className="text-muted-foreground mt-1">
-            View and manage the list of available tours.
-          </p>
-        </div>
-        <Link href="/admin/tour/create">
-          <Button className="bg-primary hover:bg-primary/90 shadow-sm gap-2">
-            <Plus className="size-4" /> Add New Tour
-          </Button>
-        </Link>
-      </div>
+    const statusOptions = [
+        { label: 'All Statuses', value: 'all' },
+        { label: 'Active', value: 'active' },
+        { label: 'Inactive', value: 'inactive' },
+        { label: 'Draft', value: 'draft' }
+    ];
 
-      <Card className="border-none shadow-sm bg-card/50 backdrop-blur-sm">
-        <CardHeader className="pb-3 border-b">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name or address..."
-                  className="pl-9 bg-background/50 border-muted-foreground/20 focus-visible:ring-primary/30"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                />
-              </div>
-              <Button onClick={handleSearch} className="w-full sm:w-auto">Search</Button>
-            </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              <select
-                className="bg-background border border-muted-foreground/20 rounded-md px-3 py-1 text-sm focus:ring-1 focus:ring-primary h-9 outline-none"
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="">All Statuses</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="draft">Draft</option>
-              </select>
-              <select
-                className="bg-background border border-muted-foreground/20 rounded-md px-3 py-1 text-sm focus:ring-1 focus:ring-primary h-9 outline-none min-w-[140px]"
-                value={`${sortBy}-${sortOrder}`}
-                onChange={(e) => {
-                  const [field, order] = e.target.value.split('-');
-                  setSortBy(field);
-                  setSortOrder(order as 'ASC' | 'DESC');
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="created_at-DESC">Newest</option>
-                <option value="created_at-ASC">Oldest</option>
-                <option value="title-ASC">Name A-Z</option>
-                <option value="title-DESC">Name Z-A</option>
-              </select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
+    const sortOptions = [
+        { label: 'Newest', value: 'created_at-DESC' },
+        { label: 'Oldest', value: 'created_at-ASC' },
+        { label: 'Name A-Z', value: 'title-ASC' },
+        { label: 'Name Z-A', value: 'title-DESC' }
+    ];
+
+    return (
+        <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <AdminPageHeader 
+                title="Tour Management" 
+                description="View and manage the list of available tours."
+            >
+                <Link href="/admin/tour/create">
+                    <Button className="bg-primary hover:bg-primary/90 shadow-sm">
+                        <Plus className="mr-2 size-4" /> Add New Tour
+                    </Button>
+                </Link>
+            </AdminPageHeader>
+
+            <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
+                <AdminFilterBar
+                    searchPlaceholder="Search by name or address..."
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    onSearch={handleSearch}
+                    onClear={() => {
+                        setSearchTerm('');
+                        setKeyword('');
+                        setStatusFilter('');
+                        setCurrentPage(1);
+                    }}
+                    isFiltered={searchTerm !== '' || statusFilter !== ''}
+                >
+                    <AdminSelect 
+                        value={statusFilter || 'all'} 
+                        onValueChange={(val: string) => {
+                            setStatusFilter(val === 'all' ? '' : val);
+                            setCurrentPage(1);
+                        }} 
+                        placeholder="Status" 
+                        options={statusOptions} 
+                    />
+
+                    <AdminSelect 
+                        value={`${sortBy}-${sortOrder}`} 
+                        onValueChange={(val: string) => {
+                            const [field, order] = val.split('-');
+                            setSortBy(field);
+                            setSortOrder(order as 'ASC' | 'DESC');
+                            setCurrentPage(1);
+                        }} 
+                        placeholder="Sort By" 
+                        options={sortOptions} 
+                    />
+                </AdminFilterBar>
+                <CardContent className="p-0">
+                    <div className="overflow-x-auto">
             <table className="w-full text-sm text-left border-collapse">
               <thead>
                 <tr className="border-b bg-muted/30 text-muted-foreground font-medium uppercase text-[10px] tracking-wider">
@@ -239,7 +235,7 @@ export default function AdminTourListPage() {
                       No matching tours found.
                     </td>
                   </tr>
-                ) : tours.map((tour) => (
+                ) : tours.map((tour: IAdminTour) => (
                   <tr key={tour.id} className="group hover:bg-muted/30 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">

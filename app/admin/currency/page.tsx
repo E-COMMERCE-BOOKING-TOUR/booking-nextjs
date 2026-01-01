@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminCurrencyApi, CreateCurrencyDTO, UpdateCurrencyDTO } from '@/apis/admin/currency';
 import { useSession } from 'next-auth/react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { AdminFilterBar } from '@/components/admin/AdminFilterBar';
 import {
-    Search,
     MoreHorizontal,
     Edit,
     Trash2,
@@ -154,31 +155,25 @@ export default function AdminCurrencyPage() {
 
     return (
         <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Currency Management</h1>
-                    <p className="text-muted-foreground mt-1 text-lg">Manage system currencies.</p>
-                </div>
-                <Button onClick={openCreate} className="bg-primary hover:bg-primary/90">
+            <AdminPageHeader
+                title="Currency Management"
+                description="Manage system currencies and their symbols."
+            >
+                <Button onClick={openCreate} className="bg-primary hover:bg-primary/90 shadow-sm">
                     <Plus className="mr-2 size-4" />
                     Add Currency
                 </Button>
-            </div>
+            </AdminPageHeader>
 
             <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
-                <CardHeader className="border-b border-white/5 pb-6">
-                    <div className="flex flex-col md:flex-row md:items-center gap-4">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search by name or symbol..."
-                                className="pl-10 bg-white/5 border-white/10"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                    </div>
-                </CardHeader>
+                <AdminFilterBar
+                    searchPlaceholder="Search by name or symbol..."
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    onSearch={() => {}} // Live search
+                    onClear={() => setSearchTerm('')}
+                    isFiltered={searchTerm !== ''}
+                />
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
@@ -204,12 +199,14 @@ export default function AdminCurrencyPage() {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-2">
-                                                <Coins className="size-4 text-amber-500" />
+                                                <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                                                    <Coins className="size-4 text-amber-500" />
+                                                </div>
                                                 <span className="text-sm font-bold text-foreground">{currency.name}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="text-lg font-bold text-amber-500">{currency.symbol}</span>
+                                            <span className="text-lg font-black text-amber-500">{currency.symbol}</span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right">
                                             <DropdownMenu>
@@ -249,6 +246,7 @@ export default function AdminCurrencyPage() {
                     </div>
                 </CardContent>
             </Card>
+
 
             {/* Create Dialog */}
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>

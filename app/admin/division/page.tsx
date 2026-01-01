@@ -4,20 +4,22 @@ import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminDivisionApi, CreateDivisionDTO, UpdateDivisionDTO } from '@/apis/admin/division';
 import { useSession } from 'next-auth/react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import {
-    Search,
     MoreHorizontal,
     Edit,
     Trash2,
     Plus,
     MapPin,
-    ImageUp,
+    ImageUp
 } from 'lucide-react';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { AdminFilterBar } from '@/components/admin/AdminFilterBar';
+import { AdminSelect } from '@/components/admin/AdminSelect';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -222,7 +224,7 @@ export default function AdminDivisionPage() {
         });
     };
 
-    const filteredDivisions = divisions.filter(d =>
+    const filteredDivisions = divisions.filter((d: IDivision) =>
         !searchTerm ||
         d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         d.name_local.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -231,47 +233,42 @@ export default function AdminDivisionPage() {
 
     return (
         <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Division Management</h1>
-                    <p className="text-muted-foreground mt-1 text-lg">Manage provinces/cities by country.</p>
-                </div>
-                <Button onClick={openCreate} className="bg-primary hover:bg-primary/90">
+            <AdminPageHeader
+                title="Division Management"
+                description="Manage administrative subdivisions and locations."
+            >
+                <Button onClick={openCreate} className="bg-primary hover:bg-primary/90 shadow-sm">
                     <Plus className="mr-2 size-4" />
                     Add Division
                 </Button>
-            </div>
+            </AdminPageHeader>
 
             <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
-                <CardHeader className="border-b border-white/5 pb-6">
-                    <div className="flex flex-col md:flex-row md:items-center gap-4">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search by name, local name or code..."
-                                className="pl-10 bg-white/5 border-white/10"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                        <Select
-                            value={selectedCountryId?.toString() || 'all'}
-                            onValueChange={(val) => setSelectedCountryId(val === 'all' ? null : parseInt(val))}
-                        >
-                            <SelectTrigger className="w-[200px] bg-white/5 border-white/10">
-                                <SelectValue placeholder="Select Country" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Countries</SelectItem>
-                                {countries.map((country: ICountry) => (
-                                    <SelectItem key={country.id} value={country.id.toString()}>
-                                        {country.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </CardHeader>
+                <AdminFilterBar
+                    searchPlaceholder="Search by name, local name or code..."
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    onSearch={() => {}} // Search is live due to filter() but we can keep it for UI
+                    onClear={() => {
+                        setSearchTerm('');
+                        setSelectedCountryId(null);
+                    }}
+                    isFiltered={searchTerm !== '' || selectedCountryId !== null}
+                >
+                    <AdminSelect
+                        value={selectedCountryId?.toString() || 'all'}
+                        onValueChange={(val: string) => setSelectedCountryId(val === 'all' ? null : parseInt(val))}
+                        placeholder="Select Country"
+                        options={[
+                            { label: 'All Countries', value: 'all' },
+                            ...countries.map((country: ICountry) => ({
+                                label: country.name,
+                                value: country.id.toString()
+                            }))
+                        ]}
+                        width="w-[200px]"
+                    />
+                </AdminFilterBar>
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
@@ -294,14 +291,16 @@ export default function AdminDivisionPage() {
                                             <td colSpan={8} className="px-6 py-4 h-16 bg-white/5"></td>
                                         </tr>
                                     ))
-                                ) : filteredDivisions.map((division) => (
+                                ) : filteredDivisions.map((division: IDivision) => (
                                     <tr key={division.id} className="group hover:bg-white/[0.05] transition-all">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="text-xs font-mono font-bold text-primary">#{division.id}</span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-2">
-                                                <MapPin className="size-4 text-muted-foreground" />
+                                                <div className="p-2 rounded-lg bg-white/5 border border-white/10 group-hover:border-primary/20 transition-colors">
+                                                    <MapPin className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                                </div>
                                                 <span className="text-sm font-bold text-foreground">{division.name}</span>
                                             </div>
                                         </td>
@@ -309,7 +308,7 @@ export default function AdminDivisionPage() {
                                             <span className="text-sm text-foreground">{division.name_local}</span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <Badge variant="outline">{division.level}</Badge>
+                                            <Badge variant="outline" className="bg-white/5 border-white/10">{division.level}</Badge>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="text-sm text-muted-foreground font-mono">{division.code || '-'}</span>
@@ -358,6 +357,7 @@ export default function AdminDivisionPage() {
                     </div>
                 </CardContent>
             </Card>
+
 
             {/* Create Dialog */}
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
