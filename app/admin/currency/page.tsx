@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminFilterBar } from '@/components/admin/AdminFilterBar';
+import { HasPermission } from '@/components/auth/HasPermission';
 import {
     MoreHorizontal,
     Edit,
@@ -159,10 +160,12 @@ export default function AdminCurrencyPage() {
                 title="Currency Management"
                 description="Manage system currencies and their symbols."
             >
-                <Button onClick={openCreate} className="bg-primary hover:bg-primary/90 shadow-sm">
-                    <Plus className="mr-2 size-4" />
-                    Add Currency
-                </Button>
+                <HasPermission permission="currency:create">
+                    <Button onClick={openCreate} className="bg-primary hover:bg-primary/90 shadow-sm">
+                        <Plus className="mr-2 size-4" />
+                        Add Currency
+                    </Button>
+                </HasPermission>
             </AdminPageHeader>
 
             <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
@@ -217,18 +220,22 @@ export default function AdminCurrencyPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-48">
                                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                    <DropdownMenuItem onClick={() => openEdit(currency)} className="cursor-pointer">
-                                                        <Edit className="mr-2 size-4" />
-                                                        Edit
-                                                    </DropdownMenuItem>
+                                                    <HasPermission permission="currency:update">
+                                                        <DropdownMenuItem onClick={() => openEdit(currency)} className="cursor-pointer">
+                                                            <Edit className="mr-2 size-4" />
+                                                            Edit
+                                                        </DropdownMenuItem>
+                                                    </HasPermission>
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        onClick={() => setDeleteId(currency.id)}
-                                                        className="text-rose-500 cursor-pointer"
-                                                    >
-                                                        <Trash2 className="mr-2 size-4" />
-                                                        Delete
-                                                    </DropdownMenuItem>
+                                                    <HasPermission permission="currency:delete">
+                                                        <DropdownMenuItem
+                                                            onClick={() => setDeleteId(currency.id)}
+                                                            className="text-rose-500 cursor-pointer"
+                                                        >
+                                                            <Trash2 className="mr-2 size-4" />
+                                                            Delete
+                                                        </DropdownMenuItem>
+                                                    </HasPermission>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </td>

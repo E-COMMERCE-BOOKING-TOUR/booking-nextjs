@@ -21,11 +21,12 @@ export interface IUserAuth {
     email: string,
     phone?: string,
     role: {
+        id: number;
         name: string,
         desciption: string,
-        // permissions: {
-        //     permission_name: string,
-        //     description: string
-        // }[]
+        permissions: {
+            permission_name: string,
+            description: string
+        }[]
     }
 }

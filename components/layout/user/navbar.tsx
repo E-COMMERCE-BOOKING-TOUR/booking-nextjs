@@ -106,6 +106,9 @@ export default async function UserNavbar({ settings }: NavbarProps) {
 
 // UserMenu needs to be a client component due to Menu's auto-generated IDs
 const UserMenu = ({ user, t, lng }: { user: IUserAuth, t: (key: string, options?: Record<string, unknown>) => string, lng: string }) => {
+  const roleName = user.role?.name?.toLowerCase();
+  const showDashboard = roleName === "admin" || roleName === "supplier";
+
   return (
     <Menu.Root lazyMount unmountOnExit id="user-menu">
       <Menu.Trigger asChild>
@@ -115,6 +118,11 @@ const UserMenu = ({ user, t, lng }: { user: IUserAuth, t: (key: string, options?
       </Menu.Trigger>
       <Menu.Positioner>
         <Menu.Content>
+          {showDashboard && (
+            <Menu.Item value="dashboard">
+              <NextLink href="/admin">{t('dashboard', { defaultValue: 'Dashboard' })}</NextLink>
+            </Menu.Item>
+          )}
           <Menu.Item value="profile">
             <NextLink href="/mypage">{t('profile', { defaultValue: 'Profile' })}</NextLink>
           </Menu.Item>

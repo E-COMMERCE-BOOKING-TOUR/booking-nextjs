@@ -43,8 +43,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { HasPermission } from '@/components/auth/HasPermission';
 
 import { useForm, useWatch } from 'react-hook-form';
+import { IAdminBookingDetail } from '@/types/admin/booking';
 
 const StatusBadge = ({ status }: { status: string }) => {
   switch (status) {
@@ -150,7 +152,7 @@ export default function AdminBookingListPage() {
     setAppliedFilters(defaultValues);
   };
 
-  const filteredBookings = (bookings || []).filter(b => {
+  const filteredBookings = (bookings || []).filter((b: IAdminBookingDetail) => {
     const { searchTerm, statusFilter, paymentFilter, dateFilter } = appliedFilters;
 
     const matchesSearch = !searchTerm ||
@@ -276,7 +278,7 @@ export default function AdminBookingListPage() {
                         <td colSpan={8} className="px-6 py-4 h-16 bg-white/5"></td>
                       </tr>
                     ))
-                  ) : filteredBookings.map((booking) => (
+                  ) : filteredBookings.map((booking: IAdminBookingDetail) => (
                     <tr key={booking.id} className="group hover:bg-white/[0.05] transition-all">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-xs font-mono font-bold text-primary">#{booking.id}</span>
@@ -317,29 +319,35 @@ export default function AdminBookingListPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem asChild>
-                              <Link href={`/admin/booking/edit/${booking.id}`} className="cursor-pointer">
-                                <Eye className="mr-2 size-4" />
-                                Details
-                              </Link>
-                            </DropdownMenuItem>
-                            {booking.status === 'pending_confirm' && (
-                              <DropdownMenuItem
-                                onClick={() => confirmMutation.mutate(booking.id)}
-                                className="text-emerald-500 cursor-pointer"
-                              >
-                                <CheckCircle2 className="mr-2 size-4" />
-                                Confirm
+                            <HasPermission permission="booking:read">
+                              <DropdownMenuItem asChild>
+                                <Link href={`/admin/booking/edit/${booking.id}`} className="cursor-pointer">
+                                  <Eye className="mr-2 size-4" />
+                                  Details
+                                </Link>
                               </DropdownMenuItem>
+                            </HasPermission>
+                            {booking.status === 'pending_confirm' && (
+                              <HasPermission permission="booking:confirm">
+                                <DropdownMenuItem
+                                  onClick={() => confirmMutation.mutate(booking.id)}
+                                  className="text-emerald-500 cursor-pointer"
+                                >
+                                  <CheckCircle2 className="mr-2 size-4" />
+                                  Confirm
+                                </DropdownMenuItem>
+                              </HasPermission>
                             )}
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => setDeleteId(booking.id)}
-                              className="text-rose-500 cursor-pointer"
-                            >
-                              <Trash2 className="mr-2 size-4" />
-                              Delete
-                            </DropdownMenuItem>
+                            <HasPermission permission="booking:delete">
+                              <DropdownMenuItem
+                                onClick={() => setDeleteId(booking.id)}
+                                className="text-rose-500 cursor-pointer"
+                              >
+                                <Trash2 className="mr-2 size-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </HasPermission>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>

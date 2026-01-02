@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { GalleryVerticalEnd, Home, SquareCheck, ThumbsUp, Users, LogOut, Compass, Bell, MapPin, Settings, MessageCircle } from "lucide-react";
 
 import {
@@ -23,6 +24,22 @@ import { Button } from "@/components/ui/button";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
+import { usePermissions } from "@/hooks/usePermissions";
+
+interface SidebarChild {
+  title: string;
+  url: string;
+  permission?: string;
+}
+
+interface SidebarSection {
+  title: string;
+  base: string | string[];
+  icon: any;
+  url?: string;
+  children?: SidebarChild[];
+  permission?: string;
+}
 
 const sections = [
   {
@@ -35,19 +52,20 @@ const sections = [
     title: "Tour Management",
     base: "/admin/tour",
     icon: GalleryVerticalEnd,
+    permission: "tour:read",
     children: [
-      { title: "All Tours", url: "/admin/tour" },
-      { title: "Refund Policies", url: "/admin/tour/policies" },
-      { title: "Create New", url: "/admin/tour/create" },
+      { title: "All Tours", url: "/admin/tour", permission: "tour:read" },
+      { title: "Refund Policies", url: "/admin/tour/policies", permission: "tour:read" },
+      { title: "Create New", url: "/admin/tour/create", permission: "tour:create" },
     ],
   },
   {
     title: "Bookings",
     base: "/admin/booking",
     icon: SquareCheck,
+    permission: "booking:read",
     children: [
-      { title: "All Bookings", url: "/admin/booking" },
-      // { title: "Payment Logs", url: "/admin/booking/payments" },
+      { title: "All Bookings", url: "/admin/booking", permission: "booking:read" },
     ],
   },
   {
@@ -55,9 +73,9 @@ const sections = [
     base: ["/admin/users", "/admin/suppliers", "/admin/roles"],
     icon: Users,
     children: [
-      { title: "Users", url: "/admin/users" },
-      { title: "Suppliers", url: "/admin/suppliers" },
-      { title: "Roles & Permissions", url: "/admin/roles" },
+      { title: "Users", url: "/admin/users", permission: "user:read" },
+      { title: "Suppliers", url: "/admin/suppliers", permission: "supplier:read" },
+      { title: "Roles & Permissions", url: "/admin/roles", permission: "role:read" },
     ],
   },
   {
@@ -65,8 +83,8 @@ const sections = [
     base: ["/admin/division", "/admin/currency"],
     icon: MapPin,
     children: [
-      { title: "Divisions", url: "/admin/division" },
-      { title: "Currencies", url: "/admin/currency" },
+      { title: "Divisions", url: "/admin/division", permission: "division:read" },
+      { title: "Currencies", url: "/admin/currency", permission: "currency:read" },
     ],
   },
   {
@@ -74,20 +92,23 @@ const sections = [
     base: "/admin/review",
     icon: ThumbsUp,
     url: "/admin/review",
+    permission: "review:read",
   },
   {
     title: "Message Management",
     base: "/admin/message",
     icon: MessageCircle,
     url: "/admin/message",
+    permission: "system:admin", // Temporary, should use specific permission
   },
   {
     title: "Notifications",
     base: "/admin/notification",
     icon: Bell,
+    permission: "notification:read",
     children: [
-      { title: "All Notifications", url: "/admin/notification" },
-      { title: "Create New", url: "/admin/notification/create" },
+      { title: "All Notifications", url: "/admin/notification", permission: "notification:read" },
+      { title: "Create New", url: "/admin/notification/create", permission: "notification:create" },
     ],
   },
   {
@@ -95,8 +116,8 @@ const sections = [
     base: ["/admin/static-pages", "/admin/social"],
     icon: GalleryVerticalEnd,
     children: [
-      { title: "Static Pages", url: "/admin/static-pages" },
-      { title: "Social Management", url: "/admin/social" },
+      { title: "Static Pages", url: "/admin/static-pages", permission: "article:read" },
+      { title: "Social Management", url: "/admin/social", permission: "article:read" },
     ],
   },
   {
@@ -104,12 +125,40 @@ const sections = [
     base: "/admin/settings",
     icon: Settings,
     url: "/admin/settings",
+    permission: "system:config",
   },
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const activeSection = sections.find(sec =>
+  const { hasPermission, user } = usePermissions();
+
+  const filteredSections = React.useMemo(() => {
+    const filterSec = (sec: SidebarSection): SidebarSection | null => {
+      // If user is admin (case insensitive), show everything
+      if (user?.role?.name?.toLowerCase() === 'admin') return sec;
+
+      let newChildren = undefined;
+      if (sec.children) {
+        newChildren = sec.children.filter(child =>
+          !child.permission || hasPermission(child.permission)
+        );
+        if (newChildren.length === 0) return null;
+      }
+
+      if (sec.permission && !hasPermission(sec.permission)) {
+        return null;
+      }
+
+      return { ...sec, children: newChildren };
+    };
+
+    return sections
+      .map(sec => filterSec(sec as SidebarSection))
+      .filter((sec): sec is SidebarSection => sec !== null);
+  }, [sections, hasPermission, user?.role?.name]);
+
+  const activeSection = filteredSections.find(sec =>
     sec.children && (Array.isArray(sec.base)
       ? sec.base.some(b => pathname.startsWith(b))
       : pathname.startsWith(sec.base as string))
@@ -138,7 +187,7 @@ export function AppSidebar() {
               className="w-full space-y-1 border-none"
               defaultValue={activeSection?.title}
             >
-              {sections.map((sec) => {
+              {filteredSections.map((sec) => {
                 const Icon = sec.icon;
                 const isParentActive = Array.isArray(sec.base)
                   ? sec.base.some(b => pathname.startsWith(b))

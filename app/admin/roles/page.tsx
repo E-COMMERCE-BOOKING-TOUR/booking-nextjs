@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminFilterBar } from '@/components/admin/AdminFilterBar';
+import { HasPermission } from '@/components/auth/HasPermission';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -136,7 +137,11 @@ export default function AdminRolePage() {
 
     const handleOpenEdit = (role: IAdminRole) => {
         setEditingRole(role);
-        setSelectedPermissions(role.permissions?.map(p => p.id) || []);
+        setSelectedPermissions(role.permissions?.map(p => 
+            typeof p === 'string' 
+                ? (permissions as IAdminPermission[]).find(ap => ap.permission_name === p)?.id 
+                : (p as any).id
+        ).filter(id => id !== undefined) as number[] || []);
         reset({
             name: role.name,
             desciption: role.desciption
@@ -180,16 +185,20 @@ export default function AdminRolePage() {
                 description="Define roles and assign access permissions to users."
             >
                 <div className="flex items-center gap-3">
-                    <Link href="/admin/roles/permissions"> {/* Corrected typo: permisions -> permissions */}
-                        <Button variant="outline" className="border-white/10 hover:bg-white/5">
-                            <ShieldAlert className="mr-2 size-4 text-primary" />
-                            Manage Permissions
+                    <HasPermission permission="permission:read">
+                        <Link href="/admin/roles/permissions">
+                            <Button variant="outline" className="border-white/10 hover:bg-white/5">
+                                <ShieldAlert className="mr-2 size-4 text-primary" />
+                                Manage Permissions
+                            </Button>
+                        </Link>
+                    </HasPermission>
+                    <HasPermission permission="role:create">
+                        <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90 shadow-sm">
+                            <Plus className="mr-2 size-4" />
+                            Add Role
                         </Button>
-                    </Link>
-                    <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90 shadow-sm">
-                        <Plus className="mr-2 size-4" />
-                        Add Role
-                    </Button>
+                    </HasPermission>
                 </div>
             </AdminPageHeader>
 
@@ -240,9 +249,13 @@ export default function AdminRolePage() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex flex-wrap gap-1 max-w-[400px]">
-                                                    {role.permissions?.slice(0, 5).map(p => (
-                                                        <Badge key={p.id} variant="secondary" className="bg-white/10 hover:bg-white/20">
-                                                            {p.permission_name}
+                                                    {role.permissions?.slice(0, 5).map((p: any, idx) => (
+                                                        <Badge 
+                                                            key={typeof p === 'string' ? `${p}-${idx}` : (p.id || idx)} 
+                                                            variant="secondary" 
+                                                            className="bg-white/10 hover:bg-white/20"
+                                                        >
+                                                            {typeof p === 'string' ? p : p.permission_name}
                                                         </Badge>
                                                     ))}
                                                     {(role.permissions?.length || 0) > 5 && (
@@ -260,16 +273,20 @@ export default function AdminRolePage() {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onClick={() => handleOpenEdit(role)} className="cursor-pointer">
-                                                            <Pencil className="mr-2 size-4" /> Edit
-                                                        </DropdownMenuItem>
+                                                        <HasPermission permission="role:update">
+                                                            <DropdownMenuItem onClick={() => handleOpenEdit(role)} className="cursor-pointer">
+                                                                <Pencil className="mr-2 size-4" /> Edit
+                                                            </DropdownMenuItem>
+                                                        </HasPermission>
                                                         <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            onClick={() => setDeleteId(role.id)}
-                                                            className="text-rose-500 cursor-pointer"
-                                                        >
-                                                            <Trash2 className="mr-2 size-4" /> Delete
-                                                        </DropdownMenuItem>
+                                                        <HasPermission permission="role:delete">
+                                                            <DropdownMenuItem
+                                                                onClick={() => setDeleteId(role.id)}
+                                                                className="text-rose-500 cursor-pointer"
+                                                            >
+                                                                <Trash2 className="mr-2 size-4" /> Delete
+                                                            </DropdownMenuItem>
+                                                        </HasPermission>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </td>

@@ -22,6 +22,7 @@ import {
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminFilterBar } from '@/components/admin/AdminFilterBar';
 import { AdminSelect } from '@/components/admin/AdminSelect';
+import { HasPermission } from '@/components/auth/HasPermission';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -161,11 +162,13 @@ export default function AdminNotificationListPage() {
                 title="Notification Management"
                 description="Send and manage system notifications to users."
             >
-                <Link href="/admin/notification/create">
-                    <Button className="bg-primary hover:bg-primary/90 shadow-sm">
-                        <Plus className="mr-2 size-4" /> Create Notification
-                    </Button>
-                </Link>
+                <HasPermission permission="notification:create">
+                    <Link href="/admin/notification/create">
+                        <Button className="bg-primary hover:bg-primary/90 shadow-sm">
+                            <Plus className="mr-2 size-4" /> Create Notification
+                        </Button>
+                    </Link>
+                </HasPermission>
             </AdminPageHeader>
 
             <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
@@ -247,20 +250,24 @@ export default function AdminNotificationListPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-48">
                                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                    <DropdownMenuItem asChild>
-                                                        <Link href={`/admin/notification/edit/${notification.id}`} className="cursor-pointer">
-                                                            <Eye className="mr-2 size-4" />
-                                                            Edit
-                                                        </Link>
-                                                    </DropdownMenuItem>
+                                                    <HasPermission permission="notification:update">
+                                                        <DropdownMenuItem asChild>
+                                                            <Link href={`/admin/notification/edit/${notification.id}`} className="cursor-pointer">
+                                                                <Eye className="mr-2 size-4" />
+                                                                Edit
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                    </HasPermission>
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        onClick={() => setDeleteId(notification.id)}
-                                                        className="text-rose-500 cursor-pointer"
-                                                    >
-                                                        <Trash2 className="mr-2 size-4" />
-                                                        Delete
-                                                    </DropdownMenuItem>
+                                                    <HasPermission permission="notification:delete">
+                                                        <DropdownMenuItem
+                                                            onClick={() => setDeleteId(notification.id)}
+                                                            className="text-rose-500 cursor-pointer"
+                                                        >
+                                                            <Trash2 className="mr-2 size-4" />
+                                                            Delete
+                                                        </DropdownMenuItem>
+                                                    </HasPermission>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </td>

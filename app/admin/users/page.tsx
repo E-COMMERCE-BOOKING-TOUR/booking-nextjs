@@ -20,6 +20,7 @@ import {
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminFilterBar } from '@/components/admin/AdminFilterBar';
 import { AdminSelect } from '@/components/admin/AdminSelect';
+import { HasPermission } from '@/components/auth/HasPermission';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -243,10 +244,12 @@ export default function AdminUserListPage() {
                 title="User Management" 
                 description="Manage accounts, permissions, and user information."
             >
-                <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90 shadow-sm">
-                    <Plus className="mr-2 size-4" />
-                    Add User
-                </Button>
+                <HasPermission permission="user:create">
+                    <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90 shadow-sm">
+                        <Plus className="mr-2 size-4" />
+                        Add User
+                    </Button>
+                </HasPermission>
             </AdminPageHeader>
 
             <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
@@ -348,16 +351,20 @@ export default function AdminUserListPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => handleOpenEdit(user)} className="cursor-pointer">
-                              <Pencil className="mr-2 size-4" /> Edit
-                            </DropdownMenuItem>
+                            <HasPermission permission="user:update">
+                              <DropdownMenuItem onClick={() => handleOpenEdit(user)} className="cursor-pointer">
+                                <Pencil className="mr-2 size-4" /> Edit
+                              </DropdownMenuItem>
+                            </HasPermission>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => setDeleteId(user.id)}
-                              className="text-rose-500 cursor-pointer"
-                            >
-                              <Trash2 className="mr-2 size-4" /> Delete
-                            </DropdownMenuItem>
+                            <HasPermission permission="user:delete">
+                              <DropdownMenuItem
+                                onClick={() => setDeleteId(user.id)}
+                                className="text-rose-500 cursor-pointer"
+                              >
+                                <Trash2 className="mr-2 size-4" /> Delete
+                              </DropdownMenuItem>
+                            </HasPermission>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>

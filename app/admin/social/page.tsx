@@ -39,6 +39,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { HasPermission } from "@/components/auth/HasPermission";
 
 const StatCard = ({ title, value, icon, colorClass }: { title: string, value: number, icon: React.ReactNode, colorClass: string }) => (
     <Card className="border-white/5 bg-card/20 backdrop-blur-xl transition-all hover:bg-card/30">
@@ -211,13 +212,15 @@ const AdminSocialPage = () => {
                                                     {article.created_at ? format(new Date(article.created_at), 'MMM dd, yyyy') : 'N/A'}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <Switch
-                                                    checked={article.is_visible}
-                                                    onCheckedChange={() => article._id && toggleVisibilityMutation.mutate(article._id)}
-                                                    className="data-[state=checked]:bg-primary"
-                                                />
-                                            </td>
+                                             <td className="px-6 py-4 whitespace-nowrap">
+                                                 <HasPermission permission="article:update" fallback={<Switch checked={article.is_visible} disabled className="opacity-50" />}>
+                                                     <Switch
+                                                         checked={article.is_visible}
+                                                         onCheckedChange={() => article._id && toggleVisibilityMutation.mutate(article._id)}
+                                                         className="data-[state=checked]:bg-primary"
+                                                     />
+                                                 </HasPermission>
+                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
@@ -225,23 +228,27 @@ const AdminSocialPage = () => {
                                                             <MoreHorizontal className="size-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-48">
-                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                        <DropdownMenuItem asChild>
-                                                            <a href={`/social/post/${article._id}`} target="_blank" className="cursor-pointer flex items-center">
-                                                                <ExternalLink className="mr-2 size-4" />
-                                                                Preview
-                                                            </a>
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            onClick={() => article._id && setDeleteId(article._id)}
-                                                            className="text-rose-500 cursor-pointer"
-                                                        >
-                                                            <Trash2 className="mr-2 size-4" />
-                                                            Delete
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
+                                                     <DropdownMenuContent align="end" className="w-48">
+                                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                         <HasPermission permission="article:read">
+                                                             <DropdownMenuItem asChild>
+                                                                 <a href={`/social/post/${article._id}`} target="_blank" className="cursor-pointer flex items-center">
+                                                                     <ExternalLink className="mr-2 size-4" />
+                                                                     Preview
+                                                                 </a>
+                                                             </DropdownMenuItem>
+                                                         </HasPermission>
+                                                         <DropdownMenuSeparator />
+                                                         <HasPermission permission="article:delete">
+                                                             <DropdownMenuItem
+                                                                 onClick={() => article._id && setDeleteId(article._id)}
+                                                                 className="text-rose-500 cursor-pointer"
+                                                             >
+                                                                 <Trash2 className="mr-2 size-4" />
+                                                                 Delete
+                                                             </DropdownMenuItem>
+                                                         </HasPermission>
+                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </td>
                                         </tr>

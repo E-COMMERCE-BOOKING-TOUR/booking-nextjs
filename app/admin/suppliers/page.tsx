@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminFilterBar } from '@/components/admin/AdminFilterBar';
+import { HasPermission } from '@/components/auth/HasPermission';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -179,10 +180,12 @@ export default function AdminSupplierPage() {
         title="Supplier Management"
         description="Manage tour providers, contact information, and cooperation status."
       >
-        <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90 shadow-sm">
-          <Plus className="mr-2 size-4" />
-          Add Supplier
-        </Button>
+        <HasPermission permission="supplier:create">
+          <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90 shadow-sm">
+            <Plus className="mr-2 size-4" />
+            Add Supplier
+          </Button>
+        </HasPermission>
       </AdminPageHeader>
 
       <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
@@ -265,16 +268,20 @@ export default function AdminSupplierPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => handleOpenEdit(supplier)} className="cursor-pointer">
-                              <Pencil className="mr-2 size-4" /> Edit Information
-                            </DropdownMenuItem>
+                            <HasPermission permission="supplier:update">
+                              <DropdownMenuItem onClick={() => handleOpenEdit(supplier)} className="cursor-pointer">
+                                <Pencil className="mr-2 size-4" /> Edit Information
+                              </DropdownMenuItem>
+                            </HasPermission>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => setDeleteId(supplier.id)}
-                              className="text-rose-500 cursor-pointer"
-                            >
-                              <Trash2 className="mr-2 size-4" /> Delete
-                            </DropdownMenuItem>
+                            <HasPermission permission="supplier:delete">
+                              <DropdownMenuItem
+                                onClick={() => setDeleteId(supplier.id)}
+                                className="text-rose-500 cursor-pointer"
+                              >
+                                <Trash2 className="mr-2 size-4" /> Delete
+                              </DropdownMenuItem>
+                            </HasPermission>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>

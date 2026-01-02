@@ -49,10 +49,12 @@ const AdminDashboard = () => {
         fetchStats();
     }, [token]);
 
+    const isSupplier = session?.user?.role?.name?.toLowerCase() === 'supplier';
+
     const kpis = useMemo(() => {
         if (!stats) return [];
         const { kpis: k } = stats;
-        return [
+        const allKpis = [
             {
                 label: "Today's Revenue",
                 value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND' }).format(k.todayRevenue),
@@ -90,7 +92,12 @@ const AdminDashboard = () => {
                 trend: "up"
             },
         ];
-    }, [stats]);
+
+        if (isSupplier) {
+            return allKpis.filter(kpi => kpi.label !== "Users");
+        }
+        return allKpis;
+    }, [stats, isSupplier]);
 
     const chartData = useMemo(() => {
         if (!stats) return [];
@@ -120,8 +127,14 @@ const AdminDashboard = () => {
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Dashboard</h1>
-                    <p className="text-muted-foreground mt-1 text-lg">Welcome back! Here is your business summary.</p>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+                        {isSupplier ? 'Supplier Dashboard' : 'Dashboard'}
+                    </h1>
+                    <p className="text-muted-foreground mt-1 text-lg">
+                        {isSupplier 
+                            ? "Manage your tours and track your performance here." 
+                            : "Welcome back! Here is your business summary."}
+                    </p>
                 </div>
                 <div className="flex items-center gap-3">
                     <Button variant="outline" className="gap-2 border-white/10 bg-white/5 hover:bg-white/10 transition-all">
@@ -138,7 +151,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${isSupplier ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-6`}>
                 {kpis.map((kpi) => (
                     <Card key={kpi.label} className="border-white/5 bg-card/20 backdrop-blur-xl hover:border-primary/30 hover:bg-card/30 transition-all group overflow-hidden relative">
                         <div className={`absolute top-0 right-0 size-24 -mt-8 -mr-8 rounded-full blur-3xl opacity-10 transition-opacity group-hover:opacity-20 ${kpi.bg}`} />

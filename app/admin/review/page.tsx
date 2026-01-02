@@ -7,28 +7,66 @@ import { Card, CardTitle, CardHeader, CardDescription, CardContent, CardAction }
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { Star, MoreVertical, Trash2, Eye, EyeOff, ThumbsUp, Flag } from "lucide-react";
+import { Star, MoreVertical, Trash2, Eye, EyeOff, ThumbsUp, Flag, Search, X } from "lucide-react";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { HasPermission } from "@/components/auth/HasPermission";
 import { adminReviewApi } from "@/apis/admin/review";
+import { adminTourApi } from "@/apis/admin/tour";
 import { Separator } from "@/components/ui/separator";
 import { IReview } from "@/types/response/review.type";
+import { IAdminTour } from "@/types/admin/tour.dto";
 
 export default function AdminReview() {
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
   const queryClient = useQueryClient();
 
+  // Filters State
+  const [keyword, setKeyword] = React.useState("");
+  const [status, setStatus] = React.useState<string>("all");
+  const [tourId, setTourId] = React.useState<string>("all");
+  const [debouncedKeyword, setDebouncedKeyword] = React.useState("");
+
+  // Debounce keyword
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedKeyword(keyword);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [keyword]);
+
   const { data: reviews = [], isLoading } = useQuery({
-    queryKey: ['admin-reviews', token],
-    queryFn: () => adminReviewApi.getAll(token),
+    queryKey: ['admin-reviews', token, debouncedKeyword, status, tourId],
+    queryFn: () => adminReviewApi.getAll({
+      keyword: debouncedKeyword || undefined,
+      status: status === "all" ? undefined : status,
+      tour_id: tourId === "all" ? undefined : Number(tourId),
+      sortOrder: 'DESC'
+    }, token),
     enabled: !!token,
   });
+
+  // Fetch Tours for filter
+  const { data: toursData } = useQuery({
+    queryKey: ['admin-tours-minimal', token],
+    queryFn: () => adminTourApi.getAll({ limit: 100 }, token),
+    enabled: !!token,
+  });
+  const tours = toursData?.data || [];
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => adminReviewApi.remove(id, token),
@@ -154,6 +192,75 @@ export default function AdminReview() {
         </Card>
       </div>
 
+      {/* Filters Section */}
+      <Card>
+        <CardContent className="py-4">
+          <div className="flex flex-col md:flex-row gap-4 items-end">
+            <div className="flex-1 w-full space-y-1.5">
+              <label className="text-sm font-medium">Search Reviews</label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by title or content..."
+                  className="pl-9"
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                />
+                {keyword && (
+                  <button 
+                    onClick={() => setKeyword("")}
+                    className="absolute right-2.5 top-2.5"
+                  >
+                    <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="w-full md:w-[200px] space-y-1.5">
+              <label className="text-sm font-medium">Filter by Tour</label>
+              <Select value={tourId} onValueChange={setTourId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Tours" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Tours</SelectItem>
+                  {tours.map((t: IAdminTour) => (
+                    <SelectItem key={t.id} value={t.id.toString()}>{t.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="w-full md:w-[150px] space-y-1.5">
+              <label className="text-sm font-medium">Status</label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setKeyword("");
+                setStatus("all");
+                setTourId("all");
+              }}
+            >
+              Reset
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="border-b">
           <CardTitle className="text-xl">Traveler Feedback</CardTitle>
@@ -186,22 +293,26 @@ export default function AdminReview() {
                               <MoreVertical className="size-3" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleToggleVisibility(f.id)}>
-                              {f.status === 'approved' ? (
-                                <>
-                                  <EyeOff className="mr-2 size-4" /> Hide Review
-                                </>
-                              ) : (
-                                <>
-                                  <Eye className="mr-2 size-4" /> Show Review
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDelete(f.id)} className="text-rose-500">
-                              <Trash2 className="mr-2 size-4" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
+                                  <DropdownMenuContent align="end">
+                                    <HasPermission permission="review:delete">
+                                      <DropdownMenuItem onClick={() => handleToggleVisibility(f.id)}>
+                                        {f.status === 'approved' ? (
+                                          <>
+                                            <EyeOff className="mr-2 size-4" /> Hide Review
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Eye className="mr-2 size-4" /> Show Review
+                                          </>
+                                        )}
+                                      </DropdownMenuItem>
+                                    </HasPermission>
+                                    <HasPermission permission="review:delete">
+                                      <DropdownMenuItem onClick={() => handleDelete(f.id)} className="text-rose-500">
+                                        <Trash2 className="mr-2 size-4" /> Delete
+                                      </DropdownMenuItem>
+                                    </HasPermission>
+                                  </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
 

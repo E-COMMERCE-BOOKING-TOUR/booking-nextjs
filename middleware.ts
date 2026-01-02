@@ -26,6 +26,23 @@ function getLocale(request: NextRequest) {
     return fallbackLng
 }
 
+// Map admin sub-routes to their required base "read" permission
+const adminSubRoutePermissions: Record<string, string> = {
+    "/admin/tour": "tour:read",
+    "/admin/booking": "booking:read",
+    "/admin/users": "user:read",
+    "/admin/suppliers": "supplier:read",
+    "/admin/roles": "role:read",
+    "/admin/division": "division:read",
+    "/admin/currency": "currency:read",
+    "/admin/notification": "notification:read",
+    "/admin/review": "review:read",
+    "/admin/social": "article:read",
+    "/admin/static-pages": "article:read",
+    "/admin/message": "system:admin",
+    "/admin/settings": "system:config",
+};
+
 export async function middleware(request: NextRequest) {
     const { nextUrl } = request;
     const pathname = nextUrl.pathname;
@@ -41,7 +58,17 @@ export async function middleware(request: NextRequest) {
 
     const isLoggedIn = !!token;
     const hasAccessToken = !!token?.accessToken;
-    const isAdmin = token?.role?.name?.toLowerCase() === "admin";
+    const roleName = token?.role?.name?.toLowerCase();
+    const isAdmin = roleName === "admin";
+
+    const userPermissions = (token?.role?.permissions || []) as any[];
+    const hasPermission = (p: string) => userPermissions.some(perm =>
+        (typeof perm === 'string' ? perm : perm.permission_name) === p
+    );
+    const hasAnyAdminPermission = userPermissions.some(perm => {
+        const name = typeof perm === 'string' ? perm : perm.permission_name;
+        return name?.endsWith(":read") || name?.startsWith("system:");
+    });
 
     // Check route types
     const isApiAuthRoute = pathname.startsWith(apiAuthPrefix);
@@ -61,10 +88,33 @@ export async function middleware(request: NextRequest) {
         if (!isLoggedIn || !hasAccessToken) {
             const callbackUrl = nextUrl.pathname + nextUrl.search;
             response = NextResponse.redirect(new URL(`/user-login?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url));
-        } else if (!isAdmin) {
-            response = NextResponse.redirect(new URL("/", request.url));
-        } else {
+        } else if (isAdmin) {
+            // Absolute access for admin role
             response = NextResponse.next();
+        } else {
+            // Check granular permissions for non-admin roles
+            let allowed = false;
+
+            // Find the longest matching sub-route key
+            const matchingSubRoute = Object.keys(adminSubRoutePermissions)
+                .filter(route => pathname === route || pathname.startsWith(`${route}/`))
+                .sort((a, b) => b.length - a.length)[0];
+
+            if (matchingSubRoute) {
+                const requiredPermission = adminSubRoutePermissions[matchingSubRoute];
+                allowed = hasPermission(requiredPermission);
+            } else if (pathname === "/admin" || pathname === "/admin/dashboard") {
+                // Allow dashboard if they have any admin-level permission OR are a supplier
+                allowed = hasAnyAdminPermission || roleName === "supplier";
+            }
+
+            if (allowed) {
+                response = NextResponse.next();
+            } else {
+                // If they have some admin access, redirect to dashboard, otherwise to home
+                const redirectTo = hasAnyAdminPermission ? "/admin" : "/";
+                response = NextResponse.redirect(new URL(redirectTo, request.url));
+            }
         }
     } else if (isUserRoute) {
         if (!isLoggedIn || !hasAccessToken) {

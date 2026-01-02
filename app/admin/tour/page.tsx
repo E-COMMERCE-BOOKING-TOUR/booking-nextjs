@@ -26,6 +26,7 @@ import {
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminFilterBar } from '@/components/admin/AdminFilterBar';
 import { AdminSelect } from '@/components/admin/AdminSelect';
+import { HasPermission } from '@/components/auth/HasPermission';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -163,11 +164,13 @@ export default function AdminTourListPage() {
                 title="Tour Management" 
                 description="View and manage the list of available tours."
             >
-                <Link href="/admin/tour/create">
-                    <Button className="bg-primary hover:bg-primary/90 shadow-sm">
-                        <Plus className="mr-2 size-4" /> Add New Tour
-                    </Button>
-                </Link>
+                <HasPermission permission="tour:create">
+                    <Link href="/admin/tour/create">
+                        <Button className="bg-primary hover:bg-primary/90 shadow-sm">
+                            <Plus className="mr-2 size-4" /> Add New Tour
+                        </Button>
+                    </Link>
+                </HasPermission>
             </AdminPageHeader>
 
             <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
@@ -282,22 +285,26 @@ export default function AdminTourListPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Link href={`/admin/tour/edit/${tour.id}`}>
-                          <Button variant="ghost" size="icon" className="size-8 text-muted-foreground hover:text-primary hover:bg-primary/5">
-                            <Edit className="size-4" />
+                        <HasPermission permission="tour:update">
+                          <Link href={`/admin/tour/edit/${tour.id}`}>
+                            <Button variant="ghost" size="icon" className="size-8 text-muted-foreground hover:text-primary hover:bg-primary/5">
+                              <Edit className="size-4" />
+                            </Button>
+                          </Link>
+                        </HasPermission>
+                        <HasPermission permission="tour:read">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={cn(
+                              "size-8",
+                              tour.is_visible ? "text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50" : "text-amber-500 hover:text-amber-600 hover:bg-amber-50"
+                            )}
+                            onClick={() => checkVisibility(tour.id)}
+                          >
+                            {tour.is_visible ? <ShieldCheck className="size-4" /> : <ShieldAlert className="size-4" />}
                           </Button>
-                        </Link>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={cn(
-                            "size-8",
-                            tour.is_visible ? "text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50" : "text-amber-500 hover:text-amber-600 hover:bg-amber-50"
-                          )}
-                          onClick={() => checkVisibility(tour.id)}
-                        >
-                          {tour.is_visible ? <ShieldCheck className="size-4" /> : <ShieldAlert className="size-4" />}
-                        </Button>
+                        </HasPermission>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="size-8 text-muted-foreground">
@@ -311,27 +318,33 @@ export default function AdminTourListPage() {
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase pb-1">Status</DropdownMenuLabel>
-                            <DropdownMenuItem
-                              onClick={() => statusMutation.mutate({ id: tour.id, status: 'active' })}
-                              disabled={tour.status === 'active'}
-                              className="text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50"
-                            >
-                              Activate
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => statusMutation.mutate({ id: tour.id, status: 'inactive' })}
-                              disabled={tour.status === 'inactive'}
-                              className="text-amber-600 focus:text-amber-600 focus:bg-amber-50"
-                            >
-                              Deactivate
-                            </DropdownMenuItem>
+                            <HasPermission permission="tour:publish">
+                              <DropdownMenuItem
+                                onClick={() => statusMutation.mutate({ id: tour.id, status: 'active' })}
+                                disabled={tour.status === 'active'}
+                                className="text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50"
+                              >
+                                Activate
+                              </DropdownMenuItem>
+                            </HasPermission>
+                            <HasPermission permission="tour:publish">
+                              <DropdownMenuItem
+                                onClick={() => statusMutation.mutate({ id: tour.id, status: 'inactive' })}
+                                disabled={tour.status === 'inactive'}
+                                className="text-amber-600 focus:text-amber-600 focus:bg-amber-50"
+                              >
+                                Deactivate
+                              </DropdownMenuItem>
+                            </HasPermission>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive focus:bg-destructive/5"
-                              onClick={() => setDeleteId(tour.id)}
-                            >
-                              <Trash2 className="size-4 mr-2" /> Delete Tour
-                            </DropdownMenuItem>
+                            <HasPermission permission="tour:delete">
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive focus:bg-destructive/5"
+                                onClick={() => setDeleteId(tour.id)}
+                              >
+                                <Trash2 className="size-4 mr-2" /> Delete Tour
+                              </DropdownMenuItem>
+                            </HasPermission>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
