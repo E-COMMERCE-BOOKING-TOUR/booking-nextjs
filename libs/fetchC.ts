@@ -5,7 +5,7 @@ interface IInitialFetch {
 }
 
 const initialFetch: IInitialFetch = {
-    BaseURL: process.env.API_BACKEND_CONTAINER ?? process.env.NEXT_PUBLIC_API_BACKEND,
+    BaseURL: process.env.API_BACKEND_CONTAINER ?? process.env.NEXT_PUBLIC_API_BACKEND ?? process.env.NEXT_PUBLIC_API_URL,
     headers: {
         "X-Requested-With": "XMLHttpRequest",
         "Content-Type": "application/json",

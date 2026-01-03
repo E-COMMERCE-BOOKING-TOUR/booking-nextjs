@@ -159,6 +159,8 @@ const ExploreContent = () => {
     );
 }
 
+export const dynamic = "force-dynamic";
+
 const ExplorePage = () => {
     return (
         <Suspense fallback={<Center py={10}><Spinner color="main" /></Center>}>

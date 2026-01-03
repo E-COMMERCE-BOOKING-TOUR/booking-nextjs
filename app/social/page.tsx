@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 import { cookieName, fallbackLng } from "@/libs/i18n/settings";
 import { createTranslation } from "@/libs/i18n";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
     const cookieStore = await cookies();
     const lng = cookieStore.get(cookieName)?.value || fallbackLng;

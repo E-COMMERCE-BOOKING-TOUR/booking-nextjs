@@ -7,6 +7,8 @@ import { cookies } from "next/headers";
 import { cookieName, fallbackLng } from "@/libs/i18n/settings";
 import { createTranslation } from "@/libs/i18n";
 
+export const dynamic = "force-dynamic";
+
 export default async function CheckoutCompletePage() {
     const result = await bookingApi.getCurrent();
 
