@@ -7,10 +7,11 @@ import { Diagonal } from '@/components/layout/user';
 import tour from '@/apis/tour';
 import division from '@/apis/division';
 import { settingsApi } from '@/apis/settings';
-
 import { cookies } from 'next/headers';
 import { cookieName, fallbackLng } from '@/libs/i18n/settings';
 import { createTranslation } from '@/libs/i18n';
+
+export const dynamic = "force-dynamic";
 
 export default async function TopPage() {
   const cookieStore = await cookies();

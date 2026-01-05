@@ -9,6 +9,8 @@ import { settingsApi } from '@/apis/settings';
 import { cookies } from 'next/headers';
 import { cookieName, fallbackLng } from '@/libs/i18n/settings';
 
+export const dynamic = "force-dynamic";
+
 export default async function TopPageLayout({
     children,
 }: Readonly<{

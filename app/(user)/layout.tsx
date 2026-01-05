@@ -8,6 +8,8 @@ import { cookieName, fallbackLng } from '@/libs/i18n/settings';
 import '../globals.css';
 import ChatboxWrapper from '@/components/chatbox/ChatboxWrapper';
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata(): Promise<Metadata> {
   try {
     const settings = await settingsApi.get();
