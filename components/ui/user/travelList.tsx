@@ -11,10 +11,9 @@ interface TravelDestination {
 
 interface TravelListProps {
     destinations: TravelDestination[];
-    lng?: string;
 }
 
-export default function TravelList({ destinations, lng }: TravelListProps) {
+export default function TravelList({ destinations }: TravelListProps) {
     const largeItems = destinations.slice(0, 2);
     const smallItems = destinations.slice(2);
 
@@ -30,7 +29,6 @@ export default function TravelList({ destinations, lng }: TravelListProps) {
                             title={item.title}
                             toursCount={item.toursCount}
                             flag={item.flag}
-                            lng={lng}
                         />
                     ))}
                 </Grid>
@@ -46,7 +44,6 @@ export default function TravelList({ destinations, lng }: TravelListProps) {
                             title={item.title}
                             toursCount={item.toursCount}
                             flag={item.flag}
-                            lng={lng}
                         />
                     ))}
                 </Grid>

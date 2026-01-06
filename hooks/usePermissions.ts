@@ -10,8 +10,8 @@ export const usePermissions = () => {
         // Admin has all permissions
         if (user.role?.name?.toLowerCase() === 'admin') return true;
 
-        const permissions = user.role?.permissions || [];
-        return permissions.some((p: any) =>
+        const permissions = (user.role?.permissions || []) as (string | { permission_name: string })[];
+        return permissions.some((p) =>
             (typeof p === 'string' ? p : p.permission_name) === permission_name
         );
     };
@@ -20,9 +20,9 @@ export const usePermissions = () => {
         if (!user) return false;
         if (user.role?.name?.toLowerCase() === 'admin') return true;
 
-        const permissions = user.role?.permissions || [];
+        const permissions = (user.role?.permissions || []) as (string | { permission_name: string })[];
         return permission_names.some(name =>
-            permissions.some((p: any) =>
+            permissions.some((p) =>
                 (typeof p === 'string' ? p : p.permission_name) === name
             )
         );
@@ -32,9 +32,9 @@ export const usePermissions = () => {
         if (!user) return false;
         if (user.role?.name?.toLowerCase() === 'admin') return true;
 
-        const permissions = user.role?.permissions || [];
+        const permissions = (user.role?.permissions || []) as (string | { permission_name: string })[];
         return permission_names.every(name =>
-            permissions.some((p: any) =>
+            permissions.some((p) =>
                 (typeof p === 'string' ? p : p.permission_name) === name
             )
         );

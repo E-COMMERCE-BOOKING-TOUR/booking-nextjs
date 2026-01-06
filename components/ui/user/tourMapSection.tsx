@@ -3,22 +3,17 @@
 import { Box, Button, Icon, Image } from "@chakra-ui/react";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import { useState } from "react";
-import { useTranslation } from "@/libs/i18n/client";
-import { fallbackLng } from "@/libs/i18n/settings";
-import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 interface TourMapSectionProps {
     mapUrl: string;
     previewImage?: string;
-    lng?: string;
 }
 
 const DEFAULT_PREVIEW = "https://images.unsplash.com/photo-1524661135-423995f22d0b?w=400&h=300&fit=crop";
 
-export default function TourMapSection({ mapUrl, previewImage, lng: propLng }: TourMapSectionProps) {
-    const searchParams = useSearchParams();
-    const lng = propLng || searchParams?.get('lng') || fallbackLng;
-    const { t } = useTranslation(lng);
+export default function TourMapSection({ mapUrl, previewImage }: TourMapSectionProps) {
+    const t = useTranslations('common');
     const [showMap, setShowMap] = useState(false);
 
     return (

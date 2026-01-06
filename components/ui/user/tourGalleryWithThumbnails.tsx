@@ -5,24 +5,14 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Autoplay, Thumbs } from "swiper/modules";
 import { useState } from "react";
 import type { Swiper as SwiperType } from "swiper";
-import { useTranslation } from "@/libs/i18n/client";
-import { fallbackLng } from "@/libs/i18n/settings";
-import { useSearchParams } from "next/navigation";
-
-import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
-import "swiper/css/thumbs";
+import { useTranslations } from "next-intl";
 
 interface TourGalleryWithThumbnailsProps {
     images: string[];
-    lng?: string;
 }
 
-export default function TourGalleryWithThumbnails({ images, lng: propLng }: TourGalleryWithThumbnailsProps) {
-    const searchParams = useSearchParams();
-    const lng = propLng || searchParams?.get('lng') || fallbackLng;
-    const { t } = useTranslation(lng);
+export default function TourGalleryWithThumbnails({ images }: TourGalleryWithThumbnailsProps) {
+    const t = useTranslations('common');
     const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
     const [activeIndex, setActiveIndex] = useState(0);
 

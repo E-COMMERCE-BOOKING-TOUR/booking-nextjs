@@ -1,14 +1,12 @@
 import { Box, Heading, VStack, HStack, Image, Text, DataList, Stack, Flex } from "@chakra-ui/react";
 import { IBookingDetail } from "@/types/booking";
 import { numberFormat } from "@/libs/function";
-import { useTranslation } from "@/libs/i18n/client";
-import { fallbackLng } from "@/libs/i18n/settings";
-import { useSearchParams } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
 
-export const BookingSummaryCard = ({ booking, lng: propLng }: { booking: IBookingDetail, lng?: string }) => {
-    const searchParams = useSearchParams();
-    const lng = propLng || searchParams?.get('lng') || fallbackLng;
-    const { t } = useTranslation(lng as string);
+export const BookingSummaryCard = ({ booking }: { booking: IBookingDetail }) => {
+    const t = useTranslations('common');
+    const locale = useLocale();
+    const lng = locale; // Keep for date formatting logic below if needed
 
     return (
         <VStack gap={4}>

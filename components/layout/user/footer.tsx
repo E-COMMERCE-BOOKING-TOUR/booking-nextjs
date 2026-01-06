@@ -12,9 +12,7 @@ import {
 } from "@chakra-ui/react";
 import { FaFacebookF, FaTwitter, FaInstagram, FaYoutube, FaCcVisa, FaCcMastercard, FaCcPaypal, FaGooglePay, FaApplePay } from "react-icons/fa";
 import { SiteSettings } from "@/apis/admin/settings";
-import { useTranslation } from "@/libs/i18n/client";
-import { fallbackLng } from "@/libs/i18n/settings";
-import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 const FooterLink = ({ children, href = "#" }: { children: React.ReactNode; href?: string }) => (
   <Link
@@ -48,13 +46,10 @@ const SocialButton = ({ icon, label, href }: { icon: React.ElementType; label: s
 
 interface FooterProps {
   settings?: SiteSettings | null;
-  lng?: string;
 }
 
-export default function UserFooter({ settings, lng: propLng }: FooterProps) {
-  const searchParams = useSearchParams();
-  const lng = propLng || searchParams?.get('lng') || fallbackLng;
-  const { t } = useTranslation(lng as string);
+export default function UserFooter({ settings }: FooterProps) {
+  const t = useTranslations('common');
 
   const companyTitle = settings?.company_name || "TOURGUIDE";
 

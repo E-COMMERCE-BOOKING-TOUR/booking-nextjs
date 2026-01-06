@@ -1,6 +1,6 @@
 import { Box, Flex, Text, Stack, VStack } from "@chakra-ui/react";
 import type { TourTestimonial } from "@/types/tour";
-import { createTranslation } from "@/libs/i18n";
+import { getTranslations } from "next-intl/server";
 
 interface TourSidebarProps {
     score: number;
@@ -8,7 +8,6 @@ interface TourSidebarProps {
     reviewCount: number;
     staffScore: number;
     testimonial?: TourTestimonial;
-    lng: string;
 }
 
 export default async function TourSidebar({
@@ -17,9 +16,8 @@ export default async function TourSidebar({
     reviewCount,
     staffScore,
     testimonial,
-    lng,
 }: TourSidebarProps) {
-    const { t } = await createTranslation(lng);
+    const t = await getTranslations('common');
     return (
         <Stack gap={6} w="full">
             {/* Unified Score Board Card */}

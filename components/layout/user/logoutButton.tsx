@@ -4,14 +4,10 @@ import { logout } from "@/actions/auth"
 import { Menu } from "@chakra-ui/react"
 import { useState } from "react"
 
-import { useTranslation } from "@/libs/i18n/client"
-import { fallbackLng } from "@/libs/i18n/settings"
-import { useSearchParams } from "next/navigation"
+import { useTranslations } from "next-intl"
 
-export const LogoutButton = ({ lng: propLng }: { lng?: string }) => {
-    const searchParams = useSearchParams()
-    const lng = propLng || searchParams?.get('lng') || fallbackLng
-    const { t } = useTranslation(lng as string)
+export const LogoutButton = () => {
+    const t = useTranslations('common')
     const [isLoading, setIsLoading] = useState(false)
 
     const handleLogout = async () => {

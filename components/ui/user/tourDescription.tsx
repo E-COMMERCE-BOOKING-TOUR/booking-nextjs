@@ -1,6 +1,6 @@
 import { Box, Heading, Text, VStack, List, Grid, HStack, Badge } from "@chakra-ui/react";
 import { FaCheckCircle, FaTimesCircle, FaClock, FaUsers, FaGlobe } from "react-icons/fa";
-import { createTranslation } from "@/libs/i18n";
+import { getTranslations } from "next-intl/server";
 
 interface TourDescriptionProps {
     description: string;
@@ -16,7 +16,6 @@ interface TourDescriptionProps {
         capacity: string;
     };
     meetingPoint: string;
-    lng: string;
 }
 
 export default async function TourDescription({
@@ -26,9 +25,8 @@ export default async function TourDescription({
     notIncluded,
     details,
     meetingPoint,
-    lng,
 }: TourDescriptionProps) {
-    const { t } = await createTranslation(lng);
+    const t = await getTranslations('common');
     return (
         <VStack align="stretch">
             {/* Description Section */}

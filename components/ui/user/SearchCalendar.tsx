@@ -3,23 +3,21 @@
 import { Box, Button, Flex, Grid, Heading, HStack, Text } from "@chakra-ui/react";
 import { useState, useMemo } from "react";
 import { BsChevronLeft, BsChevronRight } from "react-icons/bs";
-import { useTranslation } from "@/libs/i18n/client";
-import { fallbackLng } from "@/libs/i18n/settings";
+import { useTranslations, useLocale } from "next-intl";
 
 interface SearchCalendarProps {
     onSelectDate: (start: Date, end: Date) => void;
     initialStartDate?: Date | null;
     initialEndDate?: Date | null;
-    lng?: string;
 }
 
 const DAYS_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const DAYS_VI = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
-export default function SearchCalendar({ onSelectDate, initialStartDate, initialEndDate, lng: propLng }: SearchCalendarProps) {
-    const lng = propLng || fallbackLng;
-    const { t } = useTranslation(lng);
-    const DAYS = lng === 'vi' ? DAYS_VI : DAYS_EN;
+export default function SearchCalendar({ onSelectDate, initialStartDate, initialEndDate }: SearchCalendarProps) {
+    const locale = useLocale();
+    const t = useTranslations('common');
+    const DAYS = locale === 'vi' ? DAYS_VI : DAYS_EN;
 
     const [currentMonth, setCurrentMonth] = useState(() => {
         if (initialStartDate) {
@@ -90,7 +88,7 @@ export default function SearchCalendar({ onSelectDate, initialStartDate, initial
         const year = date.getFullYear();
         const month = date.getMonth();
         const days = getDaysArray(year, month);
-        const monthName = date.toLocaleString(lng === 'vi' ? 'vi-VN' : 'en-US', { month: 'long', year: 'numeric' });
+        const monthName = date.toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US', { month: 'long', year: 'numeric' });
 
         return (
             <Box flex={1} minW="280px">
@@ -211,9 +209,9 @@ export default function SearchCalendar({ onSelectDate, initialStartDate, initial
             {startDate && (
                 <Box mt={4} p={3} bg="blue.50" borderRadius="lg" textAlign="center">
                     <Text fontSize="sm" color="gray.700">
-                        {startDate.toLocaleDateString(lng === 'vi' ? 'vi-VN' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                        {startDate.toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                         {endDate && (
-                            <> → {endDate.toLocaleDateString(lng === 'vi' ? 'vi-VN' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</>
+                            <> → {endDate.toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</>
                         )}
                     </Text>
                 </Box>

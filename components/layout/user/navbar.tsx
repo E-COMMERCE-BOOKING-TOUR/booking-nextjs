@@ -11,20 +11,17 @@ import { IUserAuth } from '@/types/response/auth.type';
 import { MobileDrawer } from './navMobileDrawer';
 import { LogoutButton } from './logoutButton';
 import { SiteSettings } from '@/apis/admin/settings';
-import { cookies } from 'next/headers';
-import { cookieName, fallbackLng } from '@/libs/i18n/settings';
-import { createTranslation } from '@/libs/i18n';
+import { getTranslations } from 'next-intl/server';
 import { LanguageSwitcher } from '@/components/ui/user/LanguageSwitcher';
 import { Logo, MenuLinks } from './navCommon';
+import { Session } from 'next-auth'; // Added Session import
 
 interface NavbarProps {
   settings?: SiteSettings | null;
 }
 
 export default async function UserNavbar({ settings }: NavbarProps) {
-  const cookieStore = await cookies();
-  const lng = cookieStore.get(cookieName)?.value || fallbackLng;
-  const { t } = await createTranslation(lng);
+  const t = await getTranslations('common');
 
   const navItems: { name: string, link: string }[] = [
     {
@@ -72,14 +69,14 @@ export default async function UserNavbar({ settings }: NavbarProps) {
         </Box>
 
         <HStack gap={3}>
-          <LanguageSwitcher lng={lng} />
+          <LanguageSwitcher />
           {/* Authentication Buttons */}
           <Flex gap={2} alignItems="center">
             {isLoggedIn ? (
               <>
-                <NotificationBell lng={lng} />
-                <ResumeBookingButton booking={activeBooking} mr={2} lng={lng} />
-                <UserMenu user={user} t={t} lng={lng} />
+                <NotificationBell />
+                <ResumeBookingButton booking={activeBooking} mr={2} />
+                <UserMenu session={session} t={t} />
               </>
             ) : (
               <>
@@ -105,9 +102,14 @@ export default async function UserNavbar({ settings }: NavbarProps) {
 }
 
 // UserMenu needs to be a client component due to Menu's auto-generated IDs
-const UserMenu = ({ user, t, lng }: { user: IUserAuth, t: (key: string, options?: Record<string, unknown>) => string, lng: string }) => {
-  const roleName = user.role?.name?.toLowerCase();
+const UserMenu = ({ session, t }: { session: Session | null, t: Awaited<ReturnType<typeof getTranslations>> }) => {
+  const user = session?.user as IUserAuth | undefined;
+  const roleName = user?.role?.name?.toLowerCase();
   const showDashboard = roleName === "admin" || roleName === "supplier";
+
+  if (!user) {
+    return null; // Or some fallback UI if user is not available
+  }
 
   return (
     <Menu.Root lazyMount unmountOnExit id="user-menu">
@@ -126,7 +128,7 @@ const UserMenu = ({ user, t, lng }: { user: IUserAuth, t: (key: string, options?
           <Menu.Item value="profile">
             <NextLink href="/mypage">{t('profile', { defaultValue: 'Profile' })}</NextLink>
           </Menu.Item>
-          <LogoutButton lng={lng} />
+          <LogoutButton />
         </Menu.Content>
       </Menu.Positioner>
     </Menu.Root>

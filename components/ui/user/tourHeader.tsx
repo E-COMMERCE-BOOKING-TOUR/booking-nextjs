@@ -3,7 +3,7 @@ import { Box, Flex, Heading, HStack, Text, Button, Badge, VStack, Dialog, Portal
 import dynamic from "next/dynamic";
 import StarRating from "./starRating";
 import { useState, useTransition, useMemo } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { toaster } from "@/components/chakra/toaster";
 import { createBooking } from "@/actions/booking";
 import logout from "@/actions/logout";
@@ -12,8 +12,7 @@ import { IUserTourSession, TourVariantStatus } from "@/types/response/tour.type"
 import { useQuery } from "@tanstack/react-query";
 import Breadcrumb from "./breadcrumb";
 import { formatPriceValue } from '@/utils/currency';
-import { useTranslation } from "@/libs/i18n/client";
-import { fallbackLng } from "@/libs/i18n/settings";
+import { useTranslations, useLocale } from "next-intl";
 
 /**
  * Variant type for TourHeader component
@@ -47,17 +46,15 @@ interface TourHeaderProps {
     breadcrumbItems: { label: string; href: string }[];
     currencySymbol?: string;
     currencyCode?: string;
-    lng?: string;
 }
 
 const TourCalendar = dynamic(() => import("./TourCalendar"), {
     loading: () => <Box p={10} textAlign="center"><Spinner size="xl" /></Box>,
 });
 
-export default function TourHeader({ title, location, rating, price, oldPrice, slug, variants, durationDays, breadcrumbItems, currencySymbol = 'VND', currencyCode, lng: propLng }: TourHeaderProps) {
-    const searchParams = useSearchParams();
-    const lng = propLng || searchParams?.get('lng') || fallbackLng;
-    const { t } = useTranslation(lng);
+export default function TourHeader({ title, location, rating, price, oldPrice, slug, variants, durationDays, breadcrumbItems, currencySymbol = 'VND', currencyCode }: TourHeaderProps) {
+    const locale = useLocale();
+    const t = useTranslations('common');
     const router = useRouter();
     const [startDate, setStartDate] = useState<Date | null>(null);
     const [selectedVariantId, setSelectedVariantId] = useState<number | null>(() => variants?.[0]?.id || null);
@@ -327,7 +324,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                                     onClick={openCalendar}
                                                 >
                                                     {startDate
-                                                        ? new Date(startDate).toLocaleDateString(lng === 'vi' ? 'vi-VN' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+                                                        ? new Date(startDate).toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
                                                         : t("click_select_date")
                                                     }
                                                 </Button>

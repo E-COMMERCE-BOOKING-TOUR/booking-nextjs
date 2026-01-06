@@ -20,13 +20,10 @@ import { useState, useCallback, memo } from "react";
 import { FaSearch, FaFilter, FaStar, FaCheck, FaSlidersH } from "react-icons/fa";
 import { IUserTourSearchParams } from "@/types/response/tour.type";
 import { useFormContext } from "react-hook-form";
-import { useTranslation } from "@/libs/i18n/client";
-import { fallbackLng } from "@/libs/i18n/settings";
-import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 interface FilterSidebarProps {
     onApply: (data: IUserTourSearchParams) => void;
-    lng?: string;
 }
 
 // Memoized Rating Item component
@@ -115,16 +112,13 @@ CheckboxItem.displayName = "CheckboxItem";
 interface FilterContentProps {
     onApply: (data: IUserTourSearchParams) => void;
     onClose?: () => void; // Optional - only for mobile drawer
-    lng?: string;
 }
 
 import { masterApi } from "@/apis/master";
 import { useQuery } from "@tanstack/react-query";
 
-const FilterContent = memo(({ onApply, onClose, lng: propLng }: FilterContentProps) => {
-    const searchParams = useSearchParams();
-    const lng = propLng || searchParams?.get('lng') || fallbackLng;
-    const { t } = useTranslation(lng as string);
+const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
+    const t = useTranslations('common');
     const { register, setValue, getValues, reset, handleSubmit, watch } = useFormContext<IUserTourSearchParams>();
 
     // Fetch countries and divisions
@@ -368,10 +362,8 @@ const FilterContent = memo(({ onApply, onClose, lng: propLng }: FilterContentPro
 FilterContent.displayName = "FilterContent";
 
 // Desktop Sidebar Component
-export const FilterSidebar = memo(({ onApply, lng: propLng }: FilterSidebarProps) => {
-    const searchParams = useSearchParams();
-    const lng = propLng || searchParams?.get('lng') || fallbackLng;
-    const { t } = useTranslation(lng as string);
+export const FilterSidebar = memo(({ onApply }: FilterSidebarProps) => {
+    const t = useTranslations('common');
     return (
         <Box
             bg="white"
@@ -387,7 +379,7 @@ export const FilterSidebar = memo(({ onApply, lng: propLng }: FilterSidebarProps
                 <Icon as={FaFilter} color="main" />
                 {t('filters', { defaultValue: 'Filters' })}
             </Heading>
-            <FilterContent onApply={onApply} lng={lng} />
+            <FilterContent onApply={onApply} />
         </Box>
     );
 });
@@ -398,10 +390,8 @@ interface MobileFilterDrawerProps {
     onApply: (data: IUserTourSearchParams) => void;
 }
 
-export const MobileFilterDrawer = memo(({ onApply, lng: propLng }: MobileFilterDrawerProps & { lng?: string }) => {
-    const searchParams = useSearchParams();
-    const lng = propLng || searchParams?.get('lng') || fallbackLng;
-    const { t } = useTranslation(lng as string);
+export const MobileFilterDrawer = memo(({ onApply }: MobileFilterDrawerProps) => {
+    const t = useTranslations('common');
     const [isOpen, setIsOpen] = useState(false);
 
     return (
@@ -437,7 +427,7 @@ export const MobileFilterDrawer = memo(({ onApply, lng: propLng }: MobileFilterD
                                 </HStack>
                             </Drawer.Header>
                             <Drawer.Body py={6} overflowY="auto">
-                                <FilterContent onApply={onApply} onClose={() => setIsOpen(false)} lng={lng} />
+                                <FilterContent onApply={onApply} onClose={() => setIsOpen(false)} />
                             </Drawer.Body>
                         </Drawer.Content>
                     </Drawer.Positioner>

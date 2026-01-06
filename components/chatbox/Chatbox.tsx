@@ -14,12 +14,12 @@ import {
     Circle
 } from '@chakra-ui/react';
 import chatboxApi, { IMessage, IStartChatResponse } from '@/apis/chatbox';
-import { useTranslation } from '@/libs/i18n/client';
+import { useTranslations } from "next-intl";
 import { useSession } from 'next-auth/react';
 
 
-export default function Chatbox({ lng, isOpen, onClose }: { lng: string; isOpen: boolean; onClose: () => void }) {
-    const { t } = useTranslation(lng);
+export default function Chatbox({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+    const t = useTranslations('common');
     const { data: session, status } = useSession();
     const token = session?.user?.accessToken;
 
@@ -52,7 +52,7 @@ export default function Chatbox({ lng, isOpen, onClose }: { lng: string; isOpen:
         }
 
         connectingRef.current = true;
-        
+
         // Use a timeout to move setState out of synchronous effect execution
         setTimeout(() => setIsConnecting(true), 0);
 
@@ -200,7 +200,7 @@ export default function Chatbox({ lng, isOpen, onClose }: { lng: string; isOpen:
                                 boxShadow={isConnected ? "0 0 8px rgba(72, 187, 120, 0.6)" : "none"}
                             />
                             <Text fontSize="xs" fontWeight="medium" opacity={0.9}>
-                                {isConnected ? t('online', 'Online') : t('connecting', 'Connecting...')}
+                                {isConnected ? t('online', { defaultValue: 'Online' }) : t('connecting', { defaultValue: 'Connecting...' })}
                             </Text>
                         </HStack>
                     </VStack>
@@ -228,7 +228,7 @@ export default function Chatbox({ lng, isOpen, onClose }: { lng: string; isOpen:
                             <Loader2 className="animate-spin" size={32} />
                         </Box>
                         <Text fontSize="sm" fontWeight="medium" color="gray.500">
-                            {t('securing_connection', 'Securing connection...')}
+                            {t('securing_connection', { defaultValue: 'Securing connection...' })}
                         </Text>
                     </Flex>
                 ) : (
@@ -285,7 +285,7 @@ export default function Chatbox({ lng, isOpen, onClose }: { lng: string; isOpen:
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                                placeholder={t('type_message', 'Type a message...')}
+                                placeholder={t('type_message', { defaultValue: 'Type a message...' })}
                                 disabled={!isConnected}
                                 borderRadius="full"
                                 py={5}

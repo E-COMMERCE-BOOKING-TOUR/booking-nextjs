@@ -8,19 +8,18 @@ import {
     MenuTrigger,
     MenuPositioner
 } from "@chakra-ui/react"
-import { useTranslation } from "@/libs/i18n/client"
-import { languages } from "@/libs/i18n/settings"
+import { useLocale } from "next-intl"
 import { IoLanguage } from "react-icons/io5"
-import Cookies from 'js-cookie'
-import { cookieName } from "@/libs/i18n/settings"
+import { usePathname, useRouter } from "@/i18n/navigation"
+import { routing } from "@/i18n/routing"
 
-export const LanguageSwitcher = ({ lng }: { lng: string }) => {
-    const { i18n } = useTranslation(lng)
+export const LanguageSwitcher = () => {
+    const locale = useLocale();
+    const pathname = usePathname();
+    const router = useRouter();
 
-    const handleLanguageChange = (newLng: string) => {
-        i18n.changeLanguage(newLng)
-        Cookies.set(cookieName, newLng, { path: '/', expires: 365 })
-        window.location.reload() // Force reload to update server-side translations if any
+    const handleLanguageChange = (newLocale: "en" | "vi") => {
+        router.replace(pathname, { locale: newLocale });
     }
 
     return (
@@ -28,17 +27,17 @@ export const LanguageSwitcher = ({ lng }: { lng: string }) => {
             <MenuTrigger asChild>
                 <Button variant="ghost" size="sm" borderRadius="full">
                     <IoLanguage style={{ marginRight: '8px' }} />
-                    {lng.toUpperCase()}
+                    {locale.toUpperCase()}
                 </Button>
             </MenuTrigger>
             <MenuPositioner>
                 <MenuContent>
-                    {languages.map((l) => (
+                    {routing.locales.map((l) => (
                         <MenuItem
                             key={l}
                             value={l}
-                            onClick={() => handleLanguageChange(l)}
-                            bg={l === lng ? "gray.100" : "transparent"}
+                            onClick={() => handleLanguageChange(l as "en" | "vi")}
+                            bg={l === locale ? "gray.100" : "transparent"}
                         >
                             {l === 'en' ? 'English' : 'Tiếng Việt'}
                         </MenuItem>

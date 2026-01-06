@@ -1,19 +1,14 @@
 'use client';
 
 import { Button, ButtonProps } from '@chakra-ui/react';
-import { usePathname } from 'next/navigation';
-import NextLink from 'next/link';
 import { IBookingDetail } from '@/types/booking';
 import { useEffect, useState } from 'react';
-import { useTranslation } from "@/libs/i18n/client";
-import { fallbackLng } from "@/libs/i18n/settings";
-import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { usePathname, Link } from "@/i18n/navigation";
 
-export const ResumeBookingButton = ({ booking, lng: propLng, ...props }: { booking: IBookingDetail | null, lng?: string } & ButtonProps) => {
+export const ResumeBookingButton = ({ booking, ...props }: { booking: IBookingDetail | null } & ButtonProps) => {
     const pathname = usePathname();
-    const searchParams = useSearchParams();
-    const lng = propLng || searchParams?.get('lng') || fallbackLng;
-    const { t } = useTranslation(lng as string);
+    const t = useTranslations('common');
 
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
@@ -83,9 +78,9 @@ export const ResumeBookingButton = ({ booking, lng: propLng, ...props }: { booki
             _hover={{ bg: "blue.50" }}
             {...props}
         >
-            <NextLink href="/checkout">
+            <Link href="/checkout">
                 {t('resume_booking', { defaultValue: 'Resume Booking' })} ({formatTime(timeLeft)})
-            </NextLink>
+            </Link>
         </Button>
     );
 };

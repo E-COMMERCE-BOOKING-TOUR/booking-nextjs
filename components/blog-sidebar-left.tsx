@@ -11,6 +11,7 @@ import {
 import { useSession } from "next-auth/react";
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 type Item = {
     key: string
@@ -32,16 +33,17 @@ export default function BlogSidebarLeft({
 }: Readonly<BlogSidebarLeftProps>) {
     const { data: session } = useSession();
     const pathname = usePathname();
+    const t = useTranslations('common');
 
     // Generate items with dynamic profile link
     const menuItems = useMemo(() => {
         const userUuid = (session?.user as { uuid?: string })?.uuid;
         return [
-            { key: "home", label: "Home", href: "/social", icon: Home },
-            { key: "explore", label: "Explore", href: "/social/explore", icon: Search },
-            { key: "notifications", label: "Notifications", href: "/social/notification", icon: Bell },
-            { key: "bookmarks", label: "Bookmarks", href: "/social/bookmark", icon: Bookmark },
-            { key: "profile", label: "Profile", href: userUuid ? `/social/profile/${userUuid}` : "/social", icon: User },
+            { key: "home", label: t('home', { defaultValue: 'Home' }), href: "/social", icon: Home },
+            { key: "explore", label: t('explore', { defaultValue: 'Explore' }), href: "/social/explore", icon: Search },
+            { key: "notifications", label: t('notifications', { defaultValue: 'Notifications' }), href: "/social/notification", icon: Bell },
+            { key: "bookmarks", label: t('bookmarks', { defaultValue: 'Bookmarks' }), href: "/social/bookmark", icon: Bookmark },
+            { key: "profile", label: t('profile', { defaultValue: 'Profile' }), href: userUuid ? `/social/profile/${userUuid}` : "/social", icon: User },
         ];
     }, [session?.user]);
 

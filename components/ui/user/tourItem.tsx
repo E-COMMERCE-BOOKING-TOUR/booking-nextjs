@@ -1,12 +1,10 @@
 "use client";
 
 import { Badge, Box, HStack, Image, Text, VStack } from "@chakra-ui/react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import { formatPriceValue } from '@/utils/currency';
-import { useTranslation } from "@/libs/i18n/client";
-import { fallbackLng } from "@/libs/i18n/settings";
-import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 interface TourItemProps {
   image: string;
@@ -22,17 +20,16 @@ interface TourItemProps {
   slug: string;
   currencySymbol?: string;
   currencyCode?: string;
-  lng?: string;
 }
 
-const TourRating = ({ rating, ratingText, reviews, t }: { rating: number; ratingText: string; reviews: number; t: (key: string, options?: Record<string, unknown>) => string }) => (
+const TourRating = ({ rating, ratingText, reviews, t }: { rating: number; ratingText: string; reviews: number; t: ReturnType<typeof useTranslations> }) => (
   <HStack gap={2}>
     <Box bg="main" color="white" px={2} py={1} borderRadius="10px 10px 10px 0" fontWeight="bold" fontSize="lg">
       {parseFloat(rating.toString()).toFixed(1)}
     </Box>
     <VStack align="start" gap={0}>
       <Text fontSize="sm" fontWeight="medium" color="gray.900">{ratingText}</Text>
-      <Text fontSize="xs" color="gray.500">{reviews} {t('reviews', { count: reviews, defaultValue: 'reviews' })}</Text>
+      <Text fontSize="xs" color="gray.500">{reviews} {t('reviews', { count: reviews })}</Text>
     </VStack>
   </HStack>
 );
@@ -51,11 +48,8 @@ export default function TourItem({
   slug,
   currencySymbol = 'VND', // Default to VND if undefined
   currencyCode,
-  lng: propLng,
 }: TourItemProps) {
-  const searchParams = useSearchParams();
-  const lng = propLng || searchParams?.get('lng') || fallbackLng;
-  const { t } = useTranslation(lng as string);
+  const t = useTranslations('common');
 
   return (
     <VStack

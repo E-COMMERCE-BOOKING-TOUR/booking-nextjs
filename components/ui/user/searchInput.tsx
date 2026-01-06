@@ -13,10 +13,9 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import SearchCalendar from "./SearchCalendar";
-import { useTranslation } from "@/libs/i18n/client";
-import { fallbackLng } from "@/libs/i18n/settings";
+import { useTranslations, useLocale } from "next-intl";
 import { FaCalendarAlt, FaMapMarkerAlt, FaMinus, FaPlus, FaSearch, FaUsers } from "react-icons/fa";
 
 interface ChildrenData {
@@ -40,7 +39,6 @@ interface SearchData {
 
 interface SearchInputProps {
   defaultDestination?: string;
-  lng?: string;
 }
 
 // Counter Component
@@ -142,13 +140,10 @@ const GuestRow = ({
   </HStack>
 );
 
-export default function SearchInput({ defaultDestination = "", lng: propLng }: SearchInputProps = {}) {
+export default function SearchInput({ defaultDestination = "" }: SearchInputProps = {}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  // On the server, we can only rely on props or searchParams.
-  // Cookies.get is client-side only and would cause hydration mismatch.
-  const lng = propLng || searchParams.get('lng') || fallbackLng;
-  const { t } = useTranslation(lng as string);
+  const locale = useLocale();
+  const t = useTranslations('common');
 
   const [searchData, setSearchData] = useState<SearchData>({
     destination: defaultDestination,
@@ -191,7 +186,7 @@ export default function SearchInput({ defaultDestination = "", lng: propLng }: S
 
   const formatDate = (date: Date | null) => {
     if (!date) return "";
-    return date.toLocaleDateString(lng === 'vi' ? 'vi-VN' : 'en-US', {
+    return date.toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US', {
       month: "short",
       day: "numeric",
     });

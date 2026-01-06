@@ -12,9 +12,7 @@ import {
     Portal,
     Badge,
 } from "@chakra-ui/react";
-import { useTranslation } from "@/libs/i18n/client";
-import { fallbackLng } from "@/libs/i18n/settings";
-import { useSearchParams } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
 import notificationApi from "@/apis/notification";
@@ -22,10 +20,9 @@ import { FiBell, FiInfo, FiAlertCircle, FiCheckCircle } from "react-icons/fi";
 import Link from "next/link";
 import { INotification } from "@/types/notification";
 
-export const NotificationBell = ({ lng: propLng }: { lng?: string }) => {
-    const searchParams = useSearchParams();
-    const lng = propLng || searchParams?.get('lng') || fallbackLng;
-    const { t } = useTranslation(lng as string);
+export const NotificationBell = () => {
+    const locale = useLocale();
+    const t = useTranslations('common');
 
     const { data: session } = useSession();
     const token = session?.user?.accessToken;
@@ -127,7 +124,7 @@ export const NotificationBell = ({ lng: propLng }: { lng?: string }) => {
                                                         {n.description}
                                                     </Text>
                                                     <Text fontSize="9px" color="gray.400" mt={1}>
-                                                        {new Date(n.created_at).toLocaleString(lng === 'vi' ? 'vi-VN' : 'en-US')}
+                                                        {new Date(n.created_at).toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US')}
                                                     </Text>
                                                 </VStack>
                                             </HStack>

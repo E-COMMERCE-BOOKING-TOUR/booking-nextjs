@@ -1,10 +1,8 @@
 "use client";
 
 import { Box, HStack, Image, Text, VStack } from "@chakra-ui/react";
-import Link from "next/link";
-import { useTranslation } from "@/libs/i18n/client";
-import { fallbackLng } from "@/libs/i18n/settings";
-import { useSearchParams } from "next/navigation";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 interface TravelItemProps {
   id: number;
@@ -12,13 +10,10 @@ interface TravelItemProps {
   title: string;
   toursCount: number;
   flag?: string;
-  lng?: string;
 }
 
-const LargeTravelItem = ({ id, image, title, toursCount, flag = "🇻🇳", lng: propLng }: TravelItemProps) => {
-  const searchParams = useSearchParams();
-  const lng = propLng || searchParams?.get('lng') || fallbackLng;
-  const { t } = useTranslation(lng as string);
+const LargeTravelItem = ({ id, image, title, toursCount, flag = "🇻🇳" }: TravelItemProps) => {
+  const t = useTranslations('common');
 
   return (
     <Link href={`/tour/list?division_ids=${id}`}>
@@ -78,10 +73,8 @@ const LargeTravelItem = ({ id, image, title, toursCount, flag = "🇻🇳", lng:
   );
 };
 
-const SmallTravelItem = ({ id, image, title, toursCount, flag = "🇻🇳", lng: propLng }: TravelItemProps) => {
-  const searchParams = useSearchParams();
-  const lng = propLng || searchParams?.get('lng') || fallbackLng;
-  const { t } = useTranslation(lng as string);
+const SmallTravelItem = ({ id, image, title, toursCount, flag = "🇻🇳" }: TravelItemProps) => {
+  const t = useTranslations('common');
 
   return (
     <Link href={`/tour/list?division_ids=${id}`}>

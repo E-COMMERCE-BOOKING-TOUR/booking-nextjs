@@ -12,7 +12,6 @@ import {
     Image as ChakraImage,
 } from "@chakra-ui/react";
 import { FaStar, FaImage, FaTimes } from "react-icons/fa";
-import { useSearchParams } from "next/navigation";
 import { useState, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,11 +20,10 @@ import { toaster } from "@/components/chakra/toaster";
 import tourApi from "@/apis/tour";
 import { useSession } from "next-auth/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTranslation } from "@/libs/i18n/client";
-import { fallbackLng } from "@/libs/i18n/settings";
+import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
-const createSchema = (t: (key: string) => string) => z.object({
+const createSchema = (t: ReturnType<typeof useTranslations>) => z.object({
     rating: z.number().min(1, t("rating_required")).max(5),
     title: z.string().min(2, t("title_min_length")).max(255),
     content: z.string().min(10, t("content_min_length")),
@@ -41,13 +39,10 @@ interface ReviewFormProps {
     tourId: number;
     onSuccess?: () => void;
     onCancel?: () => void;
-    lng?: string;
 }
 
-export default function ReviewForm({ tourId, onSuccess, onCancel, lng: propLng }: ReviewFormProps) {
-    const searchParams = useSearchParams();
-    const lng = propLng || searchParams?.get('lng') || fallbackLng;
-    const { t } = useTranslation(lng);
+export default function ReviewForm({ tourId, onSuccess, onCancel }: ReviewFormProps) {
+    const t = useTranslations('common');
     const schema = useMemo(() => createSchema(t), [t]);
     const { data: session } = useSession();
     const token = session?.user?.accessToken;

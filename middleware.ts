@@ -8,23 +8,10 @@ import {
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import { fallbackLng, languages, cookieName } from './libs/i18n/settings'
+import createMiddleware from 'next-intl/middleware';
+import { routing } from './i18n/routing';
 
-function getLocale(request: NextRequest) {
-    // 1. Check cookie
-    const cookieLocale = request.cookies.get(cookieName)?.value
-    if (cookieLocale && languages.includes(cookieLocale)) return cookieLocale
-
-    // 2. Check header
-    const acceptLanguage = request.headers.get('accept-language')
-    if (acceptLanguage) {
-        const preferredLanguage = acceptLanguage.split(',')[0].split('-')[0]
-        if (languages.includes(preferredLanguage)) return preferredLanguage
-    }
-
-    // 3. Fallback
-    return fallbackLng
-}
+const intlMiddleware = createMiddleware(routing);
 
 // Map admin sub-routes to their required base "read" permission
 const adminSubRoutePermissions: Record<string, string> = {
@@ -47,8 +34,11 @@ export async function middleware(request: NextRequest) {
     const { nextUrl } = request;
     const pathname = nextUrl.pathname;
 
-    // 1. Language detection (Must happen before potential early returns)
-    const lng = getLocale(request);
+    // 1. Determine locale and pathname without locale
+    const localePattern = new RegExp(`^/(${routing.locales.join('|')})(/|$)`);
+    const match = pathname.match(localePattern);
+    const locale = match ? match[1] : routing.defaultLocale;
+    const pathnameWithoutLocale = pathname.replace(localePattern, '/') || '/';
 
     // Get the session token
     const token = await getToken({
@@ -61,7 +51,7 @@ export async function middleware(request: NextRequest) {
     const roleName = token?.role?.name?.toLowerCase();
     const isAdmin = roleName === "admin";
 
-    const userPermissions = (token?.role?.permissions || []) as any[];
+    const userPermissions = (token?.role?.permissions || []) as (string | { permission_name: string })[];
     const hasPermission = (p: string) => userPermissions.some(perm =>
         (typeof perm === 'string' ? perm : perm.permission_name) === p
     );
@@ -70,75 +60,74 @@ export async function middleware(request: NextRequest) {
         return name?.endsWith(":read") || name?.startsWith("system:");
     });
 
-    // Check route types
-    const isApiAuthRoute = pathname.startsWith(apiAuthPrefix);
-    const isAuthRoute = isMatchingRoute(pathname, authRoutes);
-    const isPublicRoute = isMatchingRoute(pathname, publicRoutes);
-    const isUserRoute = isMatchingRoute(pathname, userRoutes);
-    const isAdminRoute = isMatchingRoute(pathname, adminRoutes);
-
-    let response: NextResponse | null = null;
+    // Check route types on pathnameWithoutLocale
+    const isApiAuthRoute = pathnameWithoutLocale.startsWith(apiAuthPrefix);
+    const isAuthRoute = isMatchingRoute(pathnameWithoutLocale, authRoutes);
+    const isPublicRoute = isMatchingRoute(pathnameWithoutLocale, publicRoutes);
+    const isUserRoute = isMatchingRoute(pathnameWithoutLocale, userRoutes);
+    const isAdminRoute = isMatchingRoute(pathnameWithoutLocale, adminRoutes);
 
     // 2. Routing logic
     if (isApiAuthRoute) {
-        response = NextResponse.next();
-    } else if (isPublicRoute) {
-        response = NextResponse.next();
-    } else if (isAdminRoute) {
+        return NextResponse.next();
+    }
+
+    if (isPublicRoute) {
+        return intlMiddleware(request);
+    }
+
+    if (isAdminRoute) {
         if (!isLoggedIn || !hasAccessToken) {
             const callbackUrl = nextUrl.pathname + nextUrl.search;
-            response = NextResponse.redirect(new URL(`/user-login?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url));
+            return NextResponse.redirect(new URL(`/${locale}/user-login?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url));
         } else if (isAdmin) {
             // Absolute access for admin role
-            response = NextResponse.next();
+            return intlMiddleware(request);
         } else {
             // Check granular permissions for non-admin roles
             let allowed = false;
 
             // Find the longest matching sub-route key
             const matchingSubRoute = Object.keys(adminSubRoutePermissions)
-                .filter(route => pathname === route || pathname.startsWith(`${route}/`))
+                .filter(route => pathnameWithoutLocale === route || pathnameWithoutLocale.startsWith(`${route}/`))
                 .sort((a, b) => b.length - a.length)[0];
 
             if (matchingSubRoute) {
                 const requiredPermission = adminSubRoutePermissions[matchingSubRoute];
                 allowed = hasPermission(requiredPermission);
-            } else if (pathname === "/admin" || pathname === "/admin/dashboard") {
+            } else if (pathnameWithoutLocale === "/admin" || pathnameWithoutLocale === "/admin/dashboard") {
                 // Allow dashboard if they have any admin-level permission OR are a supplier
                 allowed = hasAnyAdminPermission || roleName === "supplier";
             }
 
             if (allowed) {
-                response = NextResponse.next();
+                return intlMiddleware(request);
             } else {
                 // If they have some admin access, redirect to dashboard, otherwise to home
-                const redirectTo = hasAnyAdminPermission ? "/admin" : "/";
-                response = NextResponse.redirect(new URL(redirectTo, request.url));
+                const redirectTo = hasAnyAdminPermission ? `/${locale}/admin` : `/${locale}`;
+                return NextResponse.redirect(new URL(redirectTo, request.url));
             }
         }
-    } else if (isUserRoute) {
+    }
+
+    if (isUserRoute) {
         if (!isLoggedIn || !hasAccessToken) {
             const callbackUrl = nextUrl.pathname + nextUrl.search;
-            response = NextResponse.redirect(new URL(`/user-login?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url));
+            return NextResponse.redirect(new URL(`/${locale}/user-login?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url));
         } else {
-            response = NextResponse.next();
+            return intlMiddleware(request);
         }
-    } else if (isAuthRoute) {
+    }
+
+    if (isAuthRoute) {
         if (isLoggedIn) {
-            response = NextResponse.redirect(new URL("/", request.url));
+            return NextResponse.redirect(new URL(`/${locale}/`, request.url));
         } else {
-            response = NextResponse.next();
+            return intlMiddleware(request);
         }
-    } else {
-        response = NextResponse.next();
     }
 
-    // 3. Set language cookie if not present or different
-    if (!request.cookies.has(cookieName) || request.cookies.get(cookieName)?.value !== lng) {
-        response.cookies.set(cookieName, lng, { path: '/', maxAge: 60 * 60 * 24 * 365 }); // 1 year
-    }
-
-    return response;
+    return intlMiddleware(request);
 }
 
 /**

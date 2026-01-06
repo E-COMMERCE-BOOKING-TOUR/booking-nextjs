@@ -8,7 +8,7 @@ import { MessageCircle } from 'lucide-react';
 
 const Chatbox = dynamic(() => import('./Chatbox'), { ssr: false });
 
-export default function ChatboxWrapper({ lng }: { lng: string }) {
+export default function ChatboxWrapper() {
     const [isOpen, setIsOpen] = useState(false);
     const [hasOpened, setHasOpened] = useState(false);
 
@@ -43,7 +43,6 @@ export default function ChatboxWrapper({ lng }: { lng: string }) {
             {hasOpened && (
                 <Box display={isOpen ? 'block' : 'none'}>
                     <Chatbox
-                        lng={lng}
                         isOpen={isOpen}
                         onClose={() => setIsOpen(false)}
                     />

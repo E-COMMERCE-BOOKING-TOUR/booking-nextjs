@@ -2,10 +2,9 @@
 
 import { useEffect, Fragment, useState, useMemo, useCallback, memo } from "react";
 import { Box, Container, Grid, SimpleGrid, Spinner, Text, VStack, Button, HStack, NativeSelect } from "@chakra-ui/react";
-import { useSearchParams } from "next/navigation";
 import { IUserTourSearchParams } from "@/types/response/tour.type";
-import { useTranslation } from "@/libs/i18n/client";
-import { fallbackLng } from "@/libs/i18n/settings";
+import { useTranslations } from "next-intl";
+import { useRouter, useSearchParams } from "next/navigation";
 import tourApi from "@/apis/tour";
 import TourItem from "@/components/ui/user/tourItem";
 import { FilterSidebar, MobileFilterDrawer } from "./filterSidebar";
@@ -15,10 +14,9 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 // Memoized TourItem wrapper to prevent unnecessary re-renders
 const MemoizedTourItem = memo(TourItem);
 
-export const TourListClient = ({ lng: propLng }: { lng?: string }) => {
+export const TourListClient = () => {
     const searchParams = useSearchParams();
-    const lng = propLng || searchParams?.get('lng') || fallbackLng;
-    const { t } = useTranslation(lng as string);
+    const t = useTranslations('common');
 
     // Initial state from URL - computed ONCE on mount
     const initialFilters = useMemo<IUserTourSearchParams>(() => ({
@@ -271,7 +269,6 @@ export const TourListClient = ({ lng: propLng }: { lng?: string }) => {
                                                         slug={tour.slug}
                                                         currencySymbol={tour.currencySymbol}
                                                         currencyCode={tour.currencyCode}
-                                                        lng={lng}
                                                     />
                                                 ))}
                                             </Fragment>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslation } from "@/libs/i18n/client";
+import { useTranslations } from "next-intl";
 
 import { useState, useEffect, memo } from "react";
 import { Box, Text } from "@chakra-ui/react";
@@ -10,8 +10,8 @@ interface CountdownTimerProps {
     onExpire?: () => void;
 }
 
-const CountdownTimer = memo(function CountdownTimer({ expiresAt, onExpire, lng }: CountdownTimerProps & { lng?: string }) {
-    const { t } = useTranslation(lng as string);
+const CountdownTimer = memo(function CountdownTimer({ expiresAt, onExpire }: CountdownTimerProps) {
+    const t = useTranslations('common');
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
     // Single robust effect to handle countdown

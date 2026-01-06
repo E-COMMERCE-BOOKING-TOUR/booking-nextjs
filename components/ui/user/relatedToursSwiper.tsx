@@ -26,10 +26,9 @@ interface RelatedTour {
 
 interface RelatedToursSwiperProps {
     tours: RelatedTour[];
-    lng?: string;
 }
 
-export default function RelatedToursSwiper({ tours, lng }: RelatedToursSwiperProps) {
+export default function RelatedToursSwiper({ tours }: RelatedToursSwiperProps) {
     return (
         <Box position="relative" width="100%">
             <Swiper
@@ -65,7 +64,6 @@ export default function RelatedToursSwiper({ tours, lng }: RelatedToursSwiperPro
                             currentPrice={tour.currentPrice}
                             tags={tour.tags}
                             slug={tour.slug}
-                            lng={lng}
                         />
                     </SwiperSlide>
                 ))}

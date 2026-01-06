@@ -20,10 +20,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import tourApi from "@/apis/tour";
 import { toaster } from "@/components/chakra/toaster";
-import { useSearchParams } from "next/navigation";
 import ReviewForm from "./ReviewForm";
-import { useTranslation } from "@/libs/i18n/client";
-import { fallbackLng } from "@/libs/i18n/settings";
+import { useTranslations, useLocale } from "next-intl";
 import { IReview } from "@/types/response/review.type";
 
 /**
@@ -49,7 +47,6 @@ interface TourReviewsProps {
     averageRating: number;
     totalReviews: number;
     categories: ReviewCategory[];
-    lng?: string;
 }
 
 export default function TourReviews({
@@ -57,11 +54,9 @@ export default function TourReviews({
     averageRating,
     totalReviews,
     categories,
-    lng: propLng
 }: TourReviewsProps & { tourId: number }) {
-    const searchParams = useSearchParams();
-    const lng = propLng || searchParams?.get('lng') || fallbackLng;
-    const { t } = useTranslation(lng);
+    const locale = useLocale();
+    const t = useTranslations('common');
     const { data: session, status } = useSession();
     const token = session?.user?.accessToken;
     const queryClient = useQueryClient();
@@ -232,7 +227,6 @@ export default function TourReviews({
                     tourId={tourId}
                     onSuccess={() => setIsWritingReview(false)}
                     onCancel={() => setIsWritingReview(false)}
-                    lng={lng}
                 />
             )}
 
@@ -348,7 +342,7 @@ export default function TourReviews({
                                                     )}
                                                 </HStack>
                                                 <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                                                    {review.created_at ? new Date(review.created_at).toLocaleDateString(lng === 'vi' ? 'vi-VN' : 'en-US') : ''}
+                                                    {review.created_at ? new Date(review.created_at).toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US') : ''}
                                                 </Text>
                                             </VStack>
                                         </HStack>

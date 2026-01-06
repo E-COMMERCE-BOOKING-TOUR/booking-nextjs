@@ -5,8 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 import article from "@/apis/article";
 import Link from "next/link";
 import division from "@/apis/division";
+import { useTranslations } from "next-intl";
 
 export default function BlogSidebarRight() {
+  const t = useTranslations('common');
 
   const { data: trendingTags, isLoading } = useQuery({
     queryKey: ["trending-tags"],
@@ -39,7 +41,7 @@ export default function BlogSidebarRight() {
         border="1px solid"
         borderColor="gray.50"
       >
-        <Heading size="md" mb={6} fontWeight="800" letterSpacing="tight">Trending Tags</Heading>
+        <Heading size="md" mb={6} fontWeight="800" letterSpacing="tight">{t('trending_tags', { defaultValue: 'Trending Tags' })}</Heading>
 
         {isLoading ? (
           <Flex justify="center" py={4}>
@@ -60,12 +62,12 @@ export default function BlogSidebarRight() {
                   transition="all 0.2s"
                 >
                   <Text fontWeight="700" fontSize="md" color="main">#{tag._id}</Text>
-                  <Text color="gray.400" fontSize="xs" fontWeight="bold">{tag.count} posts</Text>
+                  <Text color="gray.400" fontSize="xs" fontWeight="bold">{tag.count} {t('posts', { defaultValue: 'posts' })}</Text>
                 </HStack>
               </Link>
             ))}
             {(!trendingTags || trendingTags.length === 0) && (
-              <Text color="gray.500" fontSize="sm">No trending tags yet.</Text>
+              <Text color="gray.500" fontSize="sm">{t('no_trending_tags', { defaultValue: 'No trending tags yet.' })}</Text>
             )}
           </VStack>
         )}
@@ -81,7 +83,7 @@ export default function BlogSidebarRight() {
         overflow="hidden"
         color="black"
       >
-        <Heading size="md" mb={6} fontWeight="800">Popular Destinations</Heading>
+        <Heading size="md" mb={6} fontWeight="800">{t('popular_destinations', { defaultValue: 'Popular Destinations' })}</Heading>
         {isDestLoading ? (
           <Flex justify="center" py={4}>
             <Spinner color="main" />
@@ -96,13 +98,13 @@ export default function BlogSidebarRight() {
                   </Box>
                   <VStack align="start" gap={0}>
                     <Text fontWeight="800" fontSize="sm" _groupHover={{ color: "main" }}>{dest.title}</Text>
-                    <Text fontSize="2xs" fontWeight="bold" color="gray.400">{dest.toursCount} tours available</Text>
+                    <Text fontSize="2xs" fontWeight="bold" color="gray.400">{dest.toursCount} {t('tours_available', { defaultValue: 'tours available' })}</Text>
                   </VStack>
                 </HStack>
               </Link>
             ))}
             {(!trendingDestinations || trendingDestinations.length === 0) && (
-              <Text color="gray.500" fontSize="sm">No popular destinations yet.</Text>
+              <Text color="gray.500" fontSize="sm">{t('no_popular_destinations', { defaultValue: 'No popular destinations yet.' })}</Text>
             )}
           </VStack>
         )}
@@ -117,7 +119,7 @@ export default function BlogSidebarRight() {
             fontWeight="bold"
             _hover={{ bg: "main", color: "white" }}
           >
-            View More
+            {t('view_more', { defaultValue: 'View More' })}
           </Button>
         </Link>
       </Box>
