@@ -41,9 +41,14 @@ export async function middleware(request: NextRequest) {
     const pathnameWithoutLocale = pathname.replace(localePattern, '/') || '/';
 
     // Get the session token
+    const cookieName = process.env.NODE_ENV === "production"
+        ? "__Secure-authjs.session-token"
+        : "authjs.session-token";
+
     const token = await getToken({
         req: request,
         secret: process.env.AUTH_SECRET,
+        cookieName,
     });
 
     const isLoggedIn = !!token;
