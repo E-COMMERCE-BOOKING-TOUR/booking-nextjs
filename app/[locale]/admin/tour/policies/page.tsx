@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Plus, Edit, Trash2, ShieldCheck, Clock, Percent, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { ITourPolicy, ITourPolicyRule } from '@/types/admin/tour.dto';
+import { useTranslations } from 'next-intl';
 import {
     Dialog,
     DialogContent,
@@ -21,6 +22,7 @@ import {
 import { Label } from '@/components/ui/label';
 
 export default function AdminTourPoliciesPage() {
+    const t = useTranslations('admin');
     const { data: session } = useSession();
     const token = session?.user?.accessToken;
     const queryClient = useQueryClient();
@@ -47,10 +49,10 @@ export default function AdminTourPoliciesPage() {
         mutationFn: (data: ITourPolicy) => adminTourApi.createPolicy(data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-policies'] });
-            toast.success('Policy created successfully');
+            toast.success(t('toast_policy_create_success'));
             setIsDialogOpen(false);
         },
-        onError: (err: unknown) => toast.error(err instanceof Error ? err.message : 'Error creating policy')
+        onError: (err: unknown) => toast.error(err instanceof Error ? err.message : t('toast_policy_create_error'))
     });
 
     const updateMutation = useMutation({
@@ -58,19 +60,19 @@ export default function AdminTourPoliciesPage() {
             adminTourApi.updatePolicy(id, data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-policies'] });
-            toast.success('Policy updated successfully');
+            toast.success(t('toast_policy_update_success'));
             setIsDialogOpen(false);
         },
-        onError: (err: unknown) => toast.error(err instanceof Error ? err.message : 'Error updating policy')
+        onError: (err: unknown) => toast.error(err instanceof Error ? err.message : t('toast_policy_update_error'))
     });
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => adminTourApi.removePolicy(id, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-policies'] });
-            toast.success('Policy deleted successfully');
+            toast.success(t('toast_policy_delete_success'));
         },
-        onError: (err: unknown) => toast.error(err instanceof Error ? err.message : 'Error deleting policy')
+        onError: (err: unknown) => toast.error(err instanceof Error ? err.message : t('toast_policy_delete_error'))
     });
 
     const handleOpenDialog = (policy?: ITourPolicy) => {
@@ -90,11 +92,11 @@ export default function AdminTourPoliciesPage() {
 
     const handleSave = () => {
         if (!policyForm.name.trim()) {
-            toast.error('Policy name is required');
+            toast.error(t('error_policy_name_required'));
             return;
         }
         if (policyForm.rules.length === 0) {
-            toast.error('At least one rule is required');
+            toast.error(t('error_at_least_one_rule'));
             return;
         }
 
@@ -127,25 +129,25 @@ export default function AdminTourPoliciesPage() {
     };
 
     const formatTime = (hours: number) => {
-        if (hours === 0) return 'at start time';
+        if (hours === 0) return t('at_start_time_label');
         if (hours % 24 === 0) {
             const days = hours / 24;
-            return `${days} ${days === 1 ? 'day' : 'days'}`;
+            return t('days_count', { count: days });
         }
-        return `${hours} hours`;
+        return t('hours_count', { count: hours });
     };
 
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Refund Policies</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">{t('refund_policies_management_title')}</h1>
                     <p className="text-muted-foreground mt-1">
-                        Manage shared refund and cancellation policies for your tours.
+                        {t('refund_policies_management_desc')}
                     </p>
                 </div>
                 <Button onClick={() => handleOpenDialog()} className="bg-primary hover:bg-primary/90 shadow-sm gap-2">
-                    <Plus className="size-4" /> Create Policy
+                    <Plus className="size-4" /> {t('create_policy_button')}
                 </Button>
             </div>
 
@@ -157,9 +159,9 @@ export default function AdminTourPoliciesPage() {
                 ) : policies.length === 0 ? (
                     <div className="col-span-full py-12 text-center border-2 border-dashed border-white/10 rounded-xl bg-card/20">
                         <ShieldCheck className="size-12 mx-auto text-muted-foreground/30 mb-4" />
-                        <h3 className="font-semibold text-lg">No Policies Found</h3>
+                        <h3 className="font-semibold text-lg">{t('no_policies_found_title')}</h3>
                         <p className="text-muted-foreground text-sm max-w-xs mx-auto mt-2">
-                            Create your first refund policy to start assigning it to tour variants.
+                            {t('no_policies_found_desc')}
                         </p>
                     </div>
                 ) : (policies as ITourPolicy[]).map((policy) => (
@@ -174,7 +176,7 @@ export default function AdminTourPoliciesPage() {
                                     <Edit className="size-4 text-primary" />
                                 </Button>
                                 <Button variant="ghost" size="icon" className="size-8" onClick={() => {
-                                    if (confirm('Delete this policy?')) deleteMutation.mutate(policy.id!);
+                                    if (confirm(t('delete_policy_confirm', { id: policy.id ?? 0 }))) deleteMutation.mutate(policy.id!);
                                 }}>
                                     <Trash2 className="size-4 text-destructive" />
                                 </Button>
@@ -190,7 +192,7 @@ export default function AdminTourPoliciesPage() {
                                         </div>
                                         <div className="flex items-center gap-1 font-semibold text-primary">
                                             <span>{rule.fee_pct}%</span>
-                                            <span className="text-[10px] uppercase font-normal text-muted-foreground">Fee</span>
+                                            <span className="text-[10px] uppercase font-normal text-muted-foreground">{t('fee_label_short')}</span>
                                         </div>
                                     </div>
                                 ))}
@@ -203,29 +205,29 @@ export default function AdminTourPoliciesPage() {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="max-w-md bg-slate-900 border-white/10 text-white">
                     <DialogHeader>
-                        <DialogTitle>{editingPolicy ? 'Edit Policy' : 'Create New Policy'}</DialogTitle>
+                        <DialogTitle>{editingPolicy ? t('edit_policy_title') : t('create_new_policy_title')}</DialogTitle>
                         <DialogDescription className="text-slate-400">
-                            Configure cancellation rules. Rules will be applied based on the time of cancellation.
+                            {t('policy_dialog_desc')}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label htmlFor="name">Policy Name</Label>
+                            <Label htmlFor="name">{t('policy_name_label')}</Label>
                             <Input
                                 id="name"
                                 value={policyForm.name}
                                 onChange={e => setPolicyForm({ ...policyForm, name: e.target.value })}
-                                placeholder="e.g. Flexible Cancellation"
+                                placeholder={t('policy_name_placeholder')}
                                 className="bg-white/5 border-white/10 focus:ring-primary/50 text-white"
                             />
                         </div>
 
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                                <Label>Cancellation Rules</Label>
+                                <Label>{t('cancellation_rules_label')}</Label>
                                 <Button type="button" variant="outline" size="sm" className="h-7 text-xs border-primary/30 text-primary hover:bg-primary/10" onClick={addRule}>
-                                    <Plus className="size-3 mr-1" /> Add Rule
+                                    <Plus className="size-3 mr-1" /> {t('add_rule_button')}
                                 </Button>
                             </div>
 
@@ -233,7 +235,7 @@ export default function AdminTourPoliciesPage() {
                                 {([...(policyForm.rules || [])]).sort((a, b) => b.before_hours - a.before_hours).map((rule, idx) => (
                                     <div key={idx} className="flex items-end gap-2 p-3 rounded-lg bg-white/5 border border-white/5">
                                         <div className="space-y-1.5 flex-1">
-                                            <Label className="text-[10px] text-slate-400 uppercase">Hours Before {rule.before_hours > 0 && `(${formatTime(rule.before_hours)})`}</Label>
+                                            <Label className="text-[10px] text-slate-400 uppercase">{t('hours_before_label')} {rule.before_hours > 0 && `(${formatTime(rule.before_hours)})`}</Label>
                                             <div className="relative">
                                                 <Clock className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-slate-400" />
                                                 <Input
@@ -245,7 +247,7 @@ export default function AdminTourPoliciesPage() {
                                             </div>
                                         </div>
                                         <div className="space-y-1.5 flex-1">
-                                            <Label className="text-[10px] text-slate-400 uppercase">Fee (%)</Label>
+                                            <Label className="text-[10px] text-slate-400 uppercase">{t('fee_pct_label')}</Label>
                                             <div className="relative">
                                                 <Percent className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-slate-400" />
                                                 <Input
@@ -266,9 +268,9 @@ export default function AdminTourPoliciesPage() {
                     </div>
 
                     <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-slate-400 hover:bg-white/5">Cancel</Button>
+                        <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-slate-400 hover:bg-white/5">{t('cancel_button')}</Button>
                         <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
-                            <Save className="size-4 mr-2" /> {editingPolicy ? 'Update Policy' : 'Create Policy'}
+                            <Save className="size-4 mr-2" /> {editingPolicy ? t('update_policy_button') : t('create_policy_button')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

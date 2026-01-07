@@ -44,31 +44,33 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { TargetGroup, NotificationType, INotification } from '@/types/notification';
+import { useTranslations, useFormatter } from 'next-intl';
 
 const TargetBadge = ({ group }: { group: TargetGroup }) => {
+    const t = useTranslations("admin");
     switch (group) {
         case TargetGroup.all:
             return (
                 <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20">
-                    <Users className="mr-1 size-3" /> All
+                    <Users className="mr-1 size-3" /> {t('target_all')}
                 </Badge>
             );
         case TargetGroup.admin:
             return (
                 <Badge className="bg-purple-500/10 text-purple-500 border-purple-500/20">
-                    <ShieldCheck className="mr-1 size-3" /> Admin
+                    <ShieldCheck className="mr-1 size-3" /> {t('target_admin')}
                 </Badge>
             );
         case TargetGroup.supplier:
             return (
                 <Badge className="bg-orange-500/10 text-orange-500 border-orange-500/20">
-                    <User className="mr-1 size-3" /> Supplier
+                    <User className="mr-1 size-3" /> {t('target_supplier')}
                 </Badge>
             );
         case TargetGroup.specific:
             return (
                 <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
-                    <User className="mr-1 size-3" /> Specific
+                    <User className="mr-1 size-3" /> {t('target_specific')}
                 </Badge>
             );
         default:
@@ -77,14 +79,25 @@ const TargetBadge = ({ group }: { group: TargetGroup }) => {
 };
 
 const TypeBadge = ({ type }: { type: NotificationType }) => {
+    const t = useTranslations("admin");
+    const getLabel = (type: string) => {
+        switch (type) {
+            case 'general': return t('type_general');
+            case 'promotion': return t('type_promotion');
+            case 'system': return t('type_system');
+            default: return type;
+        }
+    };
     return (
         <Badge variant="outline" className="capitalize">
-            <Info className="mr-1 size-3" /> {type}
+            <Info className="mr-1 size-3" /> {getLabel(type)}
         </Badge>
     );
 };
 
 export default function AdminNotificationListPage() {
+    const t = useTranslations("admin");
+    const format = useFormatter();
     const { data: session, status: sessionStatus } = useSession();
     const token = session?.user?.accessToken;
     const queryClient = useQueryClient();
@@ -133,39 +146,39 @@ export default function AdminNotificationListPage() {
         mutationFn: (id: number) => adminNotificationApi.delete(token!, id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
-            toast.success('Notification deleted successfully');
+            toast.success(t('toast_notification_delete_success'));
             setDeleteId(null);
         },
         onError: (error: unknown) => {
-            toast.error(error instanceof Error ? error.message : 'Failed to delete notification');
+            toast.error(error instanceof Error ? error.message : t('toast_notification_delete_error'));
         }
     });
 
     const typeOptions = [
-        { label: 'All Types', value: 'all' },
-        { label: 'General', value: 'general' },
-        { label: 'Promotion', value: 'promotion' },
-        { label: 'System', value: 'system' }
+        { label: t('all_types_option'), value: 'all' },
+        { label: t('type_general'), value: 'general' },
+        { label: t('type_promotion'), value: 'promotion' },
+        { label: t('type_system'), value: 'system' }
     ];
 
     const groupOptions = [
-        { label: 'All Audiences', value: 'all' },
-        { label: 'All Users', value: TargetGroup.all },
-        { label: 'Admin', value: TargetGroup.admin },
-        { label: 'Supplier', value: TargetGroup.supplier },
-        { label: 'Specific', value: TargetGroup.specific }
+        { label: t('all_audiences_option'), value: 'all' },
+        { label: t('target_all'), value: TargetGroup.all },
+        { label: t('target_admin'), value: TargetGroup.admin },
+        { label: t('target_supplier'), value: TargetGroup.supplier },
+        { label: t('target_specific'), value: TargetGroup.specific }
     ];
 
     return (
         <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <AdminPageHeader
-                title="Notification Management"
-                description="Send and manage system notifications to users."
+                title={t('notification_management_title')}
+                description={t('notification_management_desc')}
             >
                 <HasPermission permission="notification:create">
                     <Link href="/admin/notification/create">
                         <Button className="bg-primary hover:bg-primary/90 shadow-sm">
-                            <Plus className="mr-2 size-4" /> Create Notification
+                            <Plus className="mr-2 size-4" /> {t('create_notification_button')}
                         </Button>
                     </Link>
                 </HasPermission>
@@ -173,7 +186,7 @@ export default function AdminNotificationListPage() {
 
             <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
                 <AdminFilterBar
-                    searchPlaceholder="Search title or content..."
+                    searchPlaceholder={t('search_notification_placeholder')}
                     searchTerm={keyword}
                     onSearchChange={setKeyword}
                     onSearch={handleSearch}
@@ -183,13 +196,13 @@ export default function AdminNotificationListPage() {
                     <AdminSelect
                         value={typeFilter}
                         onValueChange={setTypeFilter}
-                        placeholder="Notification Type"
+                        placeholder={t('notification_type_placeholder')}
                         options={typeOptions}
                     />
                     <AdminSelect
                         value={groupFilter}
                         onValueChange={setGroupFilter}
-                        placeholder="Audience"
+                        placeholder={t('audience_placeholder')}
                         options={groupOptions}
                         width="w-[180px]"
                     />
@@ -199,12 +212,12 @@ export default function AdminNotificationListPage() {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-white/5 border-b border-white/5">
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">ID</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Notification</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Type</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Audience</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Created At</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Actions</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_id')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_notification')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_type')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_audience')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_created_at')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">{t('col_actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -232,13 +245,13 @@ export default function AdminNotificationListPage() {
                                             <TargetBadge group={notification.target_group} />
                                             {notification.target_group === TargetGroup.specific && (
                                                 <span className="ml-2 text-[10px] text-muted-foreground">
-                                                    ({notification.user_ids?.length || 0} users)
+                                                    ({t('users_count_label', { count: notification.user_ids?.length || 0 })})
                                                 </span>
                                             )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="text-xs text-muted-foreground font-medium">
-                                                {new Date(notification.created_at).toLocaleDateString('vi-VN')}
+                                                {format.dateTime(new Date(notification.created_at), { dateStyle: 'medium' })}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -249,12 +262,12 @@ export default function AdminNotificationListPage() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-48">
-                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                    <DropdownMenuLabel>{t('col_actions')}</DropdownMenuLabel>
                                                     <HasPermission permission="notification:update">
                                                         <DropdownMenuItem asChild>
                                                             <Link href={`/admin/notification/edit/${notification.id}`} className="cursor-pointer">
                                                                 <Eye className="mr-2 size-4" />
-                                                                Edit
+                                                                {t('action_edit')}
                                                             </Link>
                                                         </DropdownMenuItem>
                                                     </HasPermission>
@@ -265,7 +278,7 @@ export default function AdminNotificationListPage() {
                                                             className="text-rose-500 cursor-pointer"
                                                         >
                                                             <Trash2 className="mr-2 size-4" />
-                                                            Delete
+                                                            {t('action_delete')}
                                                         </DropdownMenuItem>
                                                     </HasPermission>
                                                 </DropdownMenuContent>
@@ -276,7 +289,7 @@ export default function AdminNotificationListPage() {
                                 {!isLoading && notifications.length === 0 && (
                                     <tr>
                                         <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground italic">
-                                            No notifications found.
+                                            {t('no_notifications_found')}
                                         </td>
                                     </tr>
                                 )}
@@ -290,7 +303,7 @@ export default function AdminNotificationListPage() {
             {totalPages > 1 && (
                 <div className="flex items-center justify-between px-2">
                     <p className="text-sm text-muted-foreground">
-                        Showing <span className="font-bold text-foreground">{notifications.length}</span> of <span className="font-bold text-foreground">{total}</span> notifications
+                        {t('showing_notifications_count', { count: notifications.length, total })}
                     </p>
                     <div className="flex items-center gap-2">
                         <Button
@@ -333,18 +346,18 @@ export default function AdminNotificationListPage() {
             <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Confirm Deletion?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('confirm_delete_title')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. The notification will be deleted from the system.
+                            {t('confirm_delete_desc')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t('cancel_button')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => deleteId && deleteMutation.mutate(deleteId)}
                             className="bg-rose-500 hover:bg-rose-600"
                         >
-                            Delete Immediately
+                            {t('delete_immediately_button')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

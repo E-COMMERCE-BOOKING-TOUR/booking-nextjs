@@ -58,6 +58,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useForm } from 'react-hook-form';
 import { IDivision, ICountry } from '@/types/response/base.type';
+import { useTranslations } from 'next-intl';
 
 interface DivisionFormData {
     name: string;
@@ -69,6 +70,7 @@ interface DivisionFormData {
 }
 
 export default function AdminDivisionPage() {
+    const t = useTranslations("admin");
     const { data: session } = useSession();
     const token = session?.user?.accessToken;
     const queryClient = useQueryClient();
@@ -124,12 +126,12 @@ export default function AdminDivisionPage() {
         mutationFn: (data: CreateDivisionDTO) => adminDivisionApi.create(data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-divisions'] });
-            toast.success('Division created successfully');
+            toast.success(t('toast_create_division_success'));
             setIsCreateOpen(false);
             reset();
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Failed to create division');
+            toast.error(error.message || t('toast_create_division_error'));
         }
     });
 
@@ -138,12 +140,12 @@ export default function AdminDivisionPage() {
             adminDivisionApi.update(id, data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-divisions'] });
-            toast.success('Division updated successfully');
+            toast.success(t('toast_update_division_success'));
             setEditDivision(null);
             reset();
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Failed to update division');
+            toast.error(error.message || t('toast_update_division_error'));
         }
     });
 
@@ -151,11 +153,11 @@ export default function AdminDivisionPage() {
         mutationFn: (id: number) => adminDivisionApi.remove(id, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-divisions'] });
-            toast.success('Division deleted successfully');
+            toast.success(t('toast_delete_division_success'));
             setDeleteId(null);
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Failed to delete division');
+            toast.error(error.message || t('toast_delete_division_error'));
         }
     });
 
@@ -179,9 +181,9 @@ export default function AdminDivisionPage() {
             const result = await adminDivisionApi.uploadImage(editDivision.id, file, token);
             setImagePreview(result.image_url);
             queryClient.invalidateQueries({ queryKey: ['admin-divisions'] });
-            toast.success('Image uploaded successfully');
+            toast.success(t('toast_image_upload_success'));
         } catch {
-            toast.error('Failed to upload image');
+            toast.error(t('toast_image_upload_error'));
         } finally {
             setUploadingImage(false);
         }
@@ -235,23 +237,23 @@ export default function AdminDivisionPage() {
     return (
         <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <AdminPageHeader
-                title="Division Management"
-                description="Manage administrative subdivisions and locations."
+                title={t('division_management_title')}
+                description={t('division_management_desc')}
             >
                 <HasPermission permission="division:create">
                     <Button onClick={openCreate} className="bg-primary hover:bg-primary/90 shadow-sm">
                         <Plus className="mr-2 size-4" />
-                        Add Division
+                        {t('add_division_button')}
                     </Button>
                 </HasPermission>
             </AdminPageHeader>
 
             <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
                 <AdminFilterBar
-                    searchPlaceholder="Search by name, local name or code..."
+                    searchPlaceholder={t('search_division_placeholder')}
                     searchTerm={searchTerm}
                     onSearchChange={setSearchTerm}
-                    onSearch={() => {}} // Search is live due to filter() but we can keep it for UI
+                    onSearch={() => { }} // Search is live due to filter() but we can keep it for UI
                     onClear={() => {
                         setSearchTerm('');
                         setSelectedCountryId(null);
@@ -261,9 +263,9 @@ export default function AdminDivisionPage() {
                     <AdminSelect
                         value={selectedCountryId?.toString() || 'all'}
                         onValueChange={(val: string) => setSelectedCountryId(val === 'all' ? null : parseInt(val))}
-                        placeholder="Select Country"
+                        placeholder={t('select_country_placeholder')}
                         options={[
-                            { label: 'All Countries', value: 'all' },
+                            { label: t('all_countries_option'), value: 'all' },
                             ...countries.map((country: ICountry) => ({
                                 label: country.name,
                                 value: country.id.toString()
@@ -277,14 +279,14 @@ export default function AdminDivisionPage() {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-white/5 border-b border-white/5">
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">ID</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Name</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Local Name</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Level</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Code</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Country</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Parent</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Actions</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_id')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_name')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_local_name')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_level')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_code')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_country')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_parent')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">{t('col_actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -330,11 +332,11 @@ export default function AdminDivisionPage() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-48">
-                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                    <DropdownMenuLabel>{t('col_actions')}</DropdownMenuLabel>
                                                     <HasPermission permission="division:update">
                                                         <DropdownMenuItem onClick={() => openEdit(division)} className="cursor-pointer">
                                                             <Edit className="mr-2 size-4" />
-                                                            Edit
+                                                            {t('action_edit')}
                                                         </DropdownMenuItem>
                                                     </HasPermission>
                                                     <DropdownMenuSeparator />
@@ -344,7 +346,7 @@ export default function AdminDivisionPage() {
                                                             className="text-rose-500 cursor-pointer"
                                                         >
                                                             <Trash2 className="mr-2 size-4" />
-                                                            Delete
+                                                            {t('action_delete')}
                                                         </DropdownMenuItem>
                                                     </HasPermission>
                                                 </DropdownMenuContent>
@@ -355,7 +357,7 @@ export default function AdminDivisionPage() {
                                 {!isLoading && filteredDivisions.length === 0 && (
                                     <tr>
                                         <td colSpan={8} className="px-6 py-12 text-center text-muted-foreground italic">
-                                            No divisions found.
+                                            {t('no_divisions_found')}
                                         </td>
                                     </tr>
                                 )}
@@ -370,37 +372,37 @@ export default function AdminDivisionPage() {
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
-                        <DialogTitle>Add New Division</DialogTitle>
+                        <DialogTitle>{t('add_new_division_title')}</DialogTitle>
                         <DialogDescription>
-                            Enter details to create a new division.
+                            {t('add_new_division_desc')}
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit(onSubmitCreate)}>
                         <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="name" className="text-right">Name</Label>
+                                <Label htmlFor="name" className="text-right">{t('col_name')}</Label>
                                 <Input id="name" className="col-span-3" {...register('name', { required: true })} />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="name_local" className="text-right">Local Name</Label>
+                                <Label htmlFor="name_local" className="text-right">{t('col_local_name')}</Label>
                                 <Input id="name_local" className="col-span-3" {...register('name_local', { required: true })} />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="level" className="text-right">Level</Label>
+                                <Label htmlFor="level" className="text-right">{t('col_level')}</Label>
                                 <Input id="level" type="number" className="col-span-3" {...register('level', { valueAsNumber: true })} />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="code" className="text-right">Code</Label>
+                                <Label htmlFor="code" className="text-right">{t('col_code')}</Label>
                                 <Input id="code" className="col-span-3" {...register('code')} />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label className="text-right">Country</Label>
+                                <Label className="text-right">{t('col_country')}</Label>
                                 <Select
                                     value={formCountryId?.toString() || ''}
                                     onValueChange={(val) => setValue('country_id', parseInt(val))}
                                 >
                                     <SelectTrigger className="col-span-3">
-                                        <SelectValue placeholder="Select Country" />
+                                        <SelectValue placeholder={t('select_country_placeholder')} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {countries.map((country: ICountry) => (
@@ -412,16 +414,16 @@ export default function AdminDivisionPage() {
                                 </Select>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label className="text-right">Parent</Label>
+                                <Label className="text-right">{t('col_parent')}</Label>
                                 <Select
                                     value={watch('parent_id')?.toString() || 'none'}
                                     onValueChange={(val) => setValue('parent_id', val === 'none' ? null : parseInt(val))}
                                 >
                                     <SelectTrigger className="col-span-3">
-                                        <SelectValue placeholder="None" />
+                                        <SelectValue placeholder={t('none_option')} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="none">None</SelectItem>
+                                        <SelectItem value="none">{t('none_option')}</SelectItem>
                                         {parentDivisions.map((d: IDivision) => (
                                             <SelectItem key={d.id} value={d.id.toString()}>
                                                 {d.name}
@@ -433,10 +435,10 @@ export default function AdminDivisionPage() {
                         </div>
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
-                                Cancel
+                                {t('cancel_button')}
                             </Button>
                             <Button type="submit" disabled={createMutation.isPending}>
-                                {createMutation.isPending ? 'Creating...' : 'Create'}
+                                {createMutation.isPending ? t('creating_status') : t('create_button')}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -447,37 +449,37 @@ export default function AdminDivisionPage() {
             <Dialog open={!!editDivision} onOpenChange={() => setEditDivision(null)}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
-                        <DialogTitle>Edit Division</DialogTitle>
+                        <DialogTitle>{t('edit_division_title')}</DialogTitle>
                         <DialogDescription>
-                            Update division details.
+                            {t('update_division_details_desc')}
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit(onSubmitEdit)}>
                         <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="edit-name" className="text-right">Name</Label>
+                                <Label htmlFor="edit-name" className="text-right">{t('col_name')}</Label>
                                 <Input id="edit-name" className="col-span-3" {...register('name', { required: true })} />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="edit-name_local" className="text-right">Local Name</Label>
+                                <Label htmlFor="edit-name_local" className="text-right">{t('col_local_name')}</Label>
                                 <Input id="edit-name_local" className="col-span-3" {...register('name_local', { required: true })} />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="edit-level" className="text-right">Level</Label>
+                                <Label htmlFor="edit-level" className="text-right">{t('col_level')}</Label>
                                 <Input id="edit-level" type="number" className="col-span-3" {...register('level', { valueAsNumber: true })} />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="edit-code" className="text-right">Code</Label>
+                                <Label htmlFor="edit-code" className="text-right">{t('col_code')}</Label>
                                 <Input id="edit-code" className="col-span-3" {...register('code')} />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label className="text-right">Country</Label>
+                                <Label className="text-right">{t('col_country')}</Label>
                                 <Select
                                     value={formCountryId?.toString() || ''}
                                     onValueChange={(val) => setValue('country_id', parseInt(val))}
                                 >
                                     <SelectTrigger className="col-span-3">
-                                        <SelectValue placeholder="Select Country" />
+                                        <SelectValue placeholder={t('select_country_placeholder')} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {countries.map((country: ICountry) => (
@@ -489,16 +491,16 @@ export default function AdminDivisionPage() {
                                 </Select>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label className="text-right">Parent</Label>
+                                <Label className="text-right">{t('col_parent')}</Label>
                                 <Select
                                     value={watch('parent_id')?.toString() || 'none'}
                                     onValueChange={(val) => setValue('parent_id', val === 'none' ? null : parseInt(val))}
                                 >
                                     <SelectTrigger className="col-span-3">
-                                        <SelectValue placeholder="None" />
+                                        <SelectValue placeholder={t('none_option')} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="none">None</SelectItem>
+                                        <SelectItem value="none">{t('none_option')}</SelectItem>
                                         {parentDivisions.filter((d: IDivision) => d.id !== editDivision?.id).map((d: IDivision) => (
                                             <SelectItem key={d.id} value={d.id.toString()}>
                                                 {d.name}
@@ -509,7 +511,7 @@ export default function AdminDivisionPage() {
                             </div>
                             {/* Image Upload Section */}
                             <div className="grid grid-cols-4 items-start gap-4">
-                                <Label className="text-right pt-2">Image</Label>
+                                <Label className="text-right pt-2">{t('image_label')}</Label>
                                 <div className="col-span-3 space-y-3">
                                     {imagePreview && (
                                         <div className="relative w-full h-32 rounded-lg overflow-hidden border">
@@ -537,17 +539,17 @@ export default function AdminDivisionPage() {
                                         className="w-full"
                                     >
                                         <ImageUp className="mr-2 size-4" />
-                                        {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                                        {uploadingImage ? t('uploading_status') : t('upload_image_button')}
                                     </Button>
                                 </div>
                             </div>
                         </div>
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setEditDivision(null)}>
-                                Cancel
+                                {t('cancel_button')}
                             </Button>
                             <Button type="submit" disabled={updateMutation.isPending}>
-                                {updateMutation.isPending ? 'Saving...' : 'Save'}
+                                {updateMutation.isPending ? t('saving_status') : t('save_changes_button')}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -558,18 +560,18 @@ export default function AdminDivisionPage() {
             <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Confirm Deletion?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('confirm_delete_title')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. The division will be permanently deleted from the system.
+                            {t('confirm_delete_desc')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t('cancel_button')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => deleteId && deleteMutation.mutate(deleteId)}
                             className="bg-rose-500 hover:bg-rose-600"
                         >
-                            Delete Immediately
+                            {t('delete_immediately_button')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { useTranslations, useFormatter } from 'next-intl';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,32 +50,34 @@ import { useForm, useWatch } from 'react-hook-form';
 import { IAdminBookingDetail } from '@/types/admin/booking';
 
 const StatusBadge = ({ status }: { status: string }) => {
+  const t = useTranslations("admin");
   switch (status) {
     case 'confirmed':
-      return <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Confirmed</Badge>;
+      return <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">{t('status_confirmed')}</Badge>;
     case 'pending_confirm':
-      return <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">Pending Confirm</Badge>;
+      return <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">{t('status_pending_confirm')}</Badge>;
     case 'waiting_supplier':
-      return <Badge className="bg-purple-500/10 text-purple-500 border-purple-500/20">Waiting Supplier</Badge>;
+      return <Badge className="bg-purple-500/10 text-purple-500 border-purple-500/20">{t('status_waiting_supplier')}</Badge>;
     case 'pending_payment':
-      return <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20">Pending Payment</Badge>;
+      return <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20">{t('status_pending_payment')}</Badge>;
     case 'cancelled':
-      return <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20">Cancelled</Badge>;
+      return <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20">{t('status_cancelled')}</Badge>;
     case 'expired':
-      return <Badge className="bg-slate-500/10 text-slate-500 border-slate-500/20">Expired</Badge>;
+      return <Badge className="bg-slate-500/10 text-slate-500 border-slate-500/20">{t('status_expired')}</Badge>;
     default:
       return <Badge className="bg-slate-500/10 text-slate-500 border-slate-500/20">{status}</Badge>;
   }
 };
 
 const PaymentBadge = ({ status }: { status: string }) => {
+  const t = useTranslations("admin");
   switch (status) {
     case 'paid':
-      return <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Paid</Badge>;
+      return <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">{t('payment_paid')}</Badge>;
     case 'unpaid':
-      return <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">Unpaid</Badge>;
+      return <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">{t('payment_unpaid')}</Badge>;
     case 'refunded':
-      return <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20">Refunded</Badge>;
+      return <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20">{t('payment_refunded')}</Badge>;
     default:
       return <Badge className="bg-slate-500/10 text-slate-500 border-slate-500/20">{status}</Badge>;
   }
@@ -88,6 +91,8 @@ interface FilterValues {
 }
 
 export default function AdminBookingListPage() {
+  const t = useTranslations("admin");
+  const format = useFormatter();
   const { data: session, status: sessionStatus } = useSession();
   const token = session?.user?.accessToken;
   const queryClient = useQueryClient();
@@ -118,11 +123,11 @@ export default function AdminBookingListPage() {
     mutationFn: (id: number) => adminBookingApi.remove(id, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
-      toast.success('Deleted booking successfully');
+      toast.success(t('toast_delete_success'));
       setDeleteId(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete booking');
+      toast.error(error.message || t('toast_delete_error'));
     }
   });
 
@@ -130,10 +135,10 @@ export default function AdminBookingListPage() {
     mutationFn: (id: number) => adminBookingApi.confirm(id, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
-      toast.success('Confirmed booking successfully');
+      toast.success(t('toast_confirm_success'));
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to confirm booking');
+      toast.error(error.message || t('toast_confirm_error'));
     }
   });
 
@@ -176,8 +181,8 @@ export default function AdminBookingListPage() {
     <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Booking Management</h1>
-          <p className="text-muted-foreground mt-1 text-lg">Track and process tour booking requests from customers.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">{t('booking_management_title')}</h1>
+          <p className="text-muted-foreground mt-1 text-lg">{t('booking_management_desc')}</p>
         </div>
       </div>
 
@@ -188,7 +193,7 @@ export default function AdminBookingListPage() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by name, email or booking ID..."
+                  placeholder={t('search_booking_placeholder')}
                   className="pl-10 bg-white/5 border-white/10"
                   {...register('searchTerm')}
                 />
@@ -199,16 +204,16 @@ export default function AdminBookingListPage() {
                   onValueChange={(val) => setValue('statusFilter', val)}
                 >
                   <SelectTrigger className="w-[160px] bg-white/5 border-white/10">
-                    <SelectValue placeholder="Status" />
+                    <SelectValue placeholder={t('status_filter_label')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="pending_confirm">Pending Confirm</SelectItem>
-                    <SelectItem value="waiting_supplier">Waiting Supplier</SelectItem>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="pending_payment">Pending Payment</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                    <SelectItem value="expired">Expired</SelectItem>
+                    <SelectItem value="all">{t('all_status_option')}</SelectItem>
+                    <SelectItem value="pending_confirm">{t('status_pending_confirm')}</SelectItem>
+                    <SelectItem value="waiting_supplier">{t('status_waiting_supplier')}</SelectItem>
+                    <SelectItem value="confirmed">{t('status_confirmed')}</SelectItem>
+                    <SelectItem value="pending_payment">{t('status_pending_payment')}</SelectItem>
+                    <SelectItem value="cancelled">{t('status_cancelled')}</SelectItem>
+                    <SelectItem value="expired">{t('status_expired')}</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -217,13 +222,13 @@ export default function AdminBookingListPage() {
                   onValueChange={(val) => setValue('paymentFilter', val)}
                 >
                   <SelectTrigger className="w-[180px] bg-white/5 border-white/10">
-                    <SelectValue placeholder="Payment" />
+                    <SelectValue placeholder={t('payment_filter_label')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Payments</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="unpaid">Unpaid</SelectItem>
-                    <SelectItem value="refunded">Refunded</SelectItem>
+                    <SelectItem value="all">{t('all_payment_option')}</SelectItem>
+                    <SelectItem value="paid">{t('payment_paid')}</SelectItem>
+                    <SelectItem value="unpaid">{t('payment_unpaid')}</SelectItem>
+                    <SelectItem value="refunded">{t('payment_refunded')}</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -239,7 +244,7 @@ export default function AdminBookingListPage() {
                 <div className="flex items-center gap-2 ml-auto">
                   <Button type="submit" className="bg-primary hover:bg-primary/90">
                     <Search className="mr-2 size-4" />
-                    Search
+                    {t('search_button')}
                   </Button>
 
                   {(appliedFilters.statusFilter !== 'all' || appliedFilters.paymentFilter !== 'all' || appliedFilters.dateFilter !== '' || appliedFilters.searchTerm !== '') && (
@@ -249,7 +254,7 @@ export default function AdminBookingListPage() {
                       onClick={clearFilters}
                       className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
                     >
-                      Clear Filters
+                      {t('clear_filters_button')}
                     </Button>
                   )}
                 </div>
@@ -261,14 +266,14 @@ export default function AdminBookingListPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-white/5 border-b border-white/5">
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Booking ID</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Customer</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Tour</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Status</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Payment</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Total</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Date</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Actions</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_booking_id')}</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_customer')}</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_tour')}</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_status')}</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_payment')}</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_total')}</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_date')}</th>
+                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">{t('col_actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -302,12 +307,12 @@ export default function AdminBookingListPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm font-black text-foreground">
-                          {Number(booking.total_amount).toLocaleString('en-US')} {booking.currency || 'VND'}
+                          {format.number(Number(booking.total_amount))} {booking.currency || 'VND'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-xs text-muted-foreground font-medium">
-                          {new Date(booking.created_at).toLocaleDateString('en-US')}
+                          {format.dateTime(new Date(booking.created_at))}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -318,12 +323,12 @@ export default function AdminBookingListPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuLabel>{t('col_actions')}</DropdownMenuLabel>
                             <HasPermission permission="booking:read">
                               <DropdownMenuItem asChild>
                                 <Link href={`/admin/booking/edit/${booking.id}`} className="cursor-pointer">
                                   <Eye className="mr-2 size-4" />
-                                  Details
+                                  {t('action_detail')}
                                 </Link>
                               </DropdownMenuItem>
                             </HasPermission>
@@ -334,7 +339,7 @@ export default function AdminBookingListPage() {
                                   className="text-emerald-500 cursor-pointer"
                                 >
                                   <CheckCircle2 className="mr-2 size-4" />
-                                  Confirm
+                                  {t('action_confirm')}
                                 </DropdownMenuItem>
                               </HasPermission>
                             )}
@@ -345,7 +350,7 @@ export default function AdminBookingListPage() {
                                 className="text-rose-500 cursor-pointer"
                               >
                                 <Trash2 className="mr-2 size-4" />
-                                Delete
+                                {t('action_delete')}
                               </DropdownMenuItem>
                             </HasPermission>
                           </DropdownMenuContent>
@@ -356,7 +361,7 @@ export default function AdminBookingListPage() {
                   {!isLoading && filteredBookings.length === 0 && (
                     <tr>
                       <td colSpan={8} className="px-6 py-12 text-center text-muted-foreground italic">
-                        No bookings found.
+                        {t('no_bookings_found')}
                       </td>
                     </tr>
                   )}
@@ -370,18 +375,18 @@ export default function AdminBookingListPage() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Deletion?</AlertDialogTitle>
+            <AlertDialogTitle>{t('confirm_delete_title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. The booking will be permanently removed from the system.
+              {t('confirm_delete_desc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('cancel_button')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && deleteMutation.mutate(deleteId)}
               className="bg-rose-500 hover:bg-rose-600"
             >
-              Delete Now
+              {t('delete_now_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

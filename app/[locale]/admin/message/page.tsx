@@ -22,17 +22,10 @@ import {
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-
-const CATEGORIES = [
-    { value: 'all', label: 'All Categories' },
-    { value: 'general', label: 'General' },
-    { value: 'support', label: 'Support' },
-    { value: 'urgent', label: 'Urgent' },
-    { value: 'tour_query', label: 'Tour Inquiry' },
-    { value: 'hidden', label: 'Hidden' },
-];
+import { useTranslations } from 'next-intl';
 
 export default function AdminMessagePage() {
+    const t = useTranslations('admin');
     const { data: session, status: sessionStatus } = useSession();
     const token = session?.user?.accessToken;
 
@@ -46,6 +39,15 @@ export default function AdminMessagePage() {
     const [isSocketConnected, setIsSocketConnected] = useState(false);
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const getCategories = () => [
+        { value: 'all', label: t('category_all') },
+        { value: 'general', label: t('category_general') },
+        { value: 'support', label: t('category_support') },
+        { value: 'urgent', label: t('category_urgent') },
+        { value: 'tour_query', label: t('category_tour_query') },
+        { value: 'hidden', label: t('category_hidden') },
+    ];
 
     // Fetch conversations using react-query
     const { data: conversationsData, isLoading, refetch } = useQuery({
@@ -160,19 +162,19 @@ export default function AdminMessagePage() {
 
     function getParticipantName(c: IConversation) {
         const p = c.participants.find((p: { role: string; name?: string; userId?: string }) => p.role !== 'ADMIN' && p.role !== 'admin');
-        return p?.name || p?.userId || 'Unknown User';
+        return p?.name || p?.userId || t('unknown_user');
     }
 
     const handleUpdateCategory = async (category: string) => {
         if (!selectedConvo || !token) return;
         try {
             await adminChatboxApi.updateCategory(selectedConvo._id, category, token);
-            toast.success('Category updated');
+            toast.success(t('toast_category_updated'));
             // Update local state so UI reflects it immediately
             setSelectedConvo({ ...selectedConvo, category });
             refetch();
         } catch {
-            toast.error('Failed to update category');
+            toast.error(t('toast_failed_update_category'));
         }
     };
 
@@ -181,11 +183,11 @@ export default function AdminMessagePage() {
         const newHiddenStatus = !selectedConvo.isHidden;
         try {
             await adminChatboxApi.toggleHide(selectedConvo._id, newHiddenStatus, token);
-            toast.success(newHiddenStatus ? 'Conversation hidden' : 'Conversation unhidden');
+            toast.success(newHiddenStatus ? t('toast_convo_hidden') : t('toast_convo_unhidden'));
             setSelectedConvo({ ...selectedConvo, isHidden: newHiddenStatus });
             refetch();
         } catch {
-            toast.error('Failed to update visibility');
+            toast.error(t('toast_failed_update_visibility'));
         }
     };
 
@@ -193,11 +195,11 @@ export default function AdminMessagePage() {
         if (!selectedConvo || !token) return;
         try {
             await adminChatboxApi.toggleAi(selectedConvo._id, checked, token);
-            toast.success(checked ? 'AI Assistant enabled' : 'AI Assistant disabled');
+            toast.success(checked ? t('toast_ai_enabled') : t('toast_ai_disabled'));
             setSelectedConvo({ ...selectedConvo, isAiEnabled: checked });
             refetch();
         } catch {
-            toast.error('Failed to update AI status');
+            toast.error(t('toast_failed_update_ai'));
         }
     };
 
@@ -205,11 +207,11 @@ export default function AdminMessagePage() {
         if (!selectedConvo || !token) return;
         try {
             await adminChatboxApi.toggleHumanTakeover(selectedConvo._id, checked, token);
-            toast.success(checked ? 'Human takeover active (AI paused)' : 'Human intervention ended');
+            toast.success(checked ? t('toast_human_takeover_active') : t('toast_human_intervention_ended'));
             setSelectedConvo({ ...selectedConvo, isHumanTakeover: checked });
             refetch();
         } catch {
-            toast.error('Failed to update takeover status');
+            toast.error(t('toast_failed_update_takeover'));
         }
     };
 
@@ -226,27 +228,27 @@ export default function AdminMessagePage() {
         <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Message Management</h1>
-                    <p className="text-muted-foreground mt-1 text-lg">View and reply to customer conversations.</p>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">{t('message_management_title')}</h1>
+                    <p className="text-muted-foreground mt-1 text-lg">{t('message_management_desc')}</p>
                 </div>
                 {/* Socket status indicator */}
                 <div className="flex items-center gap-2 text-sm">
                     {isSocketConnecting && (
                         <>
                             <Loader2 className="size-4 animate-spin" />
-                            <span className="text-muted-foreground">Connecting...</span>
+                            <span className="text-muted-foreground">{t('socket_connecting')}</span>
                         </>
                     )}
                     {isSocketConnected && (
                         <>
                             <div className="size-2 bg-green-500 rounded-full" />
-                            <span className="text-green-500">Connected</span>
+                            <span className="text-green-500">{t('socket_connected')}</span>
                         </>
                     )}
                     {!isSocketConnecting && !isSocketConnected && token && (
                         <>
                             <div className="size-2 bg-red-500 rounded-full" />
-                            <span className="text-red-500">Disconnected</span>
+                            <span className="text-red-500">{t('socket_disconnected')}</span>
                         </>
                     )}
                 </div>
@@ -260,15 +262,15 @@ export default function AdminMessagePage() {
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                                 <Input
-                                    placeholder="Search conversations..."
+                                    placeholder={t('search_conversations_placeholder')}
                                     className="pl-10 bg-white/5 border-white/10"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
                             <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mr-1">Filter:</span>
-                                {CATEGORIES.map(cat => (
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mr-1">{t('filter_label')}:</span>
+                                {getCategories().map(cat => (
                                     <Badge
                                         key={cat.value}
                                         variant={selectedCategory === cat.value ? 'default' : 'secondary'}
@@ -280,7 +282,7 @@ export default function AdminMessagePage() {
                                         )}
                                         onClick={() => setSelectedCategory(cat.value)}
                                     >
-                                        {cat.label}
+                                        {t(`category_${cat.value}`)}
                                     </Badge>
                                 ))}
                             </div>
@@ -294,7 +296,7 @@ export default function AdminMessagePage() {
                                 ))
                             ) : filteredConversations.length === 0 ? (
                                 <div className="p-8 text-center text-muted-foreground italic">
-                                    No conversations found.
+                                    {t('no_conversations_found')}
                                 </div>
                             ) : (
                                 filteredConversations.map((c: IConversation) => (
@@ -320,7 +322,7 @@ export default function AdminMessagePage() {
                                                     <p className="font-bold text-sm truncate">{getParticipantName(c)}</p>
                                                     {c.category && c.category !== 'general' && (
                                                         <Badge variant="outline" className="text-[10px] h-4 px-1 opacity-60">
-                                                            {c.category}
+                                                            {t(`category_${c.category}`)}
                                                         </Badge>
                                                     )}
                                                 </div>
@@ -328,7 +330,7 @@ export default function AdminMessagePage() {
                                                     "text-xs truncate",
                                                     c.unreadCount > 0 ? "text-foreground font-medium" : "text-muted-foreground"
                                                 )}>
-                                                    {c.lastMessage || 'No messages'}
+                                                    {c.lastMessage || t('no_messages')}
                                                 </p>
                                             </div>
                                             <span className="text-[10px] text-muted-foreground whitespace-nowrap">
@@ -356,10 +358,10 @@ export default function AdminMessagePage() {
                                                 <div className="flex items-center gap-2">
                                                     <p className="font-bold">{getParticipantName(selectedConvo)}</p>
                                                     <Badge variant="secondary" className="text-[10px]">
-                                                        {selectedConvo.category || 'general'}
+                                                        {t(`category_${selectedConvo.category || 'general'}`)}
                                                     </Badge>
                                                 </div>
-                                                <p className="text-xs text-muted-foreground">Active conversation</p>
+                                                <p className="text-xs text-muted-foreground">{t('active_conversation')}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-4">
@@ -367,7 +369,7 @@ export default function AdminMessagePage() {
                                             <div className="flex items-center gap-6 border-x border-white/10 px-4">
                                                 <div className="flex items-center space-x-2">
                                                     <Brain className={cn("size-4", selectedConvo.isAiEnabled ? "text-primary" : "text-muted-foreground")} />
-                                                    <Label htmlFor="ai-toggle" className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">AI Asst</Label>
+                                                    <Label htmlFor="ai-toggle" className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">{t('ai_assistant_label')}</Label>
                                                     <Switch
                                                         id="ai-toggle"
                                                         checked={!!selectedConvo.isAiEnabled}
@@ -376,7 +378,7 @@ export default function AdminMessagePage() {
                                                 </div>
                                                 <div className="flex items-center space-x-2">
                                                     <UserCheck className={cn("size-4", selectedConvo.isHumanTakeover ? "text-orange-500" : "text-muted-foreground")} />
-                                                    <Label htmlFor="human-toggle" className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Human</Label>
+                                                    <Label htmlFor="human-toggle" className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">{t('human_label')}</Label>
                                                     <Switch
                                                         id="human-toggle"
                                                         checked={!!selectedConvo.isHumanTakeover}
@@ -391,7 +393,7 @@ export default function AdminMessagePage() {
                                                     size="sm"
                                                     onClick={handleToggleHide}
                                                     className="text-muted-foreground hover:text-foreground h-8"
-                                                    title={selectedConvo.isHidden ? 'Unhide' : 'Hide Spam'}
+                                                    title={selectedConvo.isHidden ? t('action_unhide') : t('action_hide_spam')}
                                                 >
                                                     {selectedConvo.isHidden ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
                                                 </Button>
@@ -400,12 +402,12 @@ export default function AdminMessagePage() {
                                                     onValueChange={handleUpdateCategory}
                                                 >
                                                     <SelectTrigger className="w-[120px] h-8 text-[10px] uppercase font-bold tracking-wider">
-                                                        <SelectValue placeholder="Category" />
+                                                        <SelectValue placeholder={t('category_placeholder')} />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        {CATEGORIES.filter(cat => cat.value !== 'all').map(cat => (
+                                                        {getCategories().filter(cat => cat.value !== 'all').map(cat => (
                                                             <SelectItem key={cat.value} value={cat.value} className="text-xs">
-                                                                {cat.label}
+                                                                {t(`category_${cat.value}`)}
                                                             </SelectItem>
                                                         ))}
                                                     </SelectContent>
@@ -442,13 +444,13 @@ export default function AdminMessagePage() {
                                                             {/* Only show "Admin" for admin messages, hide name for users */}
                                                             {isAdmin && (
                                                                 <p className="text-xs font-bold mb-1 text-primary-foreground/80">
-                                                                    Admin
+                                                                    {t('admin_label')}
                                                                 </p>
                                                             )}
                                                             <p className="text-sm">{msg.content}</p>
                                                             {msg.senderRole === 'AI' && (
                                                                 <Badge variant="outline" className="mt-1 text-[9px] h-4 bg-white/10 border-none text-primary-foreground/60">
-                                                                    AI Generated
+                                                                    {t('ai_generated_label')}
                                                                 </Badge>
                                                             )}
                                                             <div className="flex justify-between items-center gap-4 mt-1">
@@ -474,14 +476,14 @@ export default function AdminMessagePage() {
                                         <Input
                                             value={input}
                                             onChange={(e) => setInput(e.target.value)}
-                                            placeholder="Type your reply..."
+                                            placeholder={t('type_reply_placeholder')}
                                             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                                             className="flex-1"
                                             disabled={!isSocketConnected}
                                         />
                                         <Button onClick={handleSend} className="px-6" disabled={!isSocketConnected}>
                                             <Send className="size-4 mr-2" />
-                                            Send
+                                            {t('send_button')}
                                         </Button>
                                     </div>
                                 </div>
@@ -489,8 +491,8 @@ export default function AdminMessagePage() {
                         ) : (
                             <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
                                 <MessageCircle className="size-16 mb-4 opacity-20" />
-                                <p className="text-lg font-medium">Select a conversation</p>
-                                <p className="text-sm">Choose a conversation from the left to start chatting</p>
+                                <p className="text-lg font-medium">{t('select_conversation_prompt')}</p>
+                                <p className="text-sm">{t('select_conversation_desc')}</p>
                             </div>
                         )}
                     </div>

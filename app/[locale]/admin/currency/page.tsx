@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useForm } from 'react-hook-form';
 import { ICurrency } from '@/types/response/base.type';
+import { useTranslations } from 'next-intl';
 
 interface CurrencyFormData {
     name: string;
@@ -54,6 +55,7 @@ interface CurrencyFormData {
 }
 
 export default function AdminCurrencyPage() {
+    const t = useTranslations("admin");
     const { data: session } = useSession();
     const token = session?.user?.accessToken;
     const queryClient = useQueryClient();
@@ -81,12 +83,12 @@ export default function AdminCurrencyPage() {
         mutationFn: (data: CreateCurrencyDTO) => adminCurrencyApi.create(data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-currencies'] });
-            toast.success('Currency created successfully');
+            toast.success(t('toast_create_currency_success'));
             setIsCreateOpen(false);
             reset();
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Failed to create currency');
+            toast.error(error.message || t('toast_create_currency_error'));
         }
     });
 
@@ -95,12 +97,12 @@ export default function AdminCurrencyPage() {
             adminCurrencyApi.update(id, data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-currencies'] });
-            toast.success('Currency updated successfully');
+            toast.success(t('toast_update_currency_success'));
             setEditCurrency(null);
             reset();
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Failed to update currency');
+            toast.error(error.message || t('toast_update_currency_error'));
         }
     });
 
@@ -108,11 +110,11 @@ export default function AdminCurrencyPage() {
         mutationFn: (id: number) => adminCurrencyApi.remove(id, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-currencies'] });
-            toast.success('Currency deleted successfully');
+            toast.success(t('toast_delete_currency_success'));
             setDeleteId(null);
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Failed to delete currency');
+            toast.error(error.message || t('toast_delete_currency_error'));
         }
     });
 
@@ -157,23 +159,23 @@ export default function AdminCurrencyPage() {
     return (
         <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <AdminPageHeader
-                title="Currency Management"
-                description="Manage system currencies and their symbols."
+                title={t('currency_management_title')}
+                description={t('currency_management_desc')}
             >
                 <HasPermission permission="currency:create">
                     <Button onClick={openCreate} className="bg-primary hover:bg-primary/90 shadow-sm">
                         <Plus className="mr-2 size-4" />
-                        Add Currency
+                        {t('add_currency_button')}
                     </Button>
                 </HasPermission>
             </AdminPageHeader>
 
             <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
                 <AdminFilterBar
-                    searchPlaceholder="Search by name or symbol..."
+                    searchPlaceholder={t('search_currency_placeholder')}
                     searchTerm={searchTerm}
                     onSearchChange={setSearchTerm}
-                    onSearch={() => {}} // Live search
+                    onSearch={() => { }} // Live search
                     onClear={() => setSearchTerm('')}
                     isFiltered={searchTerm !== ''}
                 />
@@ -182,10 +184,10 @@ export default function AdminCurrencyPage() {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-white/5 border-b border-white/5">
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">ID</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Name</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Symbol</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Actions</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_id')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_name')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_symbol')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">{t('col_actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -219,11 +221,11 @@ export default function AdminCurrencyPage() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-48">
-                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                    <DropdownMenuLabel>{t('col_actions')}</DropdownMenuLabel>
                                                     <HasPermission permission="currency:update">
                                                         <DropdownMenuItem onClick={() => openEdit(currency)} className="cursor-pointer">
                                                             <Edit className="mr-2 size-4" />
-                                                            Edit
+                                                            {t('action_edit')}
                                                         </DropdownMenuItem>
                                                     </HasPermission>
                                                     <DropdownMenuSeparator />
@@ -233,7 +235,7 @@ export default function AdminCurrencyPage() {
                                                             className="text-rose-500 cursor-pointer"
                                                         >
                                                             <Trash2 className="mr-2 size-4" />
-                                                            Delete
+                                                            {t('action_delete')}
                                                         </DropdownMenuItem>
                                                     </HasPermission>
                                                 </DropdownMenuContent>
@@ -244,7 +246,7 @@ export default function AdminCurrencyPage() {
                                 {!isLoading && filteredCurrencies.length === 0 && (
                                     <tr>
                                         <td colSpan={4} className="px-6 py-12 text-center text-muted-foreground italic">
-                                            No currencies found.
+                                            {t('no_currencies_found')}
                                         </td>
                                     </tr>
                                 )}
@@ -259,38 +261,38 @@ export default function AdminCurrencyPage() {
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                 <DialogContent className="sm:max-w-[400px]">
                     <DialogHeader>
-                        <DialogTitle>Add New Currency</DialogTitle>
+                        <DialogTitle>{t('add_new_currency_title')}</DialogTitle>
                         <DialogDescription>
-                            Enter details to create a new currency.
+                            {t('add_new_currency_desc')}
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit(onSubmitCreate)}>
                         <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="name" className="text-right">Name</Label>
+                                <Label htmlFor="name" className="text-right">{t('col_name')}</Label>
                                 <Input
                                     id="name"
                                     className="col-span-3"
-                                    placeholder="e.g. Vietnam Dong"
+                                    placeholder={t('currency_name_placeholder')}
                                     {...register('name', { required: true })}
                                 />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="symbol" className="text-right">Symbol</Label>
+                                <Label htmlFor="symbol" className="text-right">{t('col_symbol')}</Label>
                                 <Input
                                     id="symbol"
                                     className="col-span-3"
-                                    placeholder="e.g. ₫"
+                                    placeholder={t('currency_symbol_placeholder')}
                                     {...register('symbol', { required: true })}
                                 />
                             </div>
                         </div>
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
-                                Cancel
+                                {t('cancel_button')}
                             </Button>
                             <Button type="submit" disabled={createMutation.isPending}>
-                                {createMutation.isPending ? 'Creating...' : 'Create'}
+                                {createMutation.isPending ? t('creating_status') : t('create_button')}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -301,15 +303,15 @@ export default function AdminCurrencyPage() {
             <Dialog open={!!editCurrency} onOpenChange={() => setEditCurrency(null)}>
                 <DialogContent className="sm:max-w-[400px]">
                     <DialogHeader>
-                        <DialogTitle>Edit Currency</DialogTitle>
+                        <DialogTitle>{t('edit_currency_title')}</DialogTitle>
                         <DialogDescription>
-                            Update currency details.
+                            {t('update_currency_details_desc')}
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit(onSubmitEdit)}>
                         <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="edit-name" className="text-right">Name</Label>
+                                <Label htmlFor="edit-name" className="text-right">{t('col_name')}</Label>
                                 <Input
                                     id="edit-name"
                                     className="col-span-3"
@@ -317,7 +319,7 @@ export default function AdminCurrencyPage() {
                                 />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="edit-symbol" className="text-right">Symbol</Label>
+                                <Label htmlFor="edit-symbol" className="text-right">{t('col_symbol')}</Label>
                                 <Input
                                     id="edit-symbol"
                                     className="col-span-3"
@@ -327,10 +329,10 @@ export default function AdminCurrencyPage() {
                         </div>
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setEditCurrency(null)}>
-                                Cancel
+                                {t('cancel_button')}
                             </Button>
                             <Button type="submit" disabled={updateMutation.isPending}>
-                                {updateMutation.isPending ? 'Saving...' : 'Save'}
+                                {updateMutation.isPending ? t('saving_status') : t('save_changes_button')}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -341,18 +343,18 @@ export default function AdminCurrencyPage() {
             <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Confirm Deletion?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('confirm_delete_title')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. The currency will be permanently deleted from the system.
+                            {t('confirm_delete_desc')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t('cancel_button')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => deleteId && deleteMutation.mutate(deleteId)}
                             className="bg-rose-500 hover:bg-rose-600"
                         >
-                            Delete Immediately
+                            {t('delete_immediately_button')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

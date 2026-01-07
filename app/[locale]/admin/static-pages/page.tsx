@@ -24,6 +24,7 @@ import {
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { useTranslations } from 'next-intl';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -36,6 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function StaticPagesListPage() {
+    const t = useTranslations("admin");
     const { data: session } = useSession();
     const token = session?.user?.accessToken;
     const queryClient = useQueryClient();
@@ -51,11 +53,11 @@ export default function StaticPagesListPage() {
         mutationFn: (id: number) => adminStaticPagesApi.remove(id, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-static-pages'] });
-            toast.success('Static page deleted successfully');
+            toast.success(t('toast_delete_static_page_success'));
             setDeleteId(null);
         },
         onError: (error: unknown) => {
-            toast.error(error instanceof Error ? error.message : 'Failed to delete static page');
+            toast.error(error instanceof Error ? error.message : t('toast_delete_static_page_error'));
         }
     });
 
@@ -63,6 +65,7 @@ export default function StaticPagesListPage() {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
                 <Loader2 className="size-8 animate-spin text-primary" />
+                <span className="sr-only">{t('loading_status')}</span>
             </div>
         );
     }
@@ -71,7 +74,7 @@ export default function StaticPagesListPage() {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] text-destructive">
                 <AlertCircle className="size-12 mb-4" />
-                <p className="text-lg font-semibold">An error occurred while loading data</p>
+                <p className="text-lg font-semibold">{t('loading_data_error')}</p>
             </div>
         );
     }
@@ -80,13 +83,13 @@ export default function StaticPagesListPage() {
         <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Static Pages Management</h1>
-                    <p className="text-muted-foreground mt-1 text-lg">Manage content for Information, Terms, Policies pages...</p>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">{t('static_pages_management_title')}</h1>
+                    <p className="text-muted-foreground mt-1 text-lg">{t('static_pages_management_desc')}</p>
                 </div>
                 <Button asChild className="bg-primary hover:bg-primary/90">
                     <Link href="/admin/static-pages/create">
                         <Plus className="mr-2 size-4" />
-                        Create New Page
+                        {t('create_new_page_button')}
                     </Link>
                 </Button>
             </div>
@@ -96,18 +99,18 @@ export default function StaticPagesListPage() {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-white/5 border-b border-white/5">
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 w-[80px]">ID</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 w-[400px]">Title / Slug</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Status</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Last Updated</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Actions</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 w-[80px]">{t('col_id')}</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 w-[400px]">{t('col_title_slug')}</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_status')}</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_last_updated')}</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">{t('col_actions')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
                             {pages?.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground italic">
-                                        No static pages created yet
+                                        {t('no_static_pages_msg')}
                                     </td>
                                 </tr>
                             ) : (
@@ -125,11 +128,11 @@ export default function StaticPagesListPage() {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             {page.is_active ? (
                                                 <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-emerald-500/20">
-                                                    Active
+                                                    {t('status_active')}
                                                 </Badge>
                                             ) : (
                                                 <Badge variant="secondary" className="bg-slate-500/10 text-slate-500 border-slate-500/20">
-                                                    Draft
+                                                    {t('status_draft')}
                                                 </Badge>
                                             )}
                                         </td>
@@ -146,17 +149,17 @@ export default function StaticPagesListPage() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-48 bg-background/95 backdrop-blur-md border-white/10">
-                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                    <DropdownMenuLabel>{t('col_actions')}</DropdownMenuLabel>
                                                     <DropdownMenuItem asChild className="cursor-pointer">
                                                         <Link href={`/admin/static-pages/${page.id}`}>
                                                             <Pencil className="mr-2 size-4" />
-                                                            Edit
+                                                            {t('action_edit')}
                                                         </Link>
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem asChild className="cursor-pointer">
                                                         <Link href={`/page/${page.slug}`} target="_blank">
                                                             <ExternalLink className="mr-2 size-4" />
-                                                            View Page
+                                                            {t('action_view_page')}
                                                         </Link>
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
@@ -164,7 +167,7 @@ export default function StaticPagesListPage() {
                                                         onClick={() => setDeleteId(page.id)}
                                                     >
                                                         <Trash2 className="mr-2 size-4" />
-                                                        Delete Page
+                                                        {t('action_delete_page')}
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
@@ -181,19 +184,19 @@ export default function StaticPagesListPage() {
             <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
                 <AlertDialogContent className="bg-background/95 backdrop-blur-md border-white/10">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Confirm Static Page Deletion?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('confirm_delete_static_page_title')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. This page will be permanently deleted from the system.
+                            {t('confirm_delete_static_page_desc')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t('cancel_button')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => deleteId && deleteMutation.mutate(deleteId)}
                             className="bg-rose-500 hover:bg-rose-600 text-white"
                         >
                             {deleteMutation.isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
-                            Delete Immediately
+                            {t('delete_immediately_button')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

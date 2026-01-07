@@ -25,6 +25,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useTranslations } from "next-intl";
 
 interface SidebarChild {
   title: string;
@@ -43,85 +44,85 @@ interface SidebarSection {
 
 const sections = [
   {
-    title: "Dashboard",
+    title: "dashboard_menu",
     base: "/admin/dashboard",
     icon: Home,
     url: "/admin/dashboard",
   },
   {
-    title: "Tour Management",
+    title: "tour_management_menu",
     base: "/admin/tour",
     icon: GalleryVerticalEnd,
     permission: "tour:read",
     children: [
-      { title: "All Tours", url: "/admin/tour", permission: "tour:read" },
-      { title: "Refund Policies", url: "/admin/tour/policies", permission: "tour:read" },
-      { title: "Create New", url: "/admin/tour/create", permission: "tour:create" },
+      { title: "all_tours_menu", url: "/admin/tour", permission: "tour:read" },
+      { title: "refund_policies_menu", url: "/admin/tour/policies", permission: "tour:read" },
+      { title: "create_new_menu", url: "/admin/tour/create", permission: "tour:create" },
     ],
   },
   {
-    title: "Bookings",
+    title: "bookings_menu",
     base: "/admin/booking",
     icon: SquareCheck,
     permission: "booking:read",
     children: [
-      { title: "All Bookings", url: "/admin/booking", permission: "booking:read" },
+      { title: "all_bookings_menu", url: "/admin/booking", permission: "booking:read" },
     ],
   },
   {
-    title: "User & Access",
+    title: "user_access_menu",
     base: ["/admin/users", "/admin/suppliers", "/admin/roles"],
     icon: Users,
     children: [
-      { title: "Users", url: "/admin/users", permission: "user:read" },
-      { title: "Suppliers", url: "/admin/suppliers", permission: "supplier:read" },
-      { title: "Roles & Permissions", url: "/admin/roles", permission: "role:read" },
+      { title: "users_menu", url: "/admin/users", permission: "user:read" },
+      { title: "suppliers_menu", url: "/admin/suppliers", permission: "supplier:read" },
+      { title: "roles_permissions_menu", url: "/admin/roles", permission: "role:read" },
     ],
   },
   {
-    title: "Master Data",
+    title: "master_data_menu",
     base: ["/admin/division", "/admin/currency"],
     icon: MapPin,
     children: [
-      { title: "Divisions", url: "/admin/division", permission: "division:read" },
-      { title: "Currencies", url: "/admin/currency", permission: "currency:read" },
+      { title: "divisions_menu", url: "/admin/division", permission: "division:read" },
+      { title: "currencies_menu", url: "/admin/currency", permission: "currency:read" },
     ],
   },
   {
-    title: "Reviews",
+    title: "reviews_menu",
     base: "/admin/review",
     icon: ThumbsUp,
     url: "/admin/review",
     permission: "review:read",
   },
   {
-    title: "Message Management",
+    title: "message_management_menu",
     base: "/admin/message",
     icon: MessageCircle,
     url: "/admin/message",
     permission: "system:admin", // Temporary, should use specific permission
   },
   {
-    title: "Notifications",
+    title: "notifications_menu",
     base: "/admin/notification",
     icon: Bell,
     permission: "notification:read",
     children: [
-      { title: "All Notifications", url: "/admin/notification", permission: "notification:read" },
-      { title: "Create New", url: "/admin/notification/create", permission: "notification:create" },
+      { title: "all_notifications_menu", url: "/admin/notification", permission: "notification:read" },
+      { title: "create_new_menu", url: "/admin/notification/create", permission: "notification:create" },
     ],
   },
   {
-    title: "Contents",
+    title: "contents_menu",
     base: ["/admin/static-pages", "/admin/social"],
     icon: GalleryVerticalEnd,
     children: [
-      { title: "Static Pages", url: "/admin/static-pages", permission: "article:read" },
-      { title: "Social Management", url: "/admin/social", permission: "article:read" },
+      { title: "static_pages_menu", url: "/admin/static-pages", permission: "article:read" },
+      { title: "social_management_menu", url: "/admin/social", permission: "article:read" },
     ],
   },
   {
-    title: "Settings",
+    title: "settings_menu",
     base: "/admin/settings",
     icon: Settings,
     url: "/admin/settings",
@@ -130,6 +131,7 @@ const sections = [
 ];
 
 export function AppSidebar() {
+  const t = useTranslations("admin");
   const pathname = usePathname();
   const { hasPermission, user } = usePermissions();
 
@@ -173,7 +175,7 @@ export function AppSidebar() {
           </div>
           <div className="flex flex-col">
             <span className="text-lg font-bold tracking-tight text-foreground">TripConnect</span>
-            <span className="text-xs font-medium text-muted-foreground">Admin Console</span>
+            <span className="text-xs font-medium text-muted-foreground">{t('admin_console')}</span>
           </div>
         </div>
       </SidebarHeader>
@@ -207,7 +209,7 @@ export function AppSidebar() {
                         >
                           <Link href={sec.url || "#"}>
                             <Icon className="h-5 w-5" />
-                            <span className="font-medium">{sec.title}</span>
+                            <span className="font-medium">{t(sec.title)}</span>
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -225,7 +227,7 @@ export function AppSidebar() {
                     >
                       <div className="flex items-center gap-3 flex-1">
                         <Icon className="h-5 w-5" />
-                        <span>{sec.title}</span>
+                        <span>{t(sec.title)}</span>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="pb-1 pt-1 ml-4 border-l-2 border-primary/20 pl-2">
@@ -241,7 +243,7 @@ export function AppSidebar() {
                                 : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                                 }`}
                             >
-                              {c.title}
+                              {t(c.title)}
                             </Link>
                           );
                         })}
@@ -262,7 +264,7 @@ export function AppSidebar() {
           onClick={() => signOut({ callbackUrl: '/' })}
         >
           <LogOut className="h-5 w-5" />
-          <span>Logout</span>
+          <span>{t('logout_button')}</span>
         </Button>
       </SidebarFooter>
     </Sidebar>

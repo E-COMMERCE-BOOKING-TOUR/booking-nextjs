@@ -10,11 +10,22 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const languages = ['vi', 'en'];
+import { usePathname, useRouter } from "@/i18n/navigation";
+import { useLocale } from "next-intl";
+
+const languages = [
+    { code: 'vi', label: 'Tiếng Việt' },
+    { code: 'en', label: 'English' }
+];
 
 export function AdminLanguageSwitcher() {
-    // Mock state for UI only
-    const [lng, setLng] = React.useState('vi');
+    const locale = useLocale();
+    const router = useRouter();
+    const pathname = usePathname();
+
+    const handleLocaleChange = (newLocale: string) => {
+        router.replace(pathname, { locale: newLocale });
+    };
 
     return (
         <DropdownMenu>
@@ -27,12 +38,12 @@ export function AdminLanguageSwitcher() {
             <DropdownMenuContent align="end">
                 {languages.map((l) => (
                     <DropdownMenuItem
-                        key={l}
-                        onClick={() => setLng(l)}
+                        key={l.code}
+                        onClick={() => handleLocaleChange(l.code)}
                         className="flex items-center justify-between cursor-pointer"
                     >
-                        <span>{l === 'en' ? 'English' : 'Tiếng Việt'}</span>
-                        {lng === l && <Check className="h-4 w-4 ml-2" />}
+                        <span>{l.label}</span>
+                        {locale === l.code && <Check className="h-4 w-4 ml-2" />}
                     </DropdownMenuItem>
                 ))}
             </DropdownMenuContent>

@@ -46,8 +46,10 @@ import {
 import { useForm } from 'react-hook-form';
 import { IAdminPermission, ICreatePermissionPayload } from '@/types/admin/permission';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export default function AdminPermissionPage() {
+    const t = useTranslations("admin");
     const { data: session } = useSession();
     const token = session?.user?.accessToken;
     const queryClient = useQueryClient();
@@ -68,11 +70,11 @@ export default function AdminPermissionPage() {
         mutationFn: (data: ICreatePermissionPayload) => adminPermissionApi.create(data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-permissions'] });
-            toast.success('Permission created successfully');
+            toast.success(t('toast_create_permission_success'));
             handleCloseDialog();
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Failed to create permission');
+            toast.error(error.message || t('toast_create_permission_error'));
         }
     });
 
@@ -81,11 +83,11 @@ export default function AdminPermissionPage() {
             adminPermissionApi.update(id, data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-permissions'] });
-            toast.success('Permission updated successfully');
+            toast.success(t('toast_update_permission_success'));
             handleCloseDialog();
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Failed to update permission');
+            toast.error(error.message || t('toast_update_permission_error'));
         }
     });
 
@@ -93,11 +95,11 @@ export default function AdminPermissionPage() {
         mutationFn: (id: number) => adminPermissionApi.remove(id, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-permissions'] });
-            toast.success('Permission deleted successfully');
+            toast.success(t('toast_delete_permission_success'));
             setDeleteId(null);
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Failed to delete permission');
+            toast.error(error.message || t('toast_delete_permission_error'));
         }
     });
 
@@ -146,13 +148,13 @@ export default function AdminPermissionPage() {
                         </Button>
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Permission List</h1>
-                        <p className="text-muted-foreground mt-1 text-lg">Manage detailed system permissions.</p>
+                        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">{t('permission_list_title')}</h1>
+                        <p className="text-muted-foreground mt-1 text-lg">{t('permission_list_desc')}</p>
                     </div>
                 </div>
                 <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90">
                     <Plus className="mr-2 size-4" />
-                    Add New Permission
+                    {t('add_permission_button')}
                 </Button>
             </div>
 
@@ -160,7 +162,7 @@ export default function AdminPermissionPage() {
                 <div className="p-4 border-b border-white/5">
                     <div className="relative max-w-sm">
                         <Input
-                            placeholder="Search permissions..."
+                            placeholder={t('search_permissions_placeholder')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="pl-10 bg-white/5 border-white/10"
@@ -173,10 +175,10 @@ export default function AdminPermissionPage() {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-white/5 border-b border-white/5">
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 w-[50px]">ID</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Permission Name</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Description</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Actions</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 w-[50px]">{t('col_id')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_permission_name')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_description')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">{t('col_actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -206,14 +208,14 @@ export default function AdminPermissionPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem onClick={() => handleOpenEdit(p)} className="cursor-pointer">
-                                                        <Pencil className="mr-2 size-4" /> Edit
+                                                        <Pencil className="mr-2 size-4" /> {t('action_edit')}
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem
                                                         onClick={() => setDeleteId(p.id)}
                                                         className="text-rose-500 cursor-pointer"
                                                     >
-                                                        <Trash2 className="mr-2 size-4" /> Delete
+                                                        <Trash2 className="mr-2 size-4" /> {t('action_delete')}
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
@@ -229,30 +231,30 @@ export default function AdminPermissionPage() {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
-                        <DialogTitle>{editingPermission ? 'Update Permission' : 'Create New Permission'}</DialogTitle>
+                        <DialogTitle>{editingPermission ? t('update_permission_title') : t('create_new_permission_title')}</DialogTitle>
                         <DialogDescription>
-                            Define permission code (e.g. user.create) and description.
+                            {t('permission_dialog_desc')}
                         </DialogDescription>
                     </DialogHeader>
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label>Permission Name (Code)</Label>
+                            <Label>{t('permission_name_code_label')}</Label>
                             <Input {...register('permission_name', { required: true })} placeholder="e.g. product.view" />
-                            {errors.permission_name && <span className="text-xs text-rose-500">Required</span>}
+                            {errors.permission_name && <span className="text-xs text-rose-500">{t('required_field')}</span>}
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Description</Label>
-                            <Input {...register('description', { required: true })} placeholder="Describe the function of this permission" />
-                            {errors.description && <span className="text-xs text-rose-500">Required</span>}
+                            <Label>{t('description_label')}</Label>
+                            <Input {...register('description', { required: true })} placeholder={t('permission_description_placeholder')} />
+                            {errors.description && <span className="text-xs text-rose-500">{t('required_field')}</span>}
                         </div>
 
                         <DialogFooter>
-                            <Button type="button" variant="outline" onClick={handleCloseDialog}>Cancel</Button>
+                            <Button type="button" variant="outline" onClick={handleCloseDialog}>{t('cancel_button')}</Button>
                             <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
                                 {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="mr-2 size-4 animate-spin" />}
-                                {editingPermission ? 'Save Changes' : 'Create'}
+                                {editingPermission ? t('save_changes_button') : t('create_button')}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -262,18 +264,18 @@ export default function AdminPermissionPage() {
             <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Confirm Deletion?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('confirm_delete_title')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. Roles using this permission will lose the corresponding access.
+                            {t('confirm_delete_permission_desc')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t('cancel_button')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => deleteId && deleteMutation.mutate(deleteId)}
                             className="bg-rose-500 hover:bg-rose-600"
                         >
-                            Delete Immediately
+                            {t('delete_immediately_button')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

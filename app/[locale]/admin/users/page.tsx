@@ -61,16 +61,20 @@ import { IAdminUser, ICreateUserPayload } from '@/types/admin/user';
 import { IAdminRole } from '@/types/admin/role';
 import { IAdminSupplier } from '@/types/admin/supplier';
 import { CustomPagination } from '@/components/ui/custom-pagination';
+import { useTranslations, useFormatter } from 'next-intl';
 
 const StatusBadge = ({ status }: { status: number }) => {
+  const t = useTranslations("admin");
   return status === 1 ? (
-    <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Active</Badge>
+    <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">{t('status_active')}</Badge>
   ) : (
-    <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20">Inactive</Badge>
+    <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20">{t('status_inactive')}</Badge>
   );
 };
 
 export default function AdminUserListPage() {
+  const t = useTranslations("admin");
+  const format = useFormatter();
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
   const queryClient = useQueryClient();
@@ -125,11 +129,11 @@ export default function AdminUserListPage() {
     mutationFn: (data: ICreateUserPayload) => adminUserApi.create(data as unknown as Record<string, unknown>, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast.success('User created successfully');
+      toast.success(t('toast_create_user_success'));
       handleCloseDialog();
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to create user');
+      toast.error(error.message || t('toast_create_user_error'));
     }
   });
 
@@ -138,11 +142,11 @@ export default function AdminUserListPage() {
       adminUserApi.update(id, data, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast.success('User updated successfully');
+      toast.success(t('toast_update_user_success'));
       handleCloseDialog();
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update user');
+      toast.error(error.message || t('toast_update_user_error'));
     }
   });
 
@@ -150,11 +154,11 @@ export default function AdminUserListPage() {
     mutationFn: (id: number) => adminUserApi.remove(id, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast.success('User deleted successfully');
+      toast.success(t('toast_delete_user_success'));
       setDeleteId(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete user');
+      toast.error(error.message || t('toast_delete_user_error'));
     }
   });
 
@@ -222,83 +226,83 @@ export default function AdminUserListPage() {
   const filteredUsers = users;
 
 
-    const roleOptions = [
-        { label: 'All Roles', value: 'all' },
-        ...roles.map((role: IAdminRole) => ({ label: role.name, value: role.id.toString() }))
-    ];
+  const roleOptions = [
+    { label: t('all_roles_option') || 'All Roles', value: 'all' },
+    ...roles.map((role: IAdminRole) => ({ label: role.name, value: role.id.toString() }))
+  ];
 
-    const supplierOptions = [
-        { label: 'All Suppliers', value: 'all' },
-        ...suppliers.map((supplier: IAdminSupplier) => ({ label: supplier.name, value: supplier.id.toString() }))
-    ];
+  const supplierOptions = [
+    { label: t('all_suppliers_option') || 'All Suppliers', value: 'all' },
+    ...suppliers.map((supplier: IAdminSupplier) => ({ label: supplier.name, value: supplier.id.toString() }))
+  ];
 
-    const statusOptions = [
-        { label: 'All Statuses', value: 'all' },
-        { label: 'Active', value: '1' },
-        { label: 'Inactive', value: '0' }
-    ];
+  const statusOptions = [
+    { label: t('all_status_option'), value: 'all' },
+    { label: t('status_active'), value: '1' },
+    { label: t('status_inactive'), value: '0' }
+  ];
 
-    return (
-        <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <AdminPageHeader 
-                title="User Management" 
-                description="Manage accounts, permissions, and user information."
-            >
-                <HasPermission permission="user:create">
-                    <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90 shadow-sm">
-                        <Plus className="mr-2 size-4" />
-                        Add User
-                    </Button>
-                </HasPermission>
-            </AdminPageHeader>
+  return (
+    <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <AdminPageHeader
+        title={t('user_management_title')}
+        description={t('user_management_desc')}
+      >
+        <HasPermission permission="user:create">
+          <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90 shadow-sm">
+            <Plus className="mr-2 size-4" />
+            {t('add_user_button')}
+          </Button>
+        </HasPermission>
+      </AdminPageHeader>
 
-            <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
-                <AdminFilterBar
-                    searchPlaceholder="Search by name, email, username..."
-                    searchTerm={keyword}
-                    onSearchChange={setKeyword}
-                    onSearch={handleSearch}
-                    onClear={() => {
-                        setKeyword('');
-                        setSearchTerm('');
-                        setRoleFilter('all');
-                        setSupplierFilter('all');
-                        setStatusFilter('all');
-                        setPage(1);
-                    }}
-                    isFiltered={keyword !== '' || roleFilter !== 'all' || supplierFilter !== 'all' || statusFilter !== 'all'}
-                >
-                    <AdminSelect 
-                        value={roleFilter} 
-                        onValueChange={setRoleFilter} 
-                        placeholder="Role" 
-                        options={roleOptions} 
-                    />
-                    <AdminSelect 
-                        value={supplierFilter} 
-                        onValueChange={setSupplierFilter} 
-                        placeholder="Supplier" 
-                        options={supplierOptions} 
-                    />
-                    <AdminSelect 
-                        value={statusFilter} 
-                        onValueChange={setStatusFilter} 
-                        placeholder="Status" 
-                        options={statusOptions} 
-                    />
-                </AdminFilterBar>
-                <CardContent className="p-0">
+      <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
+        <AdminFilterBar
+          searchPlaceholder={t('search_user_placeholder')}
+          searchTerm={keyword}
+          onSearchChange={setKeyword}
+          onSearch={handleSearch}
+          onClear={() => {
+            setKeyword('');
+            setSearchTerm('');
+            setRoleFilter('all');
+            setSupplierFilter('all');
+            setStatusFilter('all');
+            setPage(1);
+          }}
+          isFiltered={keyword !== '' || roleFilter !== 'all' || supplierFilter !== 'all' || statusFilter !== 'all'}
+        >
+          <AdminSelect
+            value={roleFilter}
+            onValueChange={setRoleFilter}
+            placeholder={t('col_role')}
+            options={roleOptions}
+          />
+          <AdminSelect
+            value={supplierFilter}
+            onValueChange={setSupplierFilter}
+            placeholder={t('col_supplier')}
+            options={supplierOptions}
+          />
+          <AdminSelect
+            value={statusFilter}
+            onValueChange={setStatusFilter}
+            placeholder={t('col_status')}
+            options={statusOptions}
+          />
+        </AdminFilterBar>
+        <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-white/5 border-b border-white/5">
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 w-[50px]">ID</th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">User</th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Role</th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Supplier</th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Status</th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Created At</th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Actions</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 w-[50px]">{t('col_id')}</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_user')}</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_role')}</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_supplier')}</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_status')}</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_created_at')}</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">{t('col_actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -340,7 +344,7 @@ export default function AdminUserListPage() {
                         <StatusBadge status={user.status} />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-xs text-muted-foreground">
-                        {new Date(user.created_at).toLocaleDateString('vi-VN')}
+                        {format.dateTime(new Date(user.created_at))}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <DropdownMenu>
@@ -350,10 +354,10 @@ export default function AdminUserListPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuLabel>{t('col_actions')}</DropdownMenuLabel>
                             <HasPermission permission="user:update">
                               <DropdownMenuItem onClick={() => handleOpenEdit(user)} className="cursor-pointer">
-                                <Pencil className="mr-2 size-4" /> Edit
+                                <Pencil className="mr-2 size-4" /> {t('action_edit')}
                               </DropdownMenuItem>
                             </HasPermission>
                             <DropdownMenuSeparator />
@@ -362,7 +366,7 @@ export default function AdminUserListPage() {
                                 onClick={() => setDeleteId(user.id)}
                                 className="text-rose-500 cursor-pointer"
                               >
-                                <Trash2 className="mr-2 size-4" /> Delete
+                                <Trash2 className="mr-2 size-4" /> {t('action_delete')}
                               </DropdownMenuItem>
                             </HasPermission>
                           </DropdownMenuContent>
@@ -373,7 +377,7 @@ export default function AdminUserListPage() {
                 ) : (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground italic">
-                      No users found.
+                      {t('no_users_found') || 'No users found.'}
                     </td>
                   </tr>
                 )}
@@ -382,7 +386,7 @@ export default function AdminUserListPage() {
           </div>
           <div className="p-4 border-t border-white/5 flex items-center justify-between">
             <span className="text-sm text-muted-foreground">
-              Showing {filteredUsers.length} / {totalItems} results
+              {t('showing_results', { count: filteredUsers.length, total: totalItems })}
             </span>
             <CustomPagination
               currentPage={page}
@@ -397,39 +401,39 @@ export default function AdminUserListPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>{editingUser ? 'Edit User' : 'Add New User'}</DialogTitle>
+            <DialogTitle>{editingUser ? t('edit_user_title') : t('add_new_user_title')}</DialogTitle>
             <DialogDescription>
-              {editingUser ? 'Update user information.' : 'Fill in the information to create a new user.'}
+              {editingUser ? t('edit_user_desc') : t('add_new_user_desc')}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username">{t('username_label')}</Label>
                 <Input
                   id="username"
                   disabled={!!editingUser}
                   {...register('username', { required: !editingUser })}
                   placeholder="username"
                 />
-                {errors.username && <span className="text-xs text-rose-500">Required</span>}
+                {errors.username && <span className="text-xs text-rose-500">{t('required_field')}</span>}
               </div>
 
               {!editingUser && (
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">{t('password_label')}</Label>
                   <Input
                     id="password"
                     type="password"
                     {...register('password', { required: true, minLength: 8 })}
                   />
-                  {errors.password && <span className="text-xs text-rose-500">Minimum 8 characters</span>}
+                  {errors.password && <span className="text-xs text-rose-500">{t('min_password_length', { count: 8 })}</span>}
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="full_name">Full Name</Label>
+                <Label htmlFor="full_name">{t('full_name_label')}</Label>
                 <Input
                   id="full_name"
                   {...register('full_name', { required: true })}
@@ -438,7 +442,7 @@ export default function AdminUserListPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('email_label')}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -448,7 +452,7 @@ export default function AdminUserListPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
+                <Label htmlFor="phone">{t('phone_label')}</Label>
                 <Input
                   id="phone"
                   {...register('phone')}
@@ -457,31 +461,31 @@ export default function AdminUserListPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label>{t('col_status')}</Label>
                 <Select
                   onValueChange={(val) => setValue('status', Number(val))}
                   defaultValue={editingUser ? String(editingUser.status) : "1"}
                   key={editingUser ? `edit-${editingUser.id}` : 'create'}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select Status" />
+                    <SelectValue placeholder={t('select_status_placeholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Active</SelectItem>
-                    <SelectItem value="0">Inactive</SelectItem>
+                    <SelectItem value="1">{t('status_active')}</SelectItem>
+                    <SelectItem value="0">{t('status_inactive')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label>Role</Label>
+                <Label>{t('col_role')}</Label>
                 <Select
                   onValueChange={(val) => setValue('role_id', Number(val))}
                   defaultValue={editingUser?.role?.id ? String(editingUser.role.id) : undefined}
                   key={editingUser ? `role-${editingUser.id}` : 'role-create'}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select Role" />
+                    <SelectValue placeholder={t('select_role_placeholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     {roles.map((role: IAdminRole) => (
@@ -492,14 +496,14 @@ export default function AdminUserListPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Supplier (if any)</Label>
+                <Label>{t('col_supplier')} ({t('if_any_label') || 'if any'})</Label>
                 <Select
                   onValueChange={(val) => setValue('supplier_id', Number(val))}
                   defaultValue={editingUser?.supplier?.id ? String(editingUser.supplier.id) : undefined}
                   key={editingUser ? `supplier-${editingUser.id}` : 'supplier-create'}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select Supplier" />
+                    <SelectValue placeholder={t('select_supplier_placeholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     {suppliers.map((supplier: IAdminSupplier) => (
@@ -511,10 +515,10 @@ export default function AdminUserListPage() {
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseDialog}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={handleCloseDialog}>{t('cancel_button')}</Button>
               <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
                 {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="mr-2 size-4 animate-spin" />}
-                {editingUser ? 'Update' : 'Create'}
+                {editingUser ? t('update_button') : t('create_button')}
               </Button>
             </DialogFooter>
           </form>
@@ -525,18 +529,18 @@ export default function AdminUserListPage() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Deletion?</AlertDialogTitle>
+            <AlertDialogTitle>{t('confirm_delete_title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. The user will be deleted from the system.
+              {t('confirm_delete_user_desc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('cancel_button')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && deleteMutation.mutate(deleteId)}
               className="bg-rose-500 hover:bg-rose-600"
             >
-              Delete Immediately
+              {t('delete_immediately_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

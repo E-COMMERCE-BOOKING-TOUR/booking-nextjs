@@ -20,14 +20,18 @@ import { adminDashboardApi } from "@/apis/admin/dashboard";
 import { IDashboardStats } from "@/types/admin/dashboard";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useTranslations, useFormatter } from "next-intl";
 
 const dataSelect = ['Last 6 Months', 'Last Year']
 
 const AdminDashboard = () => {
+    const t = useTranslations("admin");
+    const format = useFormatter();
     const { data: session } = useSession();
     const token = session?.user?.accessToken;
 
-    const [valueSelect, setValueSelect] = useState('Last 6 Months');
+    const dataSelect = [t('last_6_months'), t('last_1_year')]
+    const [valueSelect, setValueSelect] = useState(t('last_6_months'));
     const [stats, setStats] = useState<IDashboardStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -56,36 +60,36 @@ const AdminDashboard = () => {
         const { kpis: k } = stats;
         const allKpis = [
             {
-                label: "Today's Revenue",
-                value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND' }).format(k.todayRevenue),
-                delta: "Since 00:00",
+                label: t('kpi_today_revenue'),
+                value: format.number(k.todayRevenue, { style: 'currency', currency: 'VND' }),
+                delta: t('kpi_from_start'),
                 icon: DollarSign,
                 color: "text-emerald-400",
                 bg: "bg-emerald-400/10",
                 trend: "up"
             },
             {
-                label: "Monthly Revenue",
-                value: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND' }).format(k.monthlyRevenue),
-                delta: "In " + new Date().toLocaleString('en-US', { month: 'long' }),
+                label: t('kpi_monthly_revenue'),
+                value: format.number(k.monthlyRevenue, { style: 'currency', currency: 'VND' }),
+                delta: t('kpi_in_month') + " " + format.dateTime(new Date(), { month: 'long' }),
                 icon: TrendingUp,
                 color: "text-blue-400",
                 bg: "bg-blue-400/10",
                 trend: "up"
             },
             {
-                label: "Active Tours",
+                label: t('kpi_active_tours'),
                 value: k.activeToursCount.toString(),
-                delta: k.activeToursCount.toString() + " total",
+                delta: k.activeToursCount.toString() + " " + t('kpi_total_suffix'),
                 icon: Package,
                 color: "text-amber-400",
                 bg: "bg-amber-400/10",
                 trend: "neutral"
             },
             {
-                label: "Users",
+                label: t('kpi_users'),
                 value: k.totalUsers.toString(),
-                delta: "Total Members",
+                delta: t('kpi_total_members'),
                 icon: UsersIcon,
                 color: "text-purple-400",
                 bg: "bg-purple-400/10",
@@ -128,23 +132,23 @@ const AdminDashboard = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-                        {isSupplier ? 'Supplier Dashboard' : 'Dashboard'}
+                        {isSupplier ? t('supplier_dashboard_title') : t('dashboard_title')}
                     </h1>
                     <p className="text-muted-foreground mt-1 text-lg">
-                        {isSupplier 
-                            ? "Manage your tours and track your performance here." 
-                            : "Welcome back! Here is your business summary."}
+                        {isSupplier
+                            ? t('supplier_dashboard_desc')
+                            : t('dashboard_welcome')}
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
                     <Button variant="outline" className="gap-2 border-white/10 bg-white/5 hover:bg-white/10 transition-all">
                         <Download className="size-4" />
-                        Export Report
+                        {t('export_report')}
                     </Button>
                     <Button asChild className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/20">
                         <Link href="/admin/tour/create">
                             <Plus className="size-4" />
-                            Add New Tour
+                            {t('add_new_tour')}
                         </Link>
                     </Button>
                 </div>
@@ -177,14 +181,14 @@ const AdminDashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Chart Section */}
                 <Card className="lg:col-span-2 border-white/5 bg-card/20 backdrop-blur-xl">
-                    <CardHeader className="flex flex-row items-center justify-between border-b border-white/5 pb-6 px-8">
+                    <CardHeader className="flex flex-row items-center justify-between border-b border-white/5 pb-6 px-8" >
                         <div>
-                            <CardTitle className="text-xl font-black text-foreground">Revenue Analysis</CardTitle>
-                            <p className="text-sm text-muted-foreground mt-1">Recent revenue growth chart</p>
+                            <CardTitle className="text-xl font-black text-foreground">{t('revenue_analysis')}</CardTitle>
+                            <p className="text-sm text-muted-foreground mt-1">{t('revenue_chart_desc')}</p>
                         </div>
                         <AppSelect
                             className="w-[160px] bg-white/5 border-white/10"
-                            placeholder="Time Range"
+                            placeholder={t('time_select_placeholder')}
                             data={dataSelect}
                             valueSelect={valueSelect}
                             onChange={(value) => setValueSelect(value)}
@@ -205,8 +209,8 @@ const AdminDashboard = () => {
                                 <Flame className="size-5 text-orange-500 animate-pulse" />
                             </div>
                             <div>
-                                <CardTitle className="text-xl font-bold text-foreground">Trending Tours</CardTitle>
-                                <p className="text-sm text-muted-foreground mt-1">Top 5 best-selling tours</p>
+                                <CardTitle className="text-xl font-bold text-foreground">{t('trending_tours_title')}</CardTitle>
+                                <p className="text-sm text-muted-foreground mt-1">{t('trending_tours_desc')}</p>
                             </div>
                         </div>
                     </CardHeader>
@@ -221,25 +225,25 @@ const AdminDashboard = () => {
                                     <div className="flex items-center gap-3 mt-1">
                                         <div className="text-[10px] text-muted-foreground flex items-center gap-1 font-bold">
                                             <Navigation className="size-3" />
-                                            {tour.count} bookings
+                                            {tour.count} {t('bookings_unit')}
                                         </div>
                                         <div className="text-[10px] text-emerald-400 font-bold">
-                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND' }).format(tour.revenue)}
+                                            {format.number(tour.revenue, { style: 'currency', currency: 'VND' })}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         )) : (
                             <div className="py-10 text-center text-muted-foreground">
-                                No trending data available.
+                                {t('no_trending_data')}
                             </div>
                         )}
                         <div className="pt-6 border-t border-white/5">
                             <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-between">
                                 <div>
-                                    <p className="text-[10px] text-primary font-black uppercase tracking-[0.2em] mb-1">General Data</p>
+                                    <p className="text-[10px] text-primary font-black uppercase tracking-[0.2em] mb-1">{t('general_data')}</p>
                                     <p className="text-3xl font-black text-primary">
-                                        {stats.kpis.totalBookings} Orders
+                                        {stats.kpis.totalBookings} {t('bookings_unit')}
                                     </p>
                                 </div>
                                 <TrendingUp className="size-10 text-primary opacity-20" />
@@ -253,11 +257,11 @@ const AdminDashboard = () => {
             <Card className="border-white/5 bg-card/20 backdrop-blur-xl overflow-hidden shadow-2xl">
                 <CardHeader className="border-b border-white/5 pb-6 px-8 flex flex-row items-center justify-between">
                     <div>
-                        <CardTitle className="text-xl font-black text-foreground">Recent Transactions</CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">Latest transaction history</p>
+                        <CardTitle className="text-xl font-black text-foreground">{t('recent_transactions_title')}</CardTitle>
+                        <p className="text-sm text-muted-foreground mt-1">{t('recent_transactions_desc')}</p>
                     </div>
                     <Button asChild variant="ghost" className="text-primary hover:bg-primary/10 font-bold">
-                        <Link href="/admin/booking">View All</Link>
+                        <Link href="/admin/booking">{t('view_all_button')}</Link>
                     </Button>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -265,11 +269,11 @@ const AdminDashboard = () => {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-white/5 border-b border-white/5">
-                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">ID</th>
-                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Customer</th>
-                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Status</th>
-                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Revenue</th>
-                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-right">Booking Date</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">{t('col_id')}</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">{t('col_customer')}</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">{t('col_status')}</th>
+                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">{t('col_revenue')}</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 text-right">{t('col_booking_date')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -299,10 +303,10 @@ const AdminDashboard = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-5 whitespace-nowrap font-mono text-sm font-black text-foreground">
-                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND' }).format(Number(booking.total_amount))}
+                                            {format.number(Number(booking.total_amount), { style: 'currency', currency: 'VND' })}
                                         </td>
                                         <td className="px-8 py-5 whitespace-nowrap text-right text-xs text-muted-foreground font-bold">
-                                            {booking.created_at ? new Date(booking.created_at).toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A'}
+                                            {booking.created_at ? format.dateTime(new Date(booking.created_at), { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A'}
                                         </td>
                                     </tr>
                                 ))}
@@ -310,7 +314,7 @@ const AdminDashboard = () => {
                                     <tr>
                                         <td colSpan={5} className="px-8 py-20 text-center text-muted-foreground bg-white/5">
                                             <History className="size-12 mx-auto mb-4 opacity-10" />
-                                            No booking transactions recorded.
+                                            {t('no_bookings_recorded')}
                                         </td>
                                     </tr>
                                 )}

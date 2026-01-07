@@ -14,6 +14,7 @@ import {
     ExternalLink,
     MoreHorizontal
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { adminArticleApi } from "@/apis/admin/article";
 import type { IArticlePopular } from "@/types/response/article";
 import { toast } from "sonner";
@@ -58,6 +59,7 @@ const StatCard = ({ title, value, icon, colorClass }: { title: string, value: nu
 );
 
 const AdminSocialPage = () => {
+    const t = useTranslations("admin");
     const { data: session, status: sessionStatus } = useSession();
     const token = session?.user?.accessToken;
     const queryClient = useQueryClient();
@@ -83,17 +85,17 @@ const AdminSocialPage = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-social-articles'] });
             queryClient.invalidateQueries({ queryKey: ['admin-social-stats'] });
-            toast.success("Article deleted successfully");
+            toast.success(t('toast_article_delete_success'));
             setDeleteId(null);
         },
-        onError: () => toast.error("Failed to delete article")
+        onError: () => toast.error(t('toast_article_delete_error'))
     });
 
     const toggleVisibilityMutation = useMutation({
         mutationFn: (id: string) => adminArticleApi.toggleVisibility(id, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-social-articles'] });
-            toast.success("Visibility updated");
+            toast.success(t('toast_visibility_updated'));
         }
     });
 
@@ -106,8 +108,8 @@ const AdminSocialPage = () => {
         <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Social Network Management</h1>
-                    <p className="text-muted-foreground mt-1 text-lg">Monitor and manage user-generated content across the platform.</p>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">{t('social_network_management_title')}</h1>
+                    <p className="text-muted-foreground mt-1 text-lg">{t('social_network_management_desc')}</p>
                 </div>
             </div>
 
@@ -120,25 +122,25 @@ const AdminSocialPage = () => {
                 ) : (
                     <>
                         <StatCard
-                            title="Total Articles"
+                            title={t('total_articles_label')}
                             value={stats?.totalArticles}
                             icon={<FileText className="size-6 text-blue-500" />}
                             colorClass="border-blue-500/20"
                         />
                         <StatCard
-                            title="Total Likes"
+                            title={t('total_likes_label')}
                             value={stats?.totalLikes}
                             icon={<Heart className="size-6 text-rose-500" />}
                             colorClass="border-rose-500/20"
                         />
                         <StatCard
-                            title="Total Comments"
+                            title={t('total_comments_label')}
                             value={stats?.totalComments}
                             icon={<MessageCircle className="size-6 text-purple-500" />}
                             colorClass="border-purple-500/20"
                         />
                         <StatCard
-                            title="Total Views"
+                            title={t('total_views_label')}
                             value={stats?.totalViews}
                             icon={<TrendingUp className="size-6 text-emerald-500" />}
                             colorClass="border-emerald-500/20"
@@ -150,7 +152,7 @@ const AdminSocialPage = () => {
             {/* Article Management Table */}
             <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
                 <AdminFilterBar
-                    searchPlaceholder="Search by title, username or content..."
+                    searchPlaceholder={t('search_articles_placeholder')}
                     searchTerm={search}
                     onSearchChange={setSearch}
                     onSearch={() => setPage(1)}
@@ -165,11 +167,11 @@ const AdminSocialPage = () => {
                         <table className="w-full text-left border-collapse font-sans">
                             <thead>
                                 <tr className="bg-white/5 border-b border-white/5">
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Title</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Engagement</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Date</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Visibility</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Actions</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_tour')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_engagement')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_date')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_visibility')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">{t('col_actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -182,7 +184,7 @@ const AdminSocialPage = () => {
                                 ) : articles.length === 0 ? (
                                     <tr>
                                         <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground italic">
-                                            No articles found.
+                                            {t('no_matching_found', { defaultValue: 'No articles found.' })}
                                         </td>
                                     </tr>
                                 ) : (
@@ -212,15 +214,15 @@ const AdminSocialPage = () => {
                                                     {article.created_at ? format(new Date(article.created_at), 'MMM dd, yyyy') : 'N/A'}
                                                 </span>
                                             </td>
-                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                 <HasPermission permission="article:update" fallback={<Switch checked={article.is_visible} disabled className="opacity-50" />}>
-                                                     <Switch
-                                                         checked={article.is_visible}
-                                                         onCheckedChange={() => article._id && toggleVisibilityMutation.mutate(article._id)}
-                                                         className="data-[state=checked]:bg-primary"
-                                                     />
-                                                 </HasPermission>
-                                             </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <HasPermission permission="article:update" fallback={<Switch checked={article.is_visible} disabled className="opacity-50" />}>
+                                                    <Switch
+                                                        checked={article.is_visible}
+                                                        onCheckedChange={() => article._id && toggleVisibilityMutation.mutate(article._id)}
+                                                        className="data-[state=checked]:bg-primary"
+                                                    />
+                                                </HasPermission>
+                                            </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
@@ -228,27 +230,27 @@ const AdminSocialPage = () => {
                                                             <MoreHorizontal className="size-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
-                                                     <DropdownMenuContent align="end" className="w-48">
-                                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                         <HasPermission permission="article:read">
-                                                             <DropdownMenuItem asChild>
-                                                                 <a href={`/social/post/${article._id}`} target="_blank" className="cursor-pointer flex items-center">
-                                                                     <ExternalLink className="mr-2 size-4" />
-                                                                     Preview
-                                                                 </a>
-                                                             </DropdownMenuItem>
-                                                         </HasPermission>
-                                                         <DropdownMenuSeparator />
-                                                         <HasPermission permission="article:delete">
-                                                             <DropdownMenuItem
-                                                                 onClick={() => article._id && setDeleteId(article._id)}
-                                                                 className="text-rose-500 cursor-pointer"
-                                                             >
-                                                                 <Trash2 className="mr-2 size-4" />
-                                                                 Delete
-                                                             </DropdownMenuItem>
-                                                         </HasPermission>
-                                                     </DropdownMenuContent>
+                                                    <DropdownMenuContent align="end" className="w-48">
+                                                        <DropdownMenuLabel>{t('col_actions')}</DropdownMenuLabel>
+                                                        <HasPermission permission="article:read">
+                                                            <DropdownMenuItem asChild>
+                                                                <a href={`/social/post/${article._id}`} target="_blank" className="cursor-pointer flex items-center">
+                                                                    <ExternalLink className="mr-2 size-4" />
+                                                                    {t('action_preview')}
+                                                                </a>
+                                                            </DropdownMenuItem>
+                                                        </HasPermission>
+                                                        <DropdownMenuSeparator />
+                                                        <HasPermission permission="article:delete">
+                                                            <DropdownMenuItem
+                                                                onClick={() => article._id && setDeleteId(article._id)}
+                                                                className="text-rose-500 cursor-pointer"
+                                                            >
+                                                                <Trash2 className="mr-2 size-4" />
+                                                                {t('action_delete')}
+                                                            </DropdownMenuItem>
+                                                        </HasPermission>
+                                                    </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </td>
                                         </tr>
@@ -260,7 +262,7 @@ const AdminSocialPage = () => {
                 </CardContent>
                 <CardFooter className="p-6 border-t border-white/5 flex items-center justify-between">
                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest bg-white/5 px-3 py-1.5 rounded-full">
-                        Showing {articles.length} of {total} articles
+                        {t('showing_articles_count', { count: articles.length, total })}
                     </p>
                     <div className="flex items-center gap-4">
                         <Button
@@ -270,7 +272,7 @@ const AdminSocialPage = () => {
                             onClick={() => setPage(p => Math.max(1, p - 1))}
                             className="bg-white/5 border-white/10 hover:bg-white/10"
                         >
-                            Previous
+                            {t('action_previous')}
                         </Button>
                         <span className="text-sm font-black bg-primary/10 text-primary px-3 py-1 rounded-lg">
                             {page} / {totalPages || 1}
@@ -282,7 +284,7 @@ const AdminSocialPage = () => {
                             onClick={() => setPage(p => p + 1)}
                             className="bg-white/5 border-white/10 hover:bg-white/10"
                         >
-                            Next
+                            {t('action_next')}
                         </Button>
                     </div>
                 </CardFooter>
@@ -291,18 +293,18 @@ const AdminSocialPage = () => {
             <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
                 <AlertDialogContent className="bg-slate-950 border-white/10 backdrop-blur-2xl">
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="text-2xl font-black">Confirm Deletion?</AlertDialogTitle>
+                        <AlertDialogTitle className="text-2xl font-black">{t('confirm_delete_title')}</AlertDialogTitle>
                         <AlertDialogDescription className="text-slate-400">
-                            This action cannot be undone. The article will be permanently removed from the system.
+                            {t('confirm_delete_desc')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="mt-4">
-                        <AlertDialogCancel className="bg-white/5 border-white/10 hover:bg-white/10 text-foreground">Cancel</AlertDialogCancel>
+                        <AlertDialogCancel className="bg-white/5 border-white/10 hover:bg-white/10 text-foreground">{t('cancel_button')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => deleteId && deleteMutation.mutate(deleteId)}
                             className="bg-rose-500 hover:bg-rose-600 font-bold"
                         >
-                            Delete Now
+                            {t('delete_now_button')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

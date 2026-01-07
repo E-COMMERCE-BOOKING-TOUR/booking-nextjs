@@ -23,10 +23,12 @@ import {
 import { toast } from 'sonner';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 type StaticPageFormData = CreateStaticPageDTO;
 
 export default function StaticPageEditPage() {
+    const t = useTranslations("admin");
     const params = useParams();
     const id = params?.id as string;
     const isEdit = !!id && id !== 'create';
@@ -91,11 +93,11 @@ export default function StaticPageEditPage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-static-pages'] });
-            toast.success(isEdit ? 'Page updated successfully' : 'Page created successfully');
+            toast.success(isEdit ? t('toast_update_page_success') : t('toast_create_page_success'));
             router.push('/admin/static-pages');
         },
         onError: (error: unknown) => {
-            toast.error(error instanceof Error ? error.message : 'An error occurred');
+            toast.error(error instanceof Error ? error.message : t('toast_error_generic'));
         }
     });
 
@@ -107,6 +109,7 @@ export default function StaticPageEditPage() {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
                 <Loader2 className="size-8 animate-spin text-primary" />
+                <span className="sr-only">{t('loading_status')}</span>
             </div>
         );
     }
@@ -115,9 +118,9 @@ export default function StaticPageEditPage() {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] text-destructive">
                 <AlertCircle className="size-12 mb-4" />
-                <p className="text-lg font-semibold">Page not found or an error occurred</p>
+                <p className="text-lg font-semibold">{t('page_not_found_error')}</p>
                 <Button variant="link" asChild>
-                    <Link href="/admin/static-pages">Back to List</Link>
+                    <Link href="/admin/static-pages">{t('back_to_list')}</Link>
                 </Button>
             </div>
         );
@@ -134,10 +137,10 @@ export default function StaticPageEditPage() {
                     </Button>
                     <div>
                         <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-                            {isEdit ? 'Edit Page' : 'Create New Page'}
+                            {isEdit ? t('edit_page_title') : t('create_new_page_button')}
                         </h1>
                         <p className="text-muted-foreground mt-1">
-                            {isEdit ? `Editing: ${page?.title}` : 'Add a new content page for the website'}
+                            {isEdit ? t('editing_label', { title: page?.title || "" }) : t('add_new_static_page_desc')}
                         </p>
                     </div>
                 </div>
@@ -151,7 +154,7 @@ export default function StaticPageEditPage() {
                     ) : (
                         <Save className="mr-2 size-4" />
                     )}
-                    {isEdit ? 'Save Changes' : 'Create Page'}
+                    {isEdit ? t('save_changes_button') : t('create_button')}
                 </Button>
             </div>
 
@@ -165,29 +168,29 @@ export default function StaticPageEditPage() {
                                     <div className="p-2 bg-blue-500/10 rounded-lg">
                                         <FileText className="size-5 text-blue-500" />
                                     </div>
-                                    <CardTitle>Page Content</CardTitle>
+                                    <CardTitle>{t('page_content_title')}</CardTitle>
                                 </div>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="title">Page Title</Label>
+                                    <Label htmlFor="title">{t('page_title_label')}</Label>
                                     <Input
                                         id="title"
-                                        placeholder="e.g. Terms of Use"
+                                        placeholder={t('page_title_placeholder')}
                                         {...register('title', { required: true })}
                                         className="bg-white/5 border-white/10 text-lg font-semibold"
                                     />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="content">Content (HTML/Markdown)</Label>
+                                    <Label htmlFor="content">{t('content_label')}</Label>
                                     <Textarea
                                         id="content"
-                                        placeholder="Enter page content..."
+                                        placeholder={t('content_placeholder')}
                                         className="min-h-[400px] bg-white/5 border-white/10 font-mono text-sm leading-relaxed"
                                         {...register('content')}
                                     />
                                     <p className="text-[11px] text-muted-foreground italic">
-                                        Supports HTML format for rich content display.
+                                        {t('html_support_hint')}
                                     </p>
                                 </div>
                             </CardContent>
@@ -202,26 +205,26 @@ export default function StaticPageEditPage() {
                                     <div className="p-2 bg-amber-500/10 rounded-lg">
                                         <SettingsIcon className="size-5 text-amber-500" />
                                     </div>
-                                    <CardTitle>Configuration</CardTitle>
+                                    <CardTitle>{t('configuration_title')}</CardTitle>
                                 </div>
                             </CardHeader>
                             <CardContent className="space-y-6">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="slug">URL Slug</Label>
+                                    <Label htmlFor="slug">{t('url_slug_label')}</Label>
                                     <Input
                                         id="slug"
-                                        placeholder="dieu-khoan-su-dung"
+                                        placeholder={t('slug_placeholder')}
                                         {...register('slug', { required: true })}
                                         className="bg-white/5 border-white/10 font-mono text-sm"
                                     />
-                                    <p className="text-[10px] text-muted-foreground">Unique slug used to identify the page in the URL.</p>
+                                    <p className="text-[10px] text-muted-foreground">{t('slug_hint')}</p>
                                 </div>
 
                                 <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10">
                                     <div className="space-y-0.5">
-                                        <Label htmlFor="is_active" className="text-sm font-semibold">Status</Label>
+                                        <Label htmlFor="is_active" className="text-sm font-semibold">{t('col_status')}</Label>
                                         <p className="text-[11px] text-muted-foreground">
-                                            {isActive ? 'Public on web' : 'Hidden (Admin only)'}
+                                            {isActive ? t('public_on_web_desc') : t('hidden_admin_only_desc')}
                                         </p>
                                     </div>
                                     <Controller
@@ -245,24 +248,24 @@ export default function StaticPageEditPage() {
                                     <div className="p-2 bg-purple-500/10 rounded-lg">
                                         <Globe className="size-5 text-purple-500" />
                                     </div>
-                                    <CardTitle>SEO Metadata</CardTitle>
+                                    <CardTitle>{t('seo_metadata_title')}</CardTitle>
                                 </div>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="meta_title">SEO Title</Label>
+                                    <Label htmlFor="meta_title">{t('seo_title_label')}</Label>
                                     <Input
                                         id="meta_title"
-                                        placeholder="Title displayed on Google"
+                                        placeholder={t('seo_title_placeholder')}
                                         {...register('meta_title')}
                                         className="bg-white/5 border-white/10"
                                     />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="meta_description">SEO Description</Label>
+                                    <Label htmlFor="meta_description">{t('seo_description_label')}</Label>
                                     <Textarea
                                         id="meta_description"
-                                        placeholder="Short description of content for search results..."
+                                        placeholder={t('seo_description_placeholder')}
                                         rows={4}
                                         {...register('meta_description')}
                                         className="bg-white/5 border-white/10 resize-none text-sm"

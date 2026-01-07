@@ -24,6 +24,7 @@ import {
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 
 type SettingsFormData = UpdateSiteSettingsDTO;
 
@@ -33,6 +34,7 @@ interface PendingBanner {
 }
 
 export default function AdminSettingsPage() {
+    const t = useTranslations("admin");
     const { data: session } = useSession();
     const token = session?.user?.accessToken;
     const queryClient = useQueryClient();
@@ -87,7 +89,7 @@ export default function AdminSettingsPage() {
         mutationFn: (data: UpdateSiteSettingsDTO) => adminSettingsApi.update(data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-settings'] });
-            toast.success('Settings updated successfully');
+            toast.success(t('toast_settings_update_success'));
             setPendingLogo(null);
             setPendingFavicon(null);
             setPendingSquareBanners([]);
@@ -96,7 +98,7 @@ export default function AdminSettingsPage() {
             setRemovedRectBanners([]);
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Failed to update settings');
+            toast.error(error.message || t('toast_settings_update_error'));
         }
     });
 
@@ -157,7 +159,7 @@ export default function AdminSettingsPage() {
 
     const onSubmit = async (data: SettingsFormData) => {
         const finalData = { ...data };
-        const uploadToastId = toast.loading('Preparing data...');
+        const uploadToastId = toast.loading(t('toast_preparing_data'));
 
         try {
             // 1. Handle Logo & Favicon
@@ -191,7 +193,7 @@ export default function AdminSettingsPage() {
             toast.dismiss(uploadToastId);
             updateMutation.mutate(finalData);
         } catch {
-            toast.error('Image upload failed');
+            toast.error(t('toast_upload_failed'));
             toast.dismiss(uploadToastId);
         }
     };
@@ -211,8 +213,8 @@ export default function AdminSettingsPage() {
         <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Website Settings</h1>
-                    <p className="text-muted-foreground mt-1 text-lg">Configure general information and website banners.</p>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">{t('website_settings_title')}</h1>
+                    <p className="text-muted-foreground mt-1 text-lg">{t('website_settings_desc')}</p>
                 </div>
                 <Button
                     onClick={handleSubmit(onSubmit)}
@@ -224,7 +226,7 @@ export default function AdminSettingsPage() {
                     ) : (
                         <Save className="mr-2 size-4" />
                     )}
-                    Save Settings
+                    {t('save_settings_button')}
                 </Button>
             </div>
 
@@ -237,14 +239,14 @@ export default function AdminSettingsPage() {
                                 <Globe className="size-5 text-blue-500" />
                             </div>
                             <div>
-                                <CardTitle>SEO Settings</CardTitle>
-                                <CardDescription>Configure title and meta for SEO</CardDescription>
+                                <CardTitle>{t('seo_settings_title')}</CardTitle>
+                                <CardDescription>{t('seo_settings_desc')}</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="site_title">Website Title</Label>
+                            <Label htmlFor="site_title">{t('website_title_label')}</Label>
                             <Input
                                 id="site_title"
                                 placeholder="TripConnect - Du Lịch & Khám Phá"
@@ -252,7 +254,7 @@ export default function AdminSettingsPage() {
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="meta_description">Meta Description</Label>
+                            <Label htmlFor="meta_description">{t('meta_description_label')}</Label>
                             <Textarea
                                 id="meta_description"
                                 placeholder="Short description about the website..."
@@ -261,7 +263,7 @@ export default function AdminSettingsPage() {
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="meta_keywords">Meta Keywords</Label>
+                            <Label htmlFor="meta_keywords">{t('meta_keywords_label')}</Label>
                             <Input
                                 id="meta_keywords"
                                 placeholder="du lịch, tour, khám phá, việt nam"
@@ -279,8 +281,8 @@ export default function AdminSettingsPage() {
                                 <ImageIcon className="size-5 text-purple-500" />
                             </div>
                             <div>
-                                <CardTitle>Branding Assets</CardTitle>
-                                <CardDescription>System Logo and Favicon</CardDescription>
+                                <CardTitle>{t('branding_assets_title')}</CardTitle>
+                                <CardDescription>{t('branding_assets_desc')}</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
@@ -288,7 +290,7 @@ export default function AdminSettingsPage() {
                         <div className="grid md:grid-cols-2 gap-6">
                             {/* Logo */}
                             <div className="space-y-3">
-                                <Label>Logo</Label>
+                                <Label>{t('logo_label')}</Label>
                                 <div className="flex items-center gap-4">
                                     <div className="size-24 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center overflow-hidden relative">
                                         {pendingLogo ? (
@@ -299,14 +301,14 @@ export default function AdminSettingsPage() {
                                             <ImageIcon className="size-8 text-muted-foreground" />
                                         )}
                                         {pendingLogo && (
-                                            <div className="absolute top-0 right-0 p-1 bg-amber-500 text-[8px] font-bold text-white uppercase tracking-tighter">New</div>
+                                            <div className="absolute top-0 right-0 p-1 bg-amber-500 text-[8px] font-bold text-white uppercase tracking-tighter">{t('new_badge')}</div>
                                         )}
                                     </div>
                                     <div className="flex-1">
                                         <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={(e) => onDirectFileChange(e, 'logo_url')} />
                                         <Button type="button" variant="outline" size="sm" onClick={() => logoRef.current?.click()}>
                                             <Upload className="mr-2 size-4" />
-                                            Select Logo
+                                            {t('select_logo_button')}
                                         </Button>
                                     </div>
                                 </div>
@@ -314,7 +316,7 @@ export default function AdminSettingsPage() {
 
                             {/* Favicon */}
                             <div className="space-y-3">
-                                <Label>Favicon</Label>
+                                <Label>{t('favicon_label')}</Label>
                                 <div className="flex items-center gap-4">
                                     <div className="size-24 rounded-lg border border-white/10 bg-white/5 flex items-center justify-center overflow-hidden relative">
                                         {pendingFavicon ? (
@@ -325,14 +327,14 @@ export default function AdminSettingsPage() {
                                             <ImageIcon className="size-8 text-muted-foreground" />
                                         )}
                                         {pendingFavicon && (
-                                            <div className="absolute top-0 right-0 p-1 bg-amber-500 text-[8px] font-bold text-white uppercase tracking-tighter">New</div>
+                                            <div className="absolute top-0 right-0 p-1 bg-amber-500 text-[8px] font-bold text-white uppercase tracking-tighter">{t('new_badge')}</div>
                                         )}
                                     </div>
                                     <div className="flex-1">
                                         <input ref={faviconRef} type="file" accept="image/*,.ico" className="hidden" onChange={(e) => onDirectFileChange(e, 'favicon_url')} />
                                         <Button type="button" variant="outline" size="sm" onClick={() => faviconRef.current?.click()}>
                                             <Upload className="mr-2 size-4" />
-                                            Select Favicon
+                                            {t('select_favicon_button')}
                                         </Button>
                                     </div>
                                 </div>
@@ -349,13 +351,13 @@ export default function AdminSettingsPage() {
                                 <ImageIcon className="size-5 text-amber-500" />
                             </div>
                             <div>
-                                <CardTitle>Square Banners (1:1)</CardTitle>
-                                <CardDescription>Square-sized banners</CardDescription>
+                                <CardTitle>{t('square_banners_title')}</CardTitle>
+                                <CardDescription>{t('square_banners_desc')}</CardDescription>
                             </div>
                         </div>
                         <Button type="button" variant="outline" size="sm" onClick={() => squareBannerRef.current?.click()}>
                             <Plus className="mr-2 size-4" />
-                            Add Image
+                            {t('add_image_button')}
                         </Button>
                         <input ref={squareBannerRef} type="file" multiple accept="image/*" className="hidden" onChange={(e) => onBannerFileChange(e, 'square')} />
                     </CardHeader>
@@ -376,7 +378,7 @@ export default function AdminSettingsPage() {
                             {pendingSquareBanners.map((b, i) => (
                                 <div key={b.preview} className="group relative aspect-square rounded-lg border border-amber-500/50 overflow-hidden bg-white/5">
                                     <Image src={b.preview} alt="New Banner" fill className="object-cover" />
-                                    <div className="absolute top-0 right-0 p-1 bg-amber-500 text-[8px] font-bold text-white uppercase tracking-tighter">New</div>
+                                    <div className="absolute top-0 right-0 p-1 bg-amber-500 text-[8px] font-bold text-white uppercase tracking-tighter">{t('new_badge')}</div>
                                     <button
                                         type="button"
                                         onClick={() => removePendingBanner(i, 'square')}
@@ -388,7 +390,7 @@ export default function AdminSettingsPage() {
                             ))}
                             {(activeSquareBanners.length === 0 && pendingSquareBanners.length === 0) && (
                                 <div className="col-span-full h-32 flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-xl text-muted-foreground italic text-sm">
-                                    No banners yet
+                                    {t('no_banners_msg')}
                                 </div>
                             )}
                         </div>
@@ -403,13 +405,13 @@ export default function AdminSettingsPage() {
                                 <ImageIcon className="size-5 text-indigo-500" />
                             </div>
                             <div>
-                                <CardTitle>Rectangle Banners</CardTitle>
-                                <CardDescription>Main horizontal banners</CardDescription>
+                                <CardTitle>{t('rect_banners_title')}</CardTitle>
+                                <CardDescription>{t('rect_banners_desc')}</CardDescription>
                             </div>
                         </div>
                         <Button type="button" variant="outline" size="sm" onClick={() => rectBannerRef.current?.click()}>
                             <Plus className="mr-2 size-4" />
-                            Add Image
+                            {t('add_image_button')}
                         </Button>
                         <input ref={rectBannerRef} type="file" multiple accept="image/*" className="hidden" onChange={(e) => onBannerFileChange(e, 'rect')} />
                     </CardHeader>
@@ -430,7 +432,7 @@ export default function AdminSettingsPage() {
                             {pendingRectBanners.map((b, i) => (
                                 <div key={b.preview} className="group relative aspect-video rounded-lg border border-amber-500/50 overflow-hidden bg-white/5">
                                     <Image src={b.preview} alt="New Banner" fill className="object-cover" />
-                                    <div className="absolute top-0 right-0 p-1 bg-amber-500 text-[8px] font-bold text-white uppercase tracking-tighter">New</div>
+                                    <div className="absolute top-0 right-0 p-1 bg-amber-500 text-[8px] font-bold text-white uppercase tracking-tighter">{t('new_badge')}</div>
                                     <button
                                         type="button"
                                         onClick={() => removePendingBanner(i, 'rect')}
@@ -442,7 +444,7 @@ export default function AdminSettingsPage() {
                             ))}
                             {(activeRectBanners.length === 0 && pendingRectBanners.length === 0) && (
                                 <div className="col-span-full h-32 flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-xl text-muted-foreground italic text-sm">
-                                    No banners yet
+                                    {t('no_banners_msg')}
                                 </div>
                             )}
                         </div>
@@ -457,15 +459,15 @@ export default function AdminSettingsPage() {
                                 <Building2 className="size-5 text-emerald-500" />
                             </div>
                             <div>
-                                <CardTitle>Footer Information</CardTitle>
-                                <CardDescription>Company information displayed in the footer</CardDescription>
+                                <CardTitle>{t('footer_info_title')}</CardTitle>
+                                <CardDescription>{t('footer_info_desc')}</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="company_name">Company Name</Label>
+                                <Label htmlFor="company_name">{t('company_name_label')}</Label>
                                 <Input
                                     id="company_name"
                                     placeholder="TripConnect Company"
@@ -473,7 +475,7 @@ export default function AdminSettingsPage() {
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Email</Label>
+                                <Label htmlFor="email">{t('email_label')}</Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -482,7 +484,7 @@ export default function AdminSettingsPage() {
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="phone">Phone Number</Label>
+                                <Label htmlFor="phone">{t('phone_label')}</Label>
                                 <Input
                                     id="phone"
                                     placeholder="+84 123 456 789"
@@ -499,7 +501,7 @@ export default function AdminSettingsPage() {
                             </div>
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="address">Address</Label>
+                            <Label htmlFor="address">{t('address_label')}</Label>
                             <Input
                                 id="address"
                                 placeholder="123 Đường ABC, Quận 1, TP.HCM"
@@ -507,7 +509,7 @@ export default function AdminSettingsPage() {
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="footer_description">Footer Description</Label>
+                            <Label htmlFor="footer_description">{t('footer_description_label')}</Label>
                             <Textarea
                                 id="footer_description"
                                 placeholder="Short introduction about the company..."
@@ -526,8 +528,8 @@ export default function AdminSettingsPage() {
                                 <Share2 className="size-5 text-amber-500" />
                             </div>
                             <div>
-                                <CardTitle>Social Media Links</CardTitle>
-                                <CardDescription>Social media page URLs</CardDescription>
+                                <CardTitle>{t('social_media_links_title')}</CardTitle>
+                                <CardDescription>{t('social_media_links_desc')}</CardDescription>
                             </div>
                         </div>
                     </CardHeader>

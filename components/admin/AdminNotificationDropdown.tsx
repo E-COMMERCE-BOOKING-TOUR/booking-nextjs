@@ -5,7 +5,8 @@ import { Bell, CheckCircle2, Info, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { formatDistanceToNow } from "date-fns";
-import { enUS } from "date-fns/locale";
+import { enUS, vi } from "date-fns/locale";
+import { useTranslations, useLocale } from "next-intl";
 import notificationApi from "@/apis/notification";
 import { INotification } from "@/types/notification";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,8 @@ import { cn } from "@/libs/utils";
 import Link from "next/link";
 
 export function AdminNotificationDropdown() {
+    const t = useTranslations("admin");
+    const locale = useLocale();
     const { data: session } = useSession();
     const token = session?.user?.accessToken;
     const [readIds, setReadIds] = React.useState<number[]>([]);
@@ -74,7 +77,7 @@ export function AdminNotificationDropdown() {
                 <div className="relative">
                     <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground rounded-full hover:bg-white/5">
                         <Bell className="size-5" />
-                        <span className="sr-only">Notifications</span>
+                        <span className="sr-only">{t('notifications_menu')}</span>
                     </Button>
                     {unreadCount > 0 && (
                         <Badge
@@ -87,7 +90,7 @@ export function AdminNotificationDropdown() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[380px] p-0" sideOffset={8}>
                 <div className="flex items-center justify-between px-4 py-3 border-b">
-                    <h4 className="font-semibold text-sm">Notifications</h4>
+                    <h4 className="font-semibold text-sm">{t('notifications_menu')}</h4>
                     {unreadCount > 0 && (
                         <Button
                             variant="ghost"
@@ -95,7 +98,7 @@ export function AdminNotificationDropdown() {
                             className="h-auto text-xs text-muted-foreground hover:text-foreground px-2 py-0.5"
                             onClick={handleMarkAllRead}
                         >
-                            Mark all as read
+                            {t('mark_all_read')}
                         </Button>
                     )}
                 </div>
@@ -103,12 +106,12 @@ export function AdminNotificationDropdown() {
                 <ScrollArea className="h-[400px]">
                     {isLoading ? (
                         <div className="flex items-center justify-center h-40 text-sm text-muted-foreground">
-                            Loading...
+                            {t('loading_status')}
                         </div>
                     ) : notifications.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-40 gap-2 text-muted-foreground">
                             <Bell className="h-8 w-8 opacity-20" />
-                            <span className="text-sm">No new notifications</span>
+                            <span className="text-sm">{t('no_notifications')}</span>
                         </div>
                     ) : (
                         <div className="flex flex-col">
@@ -140,7 +143,7 @@ export function AdminNotificationDropdown() {
                                                 <span className="text-[10px] text-muted-foreground shrink-0 whitespace-nowrap">
                                                     {formatDistanceToNow(new Date(n.created_at), {
                                                         addSuffix: true,
-                                                        locale: enUS
+                                                        locale: locale === 'vi' ? vi : enUS
                                                     })}
                                                 </span>
                                             </div>
@@ -161,7 +164,7 @@ export function AdminNotificationDropdown() {
                 <div className="p-2 border-t bg-muted/20">
                     <Button variant="ghost" className="w-full h-8 text-xs font-medium" asChild>
                         <Link href="/admin/notification">
-                            View All
+                            {t('view_all_button')}
                         </Link>
                     </Button>
                 </div>

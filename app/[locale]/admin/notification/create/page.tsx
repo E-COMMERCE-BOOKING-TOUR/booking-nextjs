@@ -26,6 +26,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { TargetGroup, NotificationType, INotification } from '@/types/notification';
+import { useTranslations } from 'next-intl';
 
 interface NotificationFormValues {
     title: string;
@@ -37,6 +38,7 @@ interface NotificationFormValues {
 }
 
 export default function AdminNotificationCreatePage() {
+    const t = useTranslations("admin");
     const { data: session } = useSession();
     const token = session?.user?.accessToken;
     const router = useRouter();
@@ -55,14 +57,14 @@ export default function AdminNotificationCreatePage() {
         mutationFn: (data: Partial<INotification>) => adminNotificationApi.create(token!, data),
         onSuccess: (res) => {
             if (res.ok) {
-                toast.success('Notification created successfully');
+                toast.success(t('toast_notification_create_success'));
                 router.push('/admin/notification');
             } else {
-                toast.error(res.error || 'Error creating notification');
+                toast.error(res.error || t('toast_notification_create_error'));
             }
         },
         onError: (error: unknown) => {
-            toast.error((error as Error)?.message || 'System error');
+            toast.error((error as Error)?.message || t('system_error'));
         }
     });
 
@@ -79,7 +81,7 @@ export default function AdminNotificationCreatePage() {
         if (values.target_group === TargetGroup.specific && values.user_ids_str) {
             payload.user_ids = values.user_ids_str.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
             if (payload.user_ids.length === 0) {
-                toast.error('Please enter valid user IDs');
+                toast.error(t('error_invalid_user_ids'));
                 return;
             }
         }
@@ -94,9 +96,9 @@ export default function AdminNotificationCreatePage() {
                     <Link href="/admin/notification"><ArrowLeft className="size-4" /></Link>
                 </Button>
                 <div>
-                    <h1 className="text-2xl font-black text-foreground">Create New Notification</h1>
+                    <h1 className="text-2xl font-black text-foreground">{t('create_notification_title')}</h1>
                     <p className="text-muted-foreground text-sm font-medium mt-1">
-                        Send new notifications to target groups in the system.
+                        {t('create_notification_desc')}
                     </p>
                 </div>
             </div>
@@ -108,29 +110,29 @@ export default function AdminNotificationCreatePage() {
                             <CardHeader className="border-b border-white/5">
                                 <CardTitle className="text-lg font-bold flex items-center gap-2">
                                     <Bell className="size-5 text-primary" />
-                                    Notification Content
+                                    {t('notification_content_title')}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-6 space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="title">Title</Label>
+                                    <Label htmlFor="title">{t('col_title')}</Label>
                                     <Input
                                         id="title"
-                                        placeholder="Enter notification title..."
+                                        placeholder={t('title_placeholder')}
                                         className="bg-white/5 border-white/10"
-                                        {...register('title', { required: 'Title is required' })}
+                                        {...register('title', { required: t('error_title_required') })}
                                     />
                                     {errors.title && <span className="text-xs text-rose-500">{errors.title.message}</span>}
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="description">Description</Label>
+                                    <Label htmlFor="description">{t('col_description')}</Label>
                                     <Textarea
                                         id="description"
-                                        placeholder="Enter detailed description..."
+                                        placeholder={t('notification_description_placeholder')}
                                         rows={5}
                                         className="bg-white/5 border-white/10"
-                                        {...register('description', { required: 'Description is required' })}
+                                        {...register('description', { required: t('error_description_required') })}
                                     />
                                     {errors.description && <span className="text-xs text-rose-500">{errors.description.message}</span>}
                                 </div>
@@ -141,25 +143,27 @@ export default function AdminNotificationCreatePage() {
                             <CardHeader className="border-b border-white/5">
                                 <CardTitle className="text-lg font-bold flex items-center gap-2">
                                     <Send className="size-5 text-primary" />
-                                    Delivery Settings
+                                    {t('delivery_settings_title')}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-6 space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <Label>Type</Label>
+                                        <Label>{t('col_type')}</Label>
                                         <Controller
                                             name="type"
                                             control={control}
-                                            rules={{ required: 'Please select notification type' }}
+                                            rules={{ required: t('error_type_required') }}
                                             render={({ field }) => (
                                                 <Select onValueChange={field.onChange} value={field.value}>
                                                     <SelectTrigger className="bg-white/5 border-white/10">
-                                                        <SelectValue placeholder="Select notification type" />
+                                                        <SelectValue placeholder={t('type_placeholder')} />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {Object.values(NotificationType).map((type) => (
-                                                            <SelectItem key={type} value={type} className="capitalize">{type}</SelectItem>
+                                                            <SelectItem key={type} value={type} className="capitalize">
+                                                                {t(`type_${type}`)}
+                                                            </SelectItem>
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
@@ -169,21 +173,21 @@ export default function AdminNotificationCreatePage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label>Target Audience</Label>
+                                        <Label>{t('target_audience_label')}</Label>
                                         <Controller
                                             name="target_group"
                                             control={control}
-                                            rules={{ required: 'Please select target audience' }}
+                                            rules={{ required: t('error_audience_required') }}
                                             render={({ field }) => (
                                                 <Select onValueChange={field.onChange} value={field.value}>
                                                     <SelectTrigger className="bg-white/5 border-white/10">
-                                                        <SelectValue placeholder="Select audience" />
+                                                        <SelectValue placeholder={t('audience_select_placeholder')} />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value={TargetGroup.all}>All Users</SelectItem>
-                                                        <SelectItem value={TargetGroup.admin}>Admin Only</SelectItem>
-                                                        <SelectItem value={TargetGroup.supplier}>Supplier Only</SelectItem>
-                                                        <SelectItem value={TargetGroup.specific}>Specific Users</SelectItem>
+                                                        <SelectItem value={TargetGroup.all}>{t('target_group_all')}</SelectItem>
+                                                        <SelectItem value={TargetGroup.admin}>{t('target_group_admin')}</SelectItem>
+                                                        <SelectItem value={TargetGroup.supplier}>{t('target_group_supplier')}</SelectItem>
+                                                        <SelectItem value={TargetGroup.specific}>{t('target_group_specific')}</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             )}
@@ -194,14 +198,14 @@ export default function AdminNotificationCreatePage() {
 
                                 {targetGroup === TargetGroup.specific && (
                                     <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                                        <Label htmlFor="user_ids_str">User IDs (comma separated)</Label>
+                                        <Label htmlFor="user_ids_str">{t('user_ids_label')}</Label>
                                         <Input
                                             id="user_ids_str"
-                                            placeholder="e.g. 1, 2, 5, 10"
+                                            placeholder={t('user_ids_placeholder')}
                                             className="bg-white/5 border-white/10"
                                             {...register('user_ids_str')}
                                         />
-                                        <p className="text-[10px] text-muted-foreground italic">Enter list of user IDs you want to send this notification to.</p>
+                                        <p className="text-[10px] text-muted-foreground italic">{t('user_ids_hint')}</p>
                                     </div>
                                 )}
 
@@ -217,7 +221,7 @@ export default function AdminNotificationCreatePage() {
                                             />
                                         )}
                                     />
-                                    <Label htmlFor="is_error" className="cursor-pointer">This is a critical error/warning notification</Label>
+                                    <Label htmlFor="is_error" className="cursor-pointer">{t('is_error_label')}</Label>
                                 </div>
                             </CardContent>
                         </Card>
@@ -226,7 +230,7 @@ export default function AdminNotificationCreatePage() {
                     <div className="space-y-6">
                         <Card className="border-white/5 bg-primary/5 border-primary/20 backdrop-blur-xl">
                             <CardHeader>
-                                <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80">Actions</CardTitle>
+                                <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80">{t('col_actions')}</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 <Button
@@ -234,7 +238,7 @@ export default function AdminNotificationCreatePage() {
                                     className="w-full bg-primary hover:bg-primary/90 font-bold"
                                     disabled={createMutation.isPending}
                                 >
-                                    {createMutation.isPending ? 'Processing...' : 'Send Notification'}
+                                    {createMutation.isPending ? t('processing_status') : t('send_notification_button')}
                                 </Button>
                                 <Button
                                     type="button"
@@ -242,19 +246,19 @@ export default function AdminNotificationCreatePage() {
                                     className="w-full border-white/10"
                                     asChild
                                 >
-                                    <Link href="/admin/notification">Cancel</Link>
+                                    <Link href="/admin/notification">{t('cancel_button')}</Link>
                                 </Button>
                             </CardContent>
                         </Card>
 
                         <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
                             <CardHeader>
-                                <CardTitle className="text-sm font-bold">Note</CardTitle>
+                                <CardTitle className="text-sm font-bold">{t('note_title')}</CardTitle>
                             </CardHeader>
                             <CardContent className="text-xs text-muted-foreground space-y-2 leading-relaxed">
-                                <p>• Notifications will be displayed immediately after delivery.</p>
-                                <p>• If selecting <span className="text-primary font-bold">All Users</span>, everyone in the system will receive this notification.</p>
-                                <p>• Use error notifications for critical updates or system maintenance.</p>
+                                <p>{t('note_item_1')}</p>
+                                <p>{t('note_item_2_part1')}<span className="text-primary font-bold">{t('note_item_2_highlight')}</span>{t('note_item_2_part2')}</p>
+                                <p>{t('note_item_3')}</p>
                             </CardContent>
                         </Card>
                     </div>

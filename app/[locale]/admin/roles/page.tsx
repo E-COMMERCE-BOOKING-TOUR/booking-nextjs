@@ -56,10 +56,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Link from 'next/link';
 
 import { CustomPagination } from '@/components/ui/custom-pagination';
+import { useTranslations } from 'next-intl';
 
 // ... (existing imports)
 
 export default function AdminRolePage() {
+    const t = useTranslations("admin");
     const { data: session } = useSession();
     const token = session?.user?.accessToken;
     const queryClient = useQueryClient();
@@ -95,11 +97,11 @@ export default function AdminRolePage() {
         mutationFn: (data: ICreateRolePayload) => adminRoleApi.create(data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
-            toast.success('Role created successfully');
+            toast.success(t('toast_create_role_success'));
             handleCloseDialog();
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Failed to create role');
+            toast.error(error.message || t('toast_create_role_error'));
         }
     });
 
@@ -108,11 +110,11 @@ export default function AdminRolePage() {
             adminRoleApi.update(id, data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
-            toast.success('Role updated successfully');
+            toast.success(t('toast_update_role_success'));
             handleCloseDialog();
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Failed to update');
+            toast.error(error.message || t('toast_update_user_error'));
         }
     });
 
@@ -120,11 +122,11 @@ export default function AdminRolePage() {
         mutationFn: (id: number) => adminRoleApi.remove(id, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
-            toast.success('Role deleted successfully');
+            toast.success(t('toast_delete_role_success'));
             setDeleteId(null);
         },
         onError: (error: Error) => {
-            toast.error(error.message || 'Failed to delete role');
+            toast.error(error.message || t('toast_delete_role_error'));
         }
     });
 
@@ -137,9 +139,9 @@ export default function AdminRolePage() {
 
     const handleOpenEdit = (role: IAdminRole) => {
         setEditingRole(role);
-        setSelectedPermissions(role.permissions?.map(p => 
-            typeof p === 'string' 
-                ? (permissions as IAdminPermission[]).find(ap => ap.permission_name === p)?.id 
+        setSelectedPermissions(role.permissions?.map(p =>
+            typeof p === 'string'
+                ? (permissions as IAdminPermission[]).find(ap => ap.permission_name === p)?.id
                 : (p as any).id
         ).filter(id => id !== undefined) as number[] || []);
         reset({
@@ -181,22 +183,22 @@ export default function AdminRolePage() {
     return (
         <div className="flex flex-col gap-8 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <AdminPageHeader
-                title="Roles & Permissions"
-                description="Define roles and assign access permissions to users."
+                title={t('roles_permissions_title')}
+                description={t('roles_permissions_desc')}
             >
                 <div className="flex items-center gap-3">
                     <HasPermission permission="permission:read">
                         <Link href="/admin/roles/permissions">
                             <Button variant="outline" className="border-white/10 hover:bg-white/5">
                                 <ShieldAlert className="mr-2 size-4 text-primary" />
-                                Manage Permissions
+                                {t('manage_permissions_button')}
                             </Button>
                         </Link>
                     </HasPermission>
                     <HasPermission permission="role:create">
                         <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90 shadow-sm">
                             <Plus className="mr-2 size-4" />
-                            Add Role
+                            {t('add_role_button')}
                         </Button>
                     </HasPermission>
                 </div>
@@ -204,7 +206,7 @@ export default function AdminRolePage() {
 
             <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
                 <AdminFilterBar
-                    searchPlaceholder="Search by role name or description..."
+                    searchPlaceholder={t('search_role_placeholder')}
                     searchTerm={keyword}
                     onSearchChange={setKeyword}
                     onSearch={handleSearch}
@@ -220,11 +222,11 @@ export default function AdminRolePage() {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-white/5 border-b border-white/5">
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 w-[50px]">ID</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Role Name</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Description</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Permissions</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">Actions</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 w-[50px]">{t('col_id')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_role_name')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_description')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{t('col_permissions')}</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 text-right">{t('col_actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -250,9 +252,9 @@ export default function AdminRolePage() {
                                             <td className="px-6 py-4">
                                                 <div className="flex flex-wrap gap-1 max-w-[400px]">
                                                     {role.permissions?.slice(0, 5).map((p: any, idx) => (
-                                                        <Badge 
-                                                            key={typeof p === 'string' ? `${p}-${idx}` : (p.id || idx)} 
-                                                            variant="secondary" 
+                                                        <Badge
+                                                            key={typeof p === 'string' ? `${p}-${idx}` : (p.id || idx)}
+                                                            variant="secondary"
                                                             className="bg-white/10 hover:bg-white/20"
                                                         >
                                                             {typeof p === 'string' ? p : p.permission_name}
@@ -260,7 +262,7 @@ export default function AdminRolePage() {
                                                     ))}
                                                     {(role.permissions?.length || 0) > 5 && (
                                                         <Badge variant="outline" className="text-muted-foreground">
-                                                            +{role.permissions.length - 5} more
+                                                            {t('more_suffix', { count: (role.permissions?.length || 0) - 5 })}
                                                         </Badge>
                                                     )}
                                                 </div>
@@ -275,7 +277,7 @@ export default function AdminRolePage() {
                                                     <DropdownMenuContent align="end">
                                                         <HasPermission permission="role:update">
                                                             <DropdownMenuItem onClick={() => handleOpenEdit(role)} className="cursor-pointer">
-                                                                <Pencil className="mr-2 size-4" /> Edit
+                                                                <Pencil className="mr-2 size-4" /> {t('action_edit')}
                                                             </DropdownMenuItem>
                                                         </HasPermission>
                                                         <DropdownMenuSeparator />
@@ -284,7 +286,7 @@ export default function AdminRolePage() {
                                                                 onClick={() => setDeleteId(role.id)}
                                                                 className="text-rose-500 cursor-pointer"
                                                             >
-                                                                <Trash2 className="mr-2 size-4" /> Delete
+                                                                <Trash2 className="mr-2 size-4" /> {t('action_delete')}
                                                             </DropdownMenuItem>
                                                         </HasPermission>
                                                     </DropdownMenuContent>
@@ -295,7 +297,7 @@ export default function AdminRolePage() {
                                 ) : (
                                     <tr>
                                         <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground italic">
-                                            No roles found.
+                                            {t('no_roles_found')}
                                         </td>
                                     </tr>
                                 )}
@@ -304,7 +306,7 @@ export default function AdminRolePage() {
                     </div>
                     <div className="p-4 border-t border-white/5 flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">
-                            Showing {roles.length} / {totalItems} results
+                            {t('showing_results', { count: roles.length, total: totalItems })}
                         </span>
                         <CustomPagination
                             currentPage={page}
@@ -319,28 +321,33 @@ export default function AdminRolePage() {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-[700px]">
                     <DialogHeader>
-                        <DialogTitle>{editingRole ? 'Update Role' : 'Create New Role'}</DialogTitle>
+                        <DialogTitle>{editingRole ? t('update_role_title') : t('create_new_role_title')}</DialogTitle>
                         <DialogDescription>
-                            Set name, description and assign permissions for this role.
+                            {t('role_dialog_desc')}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="flex gap-6 py-4">
                         <div className="w-1/2 space-y-4">
                             <div className="space-y-2">
-                                <Label>Role Name (Code)</Label>
+                                <Label>{t('role_name_code_label')}</Label>
                                 <Input {...register('name', { required: true })} placeholder="e.g.: admin, staff..." />
-                                {errors.name && <span className="text-xs text-rose-500">Required</span>}
+                                {errors.name && <span className="text-xs text-rose-500">{t('required_field')}</span>}
                             </div>
                             <div className="space-y-2">
-                                <Label>Description</Label>
-                                <Input {...register('desciption', { required: true })} placeholder="What does this role do..." />
-                                {errors.desciption && <span className="text-xs text-rose-500">Required</span>}
+                                <Label>{t('description_label')}</Label>
+                                <Input
+                                    id="description"
+                                    className="col-span-3"
+                                    placeholder={t('role_description_placeholder')}
+                                    {...register('desciption', { required: true })}
+                                />
+                                {errors.desciption && <span className="text-xs text-rose-500">{t('required_field')}</span>}
                             </div>
                         </div>
 
                         <div className="w-1/2 flex flex-col gap-2">
-                            <Label className="mb-1">Permissions</Label>
+                            <Label className="mb-1">{t('permissions_label')}</Label>
                             <ScrollArea className="h-[250px] w-full rounded-md border border-white/10 bg-white/5 p-4">
                                 <div className="space-y-3">
                                     {permissions.map((p: IAdminPermission) => (
@@ -364,7 +371,7 @@ export default function AdminRolePage() {
                                         </div>
                                     ))}
                                     {permissions.length === 0 && (
-                                        <p className="text-sm text-muted-foreground text-center">No permissions created yet.</p>
+                                        <p className="text-sm text-muted-foreground text-center">{t('no_permissions_msg')}</p>
                                     )}
                                 </div>
                             </ScrollArea>
@@ -372,10 +379,10 @@ export default function AdminRolePage() {
                     </div>
 
                     <DialogFooter>
-                        <Button type="button" variant="outline" onClick={handleCloseDialog}>Cancel</Button>
+                        <Button type="button" variant="outline" onClick={handleCloseDialog}>{t('cancel_button')}</Button>
                         <Button type="button" onClick={handleSubmit(onSubmit)} disabled={createMutation.isPending || updateMutation.isPending}>
                             {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="mr-2 size-4 animate-spin" />}
-                            {editingRole ? 'Save Changes' : 'Create Role'}
+                            {editingRole ? t('save_changes_button') : t('create_role_button')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -384,18 +391,18 @@ export default function AdminRolePage() {
             <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Confirm Deletion?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('confirm_delete_title')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. If this role is being used by users, you need to remove the role from them first.
+                            {t('confirm_delete_role_desc')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t('cancel_button')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => deleteId && deleteMutation.mutate(deleteId)}
                             className="bg-rose-500 hover:bg-rose-600"
                         >
-                            Delete Immediately
+                            {t('delete_immediately_button')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

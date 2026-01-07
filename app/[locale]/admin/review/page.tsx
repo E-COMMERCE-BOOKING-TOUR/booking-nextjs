@@ -29,8 +29,10 @@ import { adminTourApi } from "@/apis/admin/tour";
 import { Separator } from "@/components/ui/separator";
 import { IReview } from "@/types/response/review.type";
 import { IAdminTour } from "@/types/admin/tour.dto";
+import { useTranslations } from "next-intl";
 
 export default function AdminReview() {
+  const t = useTranslations("admin");
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
   const queryClient = useQueryClient();
@@ -72,10 +74,10 @@ export default function AdminReview() {
     mutationFn: (id: number) => adminReviewApi.remove(id, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-reviews'] });
-      toast.success("Review deleted successfully");
+      toast.success(t('toast_delete_success'));
     },
     onError: (error: Error) => {
-      toast.error(error?.message || "Failed to delete review");
+      toast.error(error?.message || t('toast_delete_error'));
     }
   });
 
@@ -85,10 +87,10 @@ export default function AdminReview() {
     mutationFn: (id: number) => adminReviewApi.toggleVisibility(id, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-reviews'] });
-      toast.success("Review visibility updated");
+      toast.success(t('toast_update_role_success'));
     },
     onError: (error: Error) => {
-      toast.error(error?.message || "Failed to update visibility");
+      toast.error(error?.message || t('toast_update_user_error'));
     }
   });
 
@@ -97,7 +99,7 @@ export default function AdminReview() {
   };
 
   const handleDelete = (id: number) => {
-    if (confirm("Are you sure you want to delete this review?")) {
+    if (confirm(t('confirm_delete_review_desc'))) {
       deleteMutation.mutate(id);
     }
   };
@@ -112,11 +114,11 @@ export default function AdminReview() {
     if (!stats) return [];
     const breakdown = stats.rating_breakdown || {};
     return [
-      { name: '5 Stars', value: breakdown[5] || 0, fill: '#eab308' },
-      { name: '4 Stars', value: breakdown[4] || 0, fill: '#facc15' },
-      { name: '3 Stars', value: breakdown[3] || 0, fill: '#fde047' },
-      { name: '2 Stars', value: breakdown[2] || 0, fill: '#fef08a' },
-      { name: '1 Star', value: breakdown[1] || 0, fill: '#fef9c3' },
+      { name: t('star_count', { count: 5 }), value: breakdown[5] || 0, fill: '#eab308' },
+      { name: t('star_count', { count: 4 }), value: breakdown[4] || 0, fill: '#facc15' },
+      { name: t('star_count', { count: 3 }), value: breakdown[3] || 0, fill: '#fde047' },
+      { name: t('star_count', { count: 2 }), value: breakdown[2] || 0, fill: '#fef08a' },
+      { name: t('star_single'), value: breakdown[1] || 0, fill: '#fef9c3' },
     ];
   };
 
@@ -125,7 +127,7 @@ export default function AdminReview() {
 
   const chartData = getStatsChartData();
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return <div>{t('loading_status')}</div>;
 
   return (
     <div className="flex flex-col gap-4">
@@ -133,13 +135,13 @@ export default function AdminReview() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2">
           <CardHeader className="border-b">
-            <CardTitle className="text-xl">Review Statistics</CardTitle>
-            <CardDescription>Ratings Distribution</CardDescription>
+            <CardTitle className="text-xl">{t('review_statistics_title')}</CardTitle>
+            <CardDescription>{t('ratings_distribution_desc')}</CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
             <div className="h-[250px] w-full">
               {isStatsLoading ? (
-                <div className="flex items-center justify-center h-full">Loading stats...</div>
+                <div className="flex items-center justify-center h-full">{t('loading_stats')}</div>
               ) : (
                 <div className="flex gap-4 h-full">
                   <div className="flex-1 h-full">
@@ -157,7 +159,7 @@ export default function AdminReview() {
         </Card>
         <Card>
           <CardHeader className="border-b">
-            <CardTitle className="text-xl">Ratings</CardTitle>
+            <CardTitle className="text-xl">{t('ratings_title')}</CardTitle>
             <CardAction>
               <Button variant="ghost" size="icon-sm"><MoreVertical className="size-4" /></Button>
             </CardAction>
@@ -171,20 +173,20 @@ export default function AdminReview() {
                 ))}
               </div>
               <div className="text-xl font-semibold">{stats?.average_rating || 0}</div>
-              <div className="text-xs text-muted-foreground">from {stats?.total_reviews || 0} reviews</div>
+              <div className="text-xs text-muted-foreground">{t('average_rating_desc', { count: stats?.total_reviews || 0 })}</div>
             </div>
             <Separator className="my-4" />
             <div className="space-y-4">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-emerald-500 font-medium">Approved</span>
+                <span className="text-emerald-500 font-medium">{t('status_approved')}</span>
                 <span>{stats?.status_breakdown?.approved || 0}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-amber-500 font-medium">Pending</span>
+                <span className="text-amber-500 font-medium">{t('status_pending')}</span>
                 <span>{stats?.status_breakdown?.pending || 0}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-rose-500 font-medium">Rejected</span>
+                <span className="text-rose-500 font-medium">{t('status_rejected')}</span>
                 <span>{stats?.status_breakdown?.rejected || 0}</span>
               </div>
             </div>
@@ -197,17 +199,17 @@ export default function AdminReview() {
         <CardContent className="py-4">
           <div className="flex flex-col md:flex-row gap-4 items-end">
             <div className="flex-1 w-full space-y-1.5">
-              <label className="text-sm font-medium">Search Reviews</label>
+              <label className="text-sm font-medium">{t('search_reviews_label')}</label>
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by title or content..."
+                  placeholder={t('search_reviews_placeholder')}
                   className="pl-9"
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                 />
                 {keyword && (
-                  <button 
+                  <button
                     onClick={() => setKeyword("")}
                     className="absolute right-2.5 top-2.5"
                   >
@@ -218,13 +220,13 @@ export default function AdminReview() {
             </div>
 
             <div className="w-full md:w-[200px] space-y-1.5">
-              <label className="text-sm font-medium">Filter by Tour</label>
+              <label className="text-sm font-medium">{t('filter_by_tour_label')}</label>
               <Select value={tourId} onValueChange={setTourId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All Tours" />
+                  <SelectValue placeholder={t('all_tours_option')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Tours</SelectItem>
+                  <SelectItem value="all">{t('all_tours_option')}</SelectItem>
                   {tours.map((t: IAdminTour) => (
                     <SelectItem key={t.id} value={t.id.toString()}>{t.title}</SelectItem>
                   ))}
@@ -233,29 +235,29 @@ export default function AdminReview() {
             </div>
 
             <div className="w-full md:w-[150px] space-y-1.5">
-              <label className="text-sm font-medium">Status</label>
+              <label className="text-sm font-medium">{t('status_filter_label')}</label>
               <Select value={status} onValueChange={setStatus}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All Status" />
+                  <SelectValue placeholder={t('all_status_option')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="all">{t('all_status_option')}</SelectItem>
+                  <SelectItem value="approved">{t('status_approved')}</SelectItem>
+                  <SelectItem value="pending">{t('status_pending')}</SelectItem>
+                  <SelectItem value="rejected">{t('status_rejected')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setKeyword("");
                 setStatus("all");
                 setTourId("all");
               }}
             >
-              Reset
+              {t('reset_button')}
             </Button>
           </div>
         </CardContent>
@@ -263,12 +265,12 @@ export default function AdminReview() {
 
       <Card>
         <CardHeader className="border-b">
-          <CardTitle className="text-xl">Traveler Feedback</CardTitle>
+          <CardTitle className="text-xl">{t('traveler_feedback_title')}</CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {isLoading ? (
-              <div>Loading reviews...</div>
+              <div>{t('loading_reviews')}</div>
             ) : filteredReviews.map((f: IReview) => (
               <Card key={f.id} className={f.status === 'rejected' ? 'opacity-60 bg-gray-800' : ''}>
                 <CardContent className="pt-6">
@@ -282,10 +284,10 @@ export default function AdminReview() {
                       <div className="flex justify-between items-start">
                         <div>
                           <div className="font-medium flex items-center gap-2">
-                            {f.user?.full_name || "Unknown User"}
+                            {f.user?.full_name || t('review_unknown_user')}
                             {f.is_reported && <Flag className="size-3 text-red-500" />}
                           </div>
-                          <div className="text-xs text-muted-foreground">{f.tour?.title || "Unknown Tour"}</div>
+                          <div className="text-xs text-muted-foreground">{f.tour?.title || t('unknown_tour')}</div>
                         </div>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -293,26 +295,26 @@ export default function AdminReview() {
                               <MoreVertical className="size-3" />
                             </Button>
                           </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <HasPermission permission="review:delete">
-                                      <DropdownMenuItem onClick={() => handleToggleVisibility(f.id)}>
-                                        {f.status === 'approved' ? (
-                                          <>
-                                            <EyeOff className="mr-2 size-4" /> Hide Review
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Eye className="mr-2 size-4" /> Show Review
-                                          </>
-                                        )}
-                                      </DropdownMenuItem>
-                                    </HasPermission>
-                                    <HasPermission permission="review:delete">
-                                      <DropdownMenuItem onClick={() => handleDelete(f.id)} className="text-rose-500">
-                                        <Trash2 className="mr-2 size-4" /> Delete
-                                      </DropdownMenuItem>
-                                    </HasPermission>
-                                  </DropdownMenuContent>
+                          <DropdownMenuContent align="end">
+                            <HasPermission permission="review:delete">
+                              <DropdownMenuItem onClick={() => handleToggleVisibility(f.id)}>
+                                {f.status === 'approved' ? (
+                                  <>
+                                    <EyeOff className="mr-2 size-4" /> {t('hide_review_action')}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Eye className="mr-2 size-4" /> {t('show_review_action')}
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                            </HasPermission>
+                            <HasPermission permission="review:delete">
+                              <DropdownMenuItem onClick={() => handleDelete(f.id)} className="text-rose-500">
+                                <Trash2 className="mr-2 size-4" /> {t('action_delete')}
+                              </DropdownMenuItem>
+                            </HasPermission>
+                          </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
 
@@ -323,14 +325,14 @@ export default function AdminReview() {
                         <span className="text-xs text-muted-foreground ml-2">{f.rating}</span>
                       </div>
                       <div className="font-bold text-sm mt-2">{f.title}</div>
-                      <p className="mt-1 text-sm text-muted-foreground line-clamp-3">{f.content || "No content"}</p>
+                      <p className="mt-1 text-sm text-muted-foreground line-clamp-3">{f.content || t('no_content_msg')}</p>
 
                       <div className="mt-3 flex items-center justify-between">
                         <div className="text-xs text-muted-foreground">
                           {f.created_at ? new Date(f.created_at).toLocaleDateString() : 'N/A'}
                         </div>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <ThumbsUp className="size-3" /> {f.helpful_count || 0} Helpful
+                          <ThumbsUp className="size-3" /> {t('helpful_count_desc', { count: f.helpful_count || 0 })}
                         </div>
                       </div>
                     </div>
@@ -341,7 +343,7 @@ export default function AdminReview() {
           </div>
 
           <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-            <div>Showing {filteredReviews.length} reviews</div>
+            <div>{t('showing_reviews_count_total', { count: filteredReviews.length })}</div>
           </div>
         </CardContent>
       </Card>

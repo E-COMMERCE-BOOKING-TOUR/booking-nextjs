@@ -3,9 +3,14 @@ import { hasLocale } from 'next-intl';
 import { routing } from './routing';
 
 // Pre-import all locale files for standalone build compatibility
-const localeMessages: Record<string, () => Promise<{ default: Record<string, string> }>> = {
+const commonMessages: Record<string, () => Promise<{ default: Record<string, any> }>> = {
     en: () => import('../public/locales/en/common.json'),
     vi: () => import('../public/locales/vi/common.json'),
+};
+
+const adminMessages: Record<string, () => Promise<{ default: Record<string, any> }>> = {
+    en: () => import('../public/locales/en/admin.json'),
+    vi: () => import('../public/locales/vi/admin.json'),
 };
 
 export default getRequestConfig(async ({ requestLocale }) => {
@@ -15,12 +20,14 @@ export default getRequestConfig(async ({ requestLocale }) => {
         ? requested
         : routing.defaultLocale;
 
-    const commonMessages = (await localeMessages[locale]()).default;
+    const common = (await commonMessages[locale]()).default;
+    const admin = (await adminMessages[locale]()).default;
 
     return {
         locale,
         messages: {
-            common: commonMessages
+            common,
+            admin
         }
     };
 });
