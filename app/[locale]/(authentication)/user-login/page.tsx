@@ -18,6 +18,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import * as z from "zod";
 import { getGuestId } from "@/utils/guest";
 
@@ -45,14 +46,14 @@ export default function LoginPage() {
           });
         } else {
           toaster.create({
-            description: "Login successful!",
+            description: t('login_success', { defaultValue: "Login successful!" }),
             type: "success",
           });
           router.push("/");
           router.refresh();
         }
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "An error occurred during login";
+        const message = error instanceof Error ? error.message : t('login_failed', { defaultValue: "An error occurred during login" });
         toaster.create({
           description: message,
           type: "error",
@@ -60,6 +61,8 @@ export default function LoginPage() {
       }
     });
   };
+
+  const t = useTranslations('common');
 
   return (
     <Box
@@ -90,10 +93,10 @@ export default function LoginPage() {
             fontWeight="black"
             letterSpacing="tight"
           >
-            Welcome Back!
+            {t('welcome_back', { defaultValue: "Welcome Back!" })}
           </Heading>
           <Heading color="gray.500" fontSize="md" fontWeight="medium">
-            Login to continue your journey
+            {t('login_to_continue', { defaultValue: "Login to continue your journey" })}
           </Heading>
         </Stack>
 
@@ -101,7 +104,7 @@ export default function LoginPage() {
           <Stack gap={5}>
             <Stack gap={4}>
               <Field.Root invalid={!!errors.username}>
-                <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700">Username</Field.Label>
+                <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700">{t('username_label', { defaultValue: "Username" })}</Field.Label>
                 <Input
                   variant="subtle"
                   bg="gray.50"
@@ -109,7 +112,7 @@ export default function LoginPage() {
                   px={4}
                   py={6}
                   rounded="xl"
-                  placeholder="Enter your username"
+                  placeholder={t('username_placeholder', { defaultValue: "Enter your username" })}
                   {...register("username")}
                 />
                 <Field.ErrorText>{errors.username?.message}</Field.ErrorText>
@@ -117,10 +120,10 @@ export default function LoginPage() {
 
               <Field.Root invalid={!!errors.password}>
                 <Stack direction="row" justify="space-between" align="center" mb={1}>
-                  <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700" mb={0}>Password</Field.Label>
+                  <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700" mb={0}>{t('password_label', { defaultValue: "Password" })}</Field.Label>
                   <Link href="/forget-password">
                     <Box as="span" fontSize="xs" color="blue.500" fontWeight="bold" _hover={{ textDecoration: "underline" }}>
-                      Forgot password?
+                      {t('forgot_password_link', { defaultValue: "Forgot password?" })}
                     </Box>
                   </Link>
                 </Stack>
@@ -132,7 +135,7 @@ export default function LoginPage() {
                   px={4}
                   py={6}
                   rounded="xl"
-                  placeholder="Enter your password"
+                  placeholder={t('password_placeholder', { defaultValue: "Enter your password" })}
                   {...register("password")}
                 />
                 <Field.ErrorText>{errors.password?.message}</Field.ErrorText>
@@ -145,7 +148,7 @@ export default function LoginPage() {
               colorPalette="blue"
               defaultChecked
             >
-              <Checkbox.Label fontSize="sm" color="gray.600" fontWeight="medium">Remember me</Checkbox.Label>
+              <Checkbox.Label fontSize="sm" color="gray.600" fontWeight="medium">{t('remember_me', { defaultValue: "Remember me" })}</Checkbox.Label>
             </Checkbox.Root>
 
             <Button
@@ -161,17 +164,17 @@ export default function LoginPage() {
               fontSize="md"
               loading={isLoading}
             >
-              LOGIN
+              {t('login_button', { defaultValue: "LOGIN" })}
             </Button>
           </Stack>
         </form>
 
         <Center mt={4}>
           <Stack direction="row" gap={1} fontSize="sm" color="gray.600">
-            <Box>Don&apos;t have an account?</Box>
+            <Box>{t('no_account', { defaultValue: "Don't have an account?" })}</Box>
             <Link href="/user-register">
               <Box as="span" color="blue.600" fontWeight="bold" _hover={{ textDecoration: "underline" }}>
-                Sign up now
+                {t('sign_up_now', { defaultValue: "Sign up now" })}
               </Box>
             </Link>
           </Stack>

@@ -16,6 +16,7 @@ import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import Link from "next/link";
 import { useTransition } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import * as z from "zod";
 
 export default function ForgetPasswordPage() {
@@ -33,11 +34,11 @@ export default function ForgetPasswordPage() {
             try {
                 const response = await authApi.forgotPassword(values.email);
                 toaster.create({
-                    description: response.message || "Request sent successfully!",
+                    description: response.message || t('request_sent_success', { defaultValue: "Request sent successfully!" }),
                     type: "success",
                 });
             } catch (error: unknown) {
-                const message = error instanceof Error ? error.message : "An error occurred during password recovery";
+                const message = error instanceof Error ? error.message : t('recovery_failed', { defaultValue: "An error occurred during password recovery" });
                 toaster.create({
                     description: message,
                     type: "error",
@@ -45,6 +46,8 @@ export default function ForgetPasswordPage() {
             }
         });
     };
+
+    const t = useTranslations('common');
 
     return (
         <Box
@@ -75,17 +78,17 @@ export default function ForgetPasswordPage() {
                         fontWeight="black"
                         letterSpacing="tight"
                     >
-                        Forgot Password?
+                        {t('forgot_password_title', { defaultValue: "Forgot Password?" })}
                     </Heading>
                     <Heading color="gray.500" fontSize="md" fontWeight="medium">
-                        Enter your email to receive recovery instructions
+                        {t('forgot_password_desc', { defaultValue: "Enter your email to receive recovery instructions" })}
                     </Heading>
                 </Stack>
 
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <Stack gap={6}>
                         <Field.Root invalid={!!errors.email}>
-                            <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700">Email Address</Field.Label>
+                            <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700">{t('email_address_label', { defaultValue: "Email Address" })}</Field.Label>
                             <Input
                                 variant="subtle"
                                 bg="gray.50"
@@ -93,7 +96,7 @@ export default function ForgetPasswordPage() {
                                 px={4}
                                 py={6}
                                 rounded="xl"
-                                placeholder="email@example.com"
+                                placeholder={t('email_placeholder', { defaultValue: "email@example.com" })}
                                 {...register("email")}
                             />
                             <Field.ErrorText>{errors.email?.message}</Field.ErrorText>
@@ -112,7 +115,7 @@ export default function ForgetPasswordPage() {
                             fontSize="md"
                             loading={isLoading}
                         >
-                            SEND REQUEST
+                            {t('send_request_button', { defaultValue: "SEND REQUEST" })}
                         </Button>
                     </Stack>
                 </form>
@@ -120,7 +123,7 @@ export default function ForgetPasswordPage() {
                 <Center mt={2}>
                     <Link href="/user-login">
                         <Box as="span" color="gray.600" fontSize="sm" fontWeight="bold" _hover={{ textDecoration: "underline" }}>
-                            Back to login
+                            {t('back_to_login', { defaultValue: "Back to login" })}
                         </Box>
                     </Link>
                 </Center>

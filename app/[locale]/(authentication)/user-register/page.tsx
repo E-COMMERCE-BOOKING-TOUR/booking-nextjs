@@ -21,6 +21,7 @@ import { useMutation } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import * as z from "zod";
 
 export default function RegisterPage() {
@@ -47,7 +48,7 @@ export default function RegisterPage() {
         });
       } else {
         toaster.create({
-          description: "Registration successful!",
+          description: t('registration_success', { defaultValue: "Registration successful!" }),
           type: "success",
         });
         // Auto login
@@ -60,13 +61,15 @@ export default function RegisterPage() {
       }
     },
     onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : "An error occurred during registration";
+      const message = error instanceof Error ? error.message : t('registration_failed', { defaultValue: "An error occurred during registration" });
       toaster.create({
         description: message,
         type: "error",
       });
     },
   });
+
+  const t = useTranslations('common');
 
   const onSubmit = (values: z.infer<typeof RegisterSchema>) => {
     registerMutate.mutate(values);
@@ -101,10 +104,10 @@ export default function RegisterPage() {
             fontWeight="black"
             letterSpacing="tight"
           >
-            Create an Account
+            {t('create_account_title', { defaultValue: "Create an Account" })}
           </Heading>
           <Heading color="gray.500" fontSize="md" fontWeight="medium">
-            Discover amazing journeys with us
+            {t('discover_journeys', { defaultValue: "Discover amazing journeys with us" })}
           </Heading>
         </Stack>
 
@@ -113,7 +116,7 @@ export default function RegisterPage() {
             <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={4}>
               <GridItem colSpan={{ base: 1, md: 2 }}>
                 <Field.Root invalid={!!errors.full_name}>
-                  <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700">Full Name</Field.Label>
+                  <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700">{t('full_name_label', { defaultValue: "Full Name" })}</Field.Label>
                   <Input
                     variant="subtle"
                     bg="gray.50"
@@ -121,7 +124,7 @@ export default function RegisterPage() {
                     px={4}
                     py={6}
                     rounded="xl"
-                    placeholder="e.g. John Doe"
+                    placeholder={t('full_name_placeholder_eg', { defaultValue: "e.g. John Doe" })}
                     {...registerFrom("full_name")}
                   />
                   <Field.ErrorText>{errors.full_name?.message}</Field.ErrorText>
@@ -130,7 +133,7 @@ export default function RegisterPage() {
 
               <GridItem>
                 <Field.Root invalid={!!errors.username}>
-                  <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700">Username</Field.Label>
+                  <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700">{t('username_label', { defaultValue: "Username" })}</Field.Label>
                   <Input
                     variant="subtle"
                     bg="gray.50"
@@ -147,7 +150,7 @@ export default function RegisterPage() {
 
               <GridItem>
                 <Field.Root invalid={!!errors.phone}>
-                  <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700">Phone Number</Field.Label>
+                  <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700">{t('phone_label', { defaultValue: "Phone Number" })}</Field.Label>
                   <Input
                     variant="subtle"
                     bg="gray.50"
@@ -155,7 +158,7 @@ export default function RegisterPage() {
                     px={4}
                     py={6}
                     rounded="xl"
-                    placeholder="e.g. 0912345678"
+                    placeholder={t('phone_placeholder_eg', { defaultValue: "e.g. 0912345678" })}
                     {...registerFrom("phone")}
                   />
                   <Field.ErrorText>{errors.phone?.message}</Field.ErrorText>
@@ -164,7 +167,7 @@ export default function RegisterPage() {
 
               <GridItem colSpan={{ base: 1, md: 2 }}>
                 <Field.Root invalid={!!errors.email}>
-                  <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700">Email</Field.Label>
+                  <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700">{t('email_label', { defaultValue: "Email" })}</Field.Label>
                   <Input
                     variant="subtle"
                     bg="gray.50"
@@ -172,7 +175,7 @@ export default function RegisterPage() {
                     px={4}
                     py={6}
                     rounded="xl"
-                    placeholder="email@example.com"
+                    placeholder={t('email_placeholder', { defaultValue: "email@example.com" })}
                     {...registerFrom("email")}
                   />
                   <Field.ErrorText>{errors.email?.message}</Field.ErrorText>
@@ -181,7 +184,7 @@ export default function RegisterPage() {
 
               <GridItem>
                 <Field.Root invalid={!!errors.password}>
-                  <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700">Password</Field.Label>
+                  <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700">{t('password_label', { defaultValue: "Password" })}</Field.Label>
                   <Input
                     variant="subtle"
                     bg="gray.50"
@@ -199,7 +202,7 @@ export default function RegisterPage() {
 
               <GridItem>
                 <Field.Root invalid={!!errors.confirmPassword}>
-                  <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700">Confirm Password</Field.Label>
+                  <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700">{t('register_confirm_password_label', { defaultValue: "Confirm Password" })}</Field.Label>
                   <Input
                     variant="subtle"
                     bg="gray.50"
@@ -208,7 +211,7 @@ export default function RegisterPage() {
                     px={4}
                     py={6}
                     rounded="xl"
-                    placeholder="••••••••"
+                    placeholder={t('register_confirm_password_placeholder', { defaultValue: "••••••••" })}
                     {...registerFrom("confirmPassword")}
                   />
                   <Field.ErrorText>{errors.confirmPassword?.message}</Field.ErrorText>
@@ -224,7 +227,7 @@ export default function RegisterPage() {
               mt={2}
             >
               <Checkbox.Label fontSize="sm" color="gray.600" fontWeight="medium">
-                I agree to the <Box as="span" color="blue.500">Terms & Services</Box>
+                {t('agree_terms', { defaultValue: "I agree to the" })} <Box as="span" color="blue.500">{t('terms_services', { defaultValue: "Terms & Services" })}</Box>
               </Checkbox.Label>
             </Checkbox.Root>
 
@@ -242,17 +245,17 @@ export default function RegisterPage() {
               fontSize="md"
               loading={registerMutate.isPending}
             >
-              REGISTER NOW
+              {t('register_button', { defaultValue: "REGISTER NOW" })}
             </Button>
           </Stack>
         </form>
 
         <Center mt={2}>
           <Stack direction="row" gap={1} fontSize="sm" color="gray.600">
-            <Box>Already have an account?</Box>
+            <Box>{t('already_have_account', { defaultValue: "Already have an account?" })}</Box>
             <Link href="/user-login">
               <Box as="span" color="blue.600" fontWeight="bold" _hover={{ textDecoration: "underline" }}>
-                Login now
+                {t('login_now', { defaultValue: "Login now" })}
               </Box>
             </Link>
           </Stack>
