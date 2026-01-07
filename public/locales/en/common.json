@@ -1,5 +1,7 @@
 {
     "search": "Search",
+    "start": "Start",
+    "end": "End",
     "destination": "Where are you going?",
     "dates": "Dates",
     "travelers": "Travelers",
@@ -385,5 +387,22 @@
     "recovery_failed": "An error occurred during password recovery",
     "register_confirm_password_label": "Confirm Password",
     "register_confirm_password_placeholder": "••••••••",
-    "signing_out": "Signing out..."
+    "signing_out": "Signing out...",
+    "contact_info_title": "Contact Information",
+    "contact_info_desc": "We'll send booking confirmation and updates to this contact",
+    "traveler_name_required": "Traveler name is required",
+    "agree_terms_required": "You must agree to the terms and conditions",
+    "invalid_email": "Invalid email address",
+    "error": "Error",
+    "not_selected": "Not selected",
+    "payment_method_label": "Payment Method",
+    "expiry_label": "Exp",
+    "total_label": "Total",
+    "taxes_included": "All taxes and fees included",
+    "refund_policy_title": "Cancellation & Refund Policy",
+    "cancel_anytime": "Cancel anytime",
+    "cancel_before_days": "Cancel before {count} day(s)",
+    "cancel_before_hours": "Cancel before {count} hour(s)",
+    "free_cancellation": "Free cancellation",
+    "cancellation_fee_pct": "{pct}% cancellation fee"
 }

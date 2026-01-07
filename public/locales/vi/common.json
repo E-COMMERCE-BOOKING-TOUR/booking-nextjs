@@ -1,5 +1,7 @@
 {
     "search": "Tìm kiếm",
+    "start": "Bắt đầu",
+    "end": "Kết thúc",
     "destination": "Bạn muốn đi đâu?",
     "dates": "Ngày đi",
     "travelers": "Khách",
@@ -385,5 +387,22 @@
     "recovery_failed": "Có lỗi xảy ra khi khôi phục mật khẩu",
     "register_confirm_password_label": "Xác nhận mật khẩu",
     "register_confirm_password_placeholder": "••••••••",
-    "signing_out": "Đang đăng xuất..."
+    "signing_out": "Đang đăng xuất...",
+    "contact_info_title": "Thông tin liên hệ",
+    "contact_info_desc": "Chúng tôi sẽ gửi xác nhận đặt chỗ và cập nhật tới địa chỉ liên hệ này",
+    "traveler_name_required": "Tên khách du hành là bắt buộc",
+    "agree_terms_required": "Bạn phải đồng ý với các điều khoản và điều kiện",
+    "invalid_email": "Địa chỉ email không hợp lệ",
+    "error": "Lỗi",
+    "not_selected": "Chưa chọn",
+    "payment_method_label": "Phương thức thanh toán",
+    "expiry_label": "HSD",
+    "total_label": "Tổng cộng",
+    "taxes_included": "Đã bao gồm tất cả thuế và phí",
+    "refund_policy_title": "Chính sách Hủy & Hoàn tiền",
+    "cancel_anytime": "Hủy bất kỳ lúc nào",
+    "cancel_before_days": "Hủy trước {count} ngày",
+    "cancel_before_hours": "Hủy trước {count} giờ",
+    "free_cancellation": "Hủy miễn phí",
+    "cancellation_fee_pct": "Phí hủy {pct}%"
 }

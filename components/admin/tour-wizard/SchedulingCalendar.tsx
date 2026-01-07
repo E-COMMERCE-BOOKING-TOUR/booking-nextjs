@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Ban, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/libs/utils';
+import { useTranslations } from 'next-intl';
 
 interface SchedulingCalendarProps {
     ranges: { start: string, end: string }[];
@@ -12,14 +13,25 @@ interface SchedulingCalendarProps {
     durationDays?: number;
 }
 
-const DAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-const MONTHS = [
-    'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
-    'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
-];
-
 export default function SchedulingCalendar({ ranges, excluded, onToggleDate, durationDays = 0 }: SchedulingCalendarProps) {
+    const t = useTranslations('admin');
     const [currentDate, setCurrentDate] = useState(new Date());
+
+    const DAYS = [
+        t('tour_wizard_day_0'),
+        t('tour_wizard_day_1'),
+        t('tour_wizard_day_2'),
+        t('tour_wizard_day_3'),
+        t('tour_wizard_day_4'),
+        t('tour_wizard_day_5'),
+        t('tour_wizard_day_6')
+    ];
+
+    const MONTHS = [
+        t('tour_wizard_month_1'), t('tour_wizard_month_2'), t('tour_wizard_month_3'), t('tour_wizard_month_4'),
+        t('tour_wizard_month_5'), t('tour_wizard_month_6'), t('tour_wizard_month_7'), t('tour_wizard_month_8'),
+        t('tour_wizard_month_9'), t('tour_wizard_month_10'), t('tour_wizard_month_11'), t('tour_wizard_month_12')
+    ];
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -61,7 +73,7 @@ export default function SchedulingCalendar({ ranges, excluded, onToggleDate, dur
                 day: i,
                 isInRange: isDateInRange(dateStr),
                 isExcluded: excluded.includes(dateStr),
-                isUnbookable: false // Placeholder
+                isUnbookable: false
             });
         }
 
@@ -154,19 +166,21 @@ export default function SchedulingCalendar({ ranges, excluded, onToggleDate, dur
             <div className="mt-6 flex flex-wrap gap-4 text-[10px] text-muted-foreground border-t border-white/5 pt-4">
                 <div className="flex items-center gap-1.5">
                     <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                    <span>Đang mở (Available)</span>
+                    <span>{t('tour_wizard_open_available')}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <div className="h-2 w-2 rounded-full bg-red-500" />
-                    <span>Đã loại trừ (Excluded)</span>
+                    <span>{t('tour_wizard_excluded')}</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                    <AlertTriangle className="h-3 w-3 text-amber-500" />
-                    <span>Thiếu ngày liên tiếp (Unbookable)</span>
-                </div>
+                {durationDays > 1 && (
+                    <div className="flex items-center gap-1.5">
+                        <AlertTriangle className="h-3 w-3 text-amber-500" />
+                        <span>{t('tour_wizard_missing_cont_days', { duration: durationDays })}</span>
+                    </div>
+                )}
                 <div className="flex items-center gap-1.5">
                     <div className="h-2 w-2 rounded-full bg-white/10" />
-                    <span>Không có lịch (Inactive)</span>
+                    <span>{t('tour_wizard_no_schedule')}</span>
                 </div>
             </div>
         </div>

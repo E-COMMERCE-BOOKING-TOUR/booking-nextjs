@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { useTranslations } from 'next-intl';
 import {
     Settings2,
     CalendarDays,
@@ -21,9 +22,14 @@ import {
     Info,
     Image as ImageIcon,
     CheckCircle2,
-    ListChecks
+    ListChecks,
+    Eye,
+    EyeOff,
+    Calendar,
+    X
 } from 'lucide-react';
 
+import { ApiError } from '@/libs/fetchC';
 import { cn } from '@/libs/utils';
 import VariantSchedulingEditor from './VariantSchedulingEditor';
 import SortableTourImage from './SortableTourImage';
@@ -52,26 +58,26 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { useQuery } from '@tanstack/react-query';
 
 const STEPS = [
-    { id: 1, title: 'General Info', icon: Info },
-    { id: 2, title: 'Details & Amenities', icon: ListChecks },
-    { id: 3, title: 'Images', icon: ImageIcon },
-    { id: 4, title: 'Variants & Prices', icon: Settings2 },
-    { id: 5, title: 'Schedule & Sessions', icon: CalendarDays },
-    { id: 6, title: 'Confirmation', icon: CheckCircle2 },
+    { id: 1, title: 'tour_wizard_general_info', icon: Info },
+    { id: 2, title: 'tour_wizard_details_amenities', icon: ListChecks },
+    { id: 3, title: 'tour_wizard_images', icon: ImageIcon },
+    { id: 4, title: 'tour_wizard_variants_prices', icon: Settings2 },
+    { id: 5, title: 'tour_wizard_schedule_sessions', icon: CalendarDays },
+    { id: 6, title: 'tour_wizard_confirmation', icon: CheckCircle2 },
 ];
 
-const tourSchema = z.object({
-    title: z.string().min(5, "Tour title must be at least 5 characters"),
-    slug: z.string().optional(),
-    description: z.string().min(20, "Description must be at least 20 characters"),
-    summary: z.string().min(10, "Summary must be at least 10 characters"),
-    address: z.string().min(5, "Address cannot be empty"),
+
+const baseTourSchema = z.object({
+    title: z.string().min(2),
+    description: z.string().min(1),
+    summary: z.string().min(1),
+    address: z.string().min(1),
     map_url: z.string().optional(),
-    tax: z.coerce.number().min(0, "Tax cannot be negative"),
-    min_pax: z.coerce.number().min(1, "Minimum pax is 1"),
+    tax: z.coerce.number().min(0),
+    min_pax: z.coerce.number().min(1),
     max_pax: z.coerce.number().nullable().optional(),
-    country_id: z.coerce.number().min(1, "Please select a country"),
-    division_id: z.coerce.number().min(1, "Please select a division"),
+    country_id: z.coerce.number().min(1),
+    division_id: z.coerce.number().min(1),
     currency_id: z.coerce.number().default(1),
     supplier_id: z.coerce.number().default(1),
     tour_category_ids: z.array(z.number()).default([]),
@@ -80,10 +86,10 @@ const tourSchema = z.object({
         sort_no: z.number(),
         is_cover: z.boolean(),
         file: z.any().optional()
-    })).min(1, "Please select at least 1 image"),
+    })).min(1),
     variants: z.array(z.object({
         id: z.number().optional(),
-        name: z.string().min(1, "Variant name cannot be empty"),
+        name: z.string().min(2),
         min_pax_per_booking: z.coerce.number().min(1),
         capacity_per_slot: z.coerce.number().min(1),
         tax_included: z.boolean().default(true),
@@ -95,8 +101,8 @@ const tourSchema = z.object({
             pax_type_name: z.string(),
             price: z.coerce.number().min(0)
         })),
-        tour_policy_id: z.coerce.number().min(1, "Please select a refund policy").optional()
-    })).min(1, "Please add at least 1 variant"),
+        tour_policy_id: z.coerce.number().min(1)
+    })).min(1),
     is_visible: z.boolean().default(true),
     status: z.enum(['draft', 'active', 'inactive']).default('active'),
     duration_hours: z.coerce.number().min(0).nullable().optional(),
@@ -117,9 +123,11 @@ const tourSchema = z.object({
         text: z.string().optional()
     }).optional(),
     map_preview: z.string().optional(),
+    map_preview_file: z.any().optional(),
 });
 
-type TourFormValues = z.infer<typeof tourSchema>;
+type TourFormValues = z.infer<typeof baseTourSchema>;
+
 
 import { IAdminTourDetail, IAdminTourVariant } from "@/types/admin/tour.dto";
 
@@ -164,7 +172,9 @@ const VariantPricing = ({ control, index }: { control: Control<TourFormValues>, 
 };
 
 export default function TourWizard({ tourId, initialData }: TourWizardProps) {
+    const t = useTranslations('admin');
     const router = useRouter();
+
     const { data: session } = useSession();
     const token = session?.user?.accessToken;
     const [currentStep, setCurrentStep] = useState(1);
@@ -184,11 +194,76 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
         enabled: !!token,
         staleTime: 5 * 60 * 1000,
     });
+    const tourSchema = useMemo(() => z.object({
+        title: z.string().min(2, t('tour_wizard_error_title_min')),
+        description: z.string().min(1, t('tour_wizard_error_description_min')),
+        summary: z.string().min(1, t('tour_wizard_error_summary_min')),
+        address: z.string().min(1, t('tour_wizard_error_address_required')),
+        map_url: z.string().optional(),
+        tax: z.coerce.number().min(0, t('tour_wizard_error_tax_negative')),
+        min_pax: z.coerce.number().min(1, t('tour_wizard_error_min_pax')),
+        max_pax: z.coerce.number().nullable().optional(),
+        country_id: z.coerce.number().min(1, t('tour_wizard_error_country_required')),
+        division_id: z.coerce.number().min(1, t('tour_wizard_error_division_required')),
+        currency_id: z.coerce.number().default(1),
+        supplier_id: z.coerce.number().default(1),
+        tour_category_ids: z.array(z.number()).default([]),
+        images: z.array(z.object({
+            image_url: z.string(),
+            sort_no: z.number(),
+            is_cover: z.boolean(),
+            file: z.any().optional()
+        })).min(1, t('tour_wizard_error_image_min')),
+        variants: z.array(z.object({
+            id: z.number().optional(),
+            name: z.string().min(2, t('tour_wizard_error_variant_name_required')),
+            min_pax_per_booking: z.coerce.number().min(1),
+            capacity_per_slot: z.coerce.number().min(1),
+            tax_included: z.boolean().default(true),
+            cutoff_hours: z.coerce.number().min(0),
+            status: z.string(),
+            prices: z.array(z.object({
+                id: z.number().optional(),
+                pax_type_id: z.number(),
+                pax_type_name: z.string(),
+                price: z.coerce.number().min(0)
+            })),
+            tour_policy_id: z.coerce.number().min(1, t('tour_wizard_error_policy_required'))
+        })).min(1, t('tour_wizard_error_variant_min')),
+        is_visible: z.boolean().default(true),
+        status: z.enum(['draft', 'active', 'inactive']).default('active'),
+        duration_hours: z.coerce.number().min(0).nullable().optional(),
+        duration_days: z.coerce.number().min(0).nullable().optional(),
+        published_at: z.string().nullable().optional(),
+        meeting_point: z.string().optional(),
+        included: z.array(z.string()).default([]),
+        not_included: z.array(z.string()).default([]),
+        highlights: z.object({
+            title: z.string().default(t('tour_wizard_highlights_label')),
+            items: z.array(z.string()).default([])
+        }).optional(),
+        languages: z.array(z.string()).default(['English', 'Vietnamese']),
+        staff_score: z.coerce.number().min(0).max(10).default(0),
+        testimonial: z.object({
+            name: z.string().optional(),
+            country: z.string().optional(),
+            text: z.string().optional()
+        }).optional(),
+        map_preview: z.string().optional(),
+        map_preview_file: z.any().optional(),
+    }).refine(data => {
+        if (data.max_pax && data.min_pax > data.max_pax) return false;
+        return true;
+    }, {
+        message: t('tour_wizard_error_max_pax'),
+        path: ['max_pax']
+    }), [t]);
+
     const form = useForm<TourFormValues>({
         resolver: zodResolver(tourSchema) as Resolver<TourFormValues>,
+
         defaultValues: {
             title: '',
-            slug: '',
             description: '',
             summary: '',
             address: '',
@@ -216,6 +291,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
             staff_score: 9.0,
             testimonial: { name: '', country: '', text: '' },
             map_preview: '',
+            map_preview_file: null,
         }
     });
 
@@ -256,7 +332,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                 const curr = new Date(minDate);
                 const end = new Date(maxDate);
                 while (curr <= end) {
-                    allDates.push(curr.toISOString().split('T')[0]);
+                    allDates.push(curr.toLocaleDateString('en-CA'));
                     curr.setDate(curr.getDate() + 1);
                 }
 
@@ -318,6 +394,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
     const watchedInclusions = useWatch({ control: form.control, name: 'included' }) || [];
     const watchedExclusions = useWatch({ control: form.control, name: 'not_included' }) || [];
     const watchedLanguages = useWatch({ control: form.control, name: 'languages' }) || [];
+    const watchedMapPreview = useWatch({ control: form.control, name: 'map_preview' });
 
     useEffect(() => {
         if (initialData) {
@@ -348,7 +425,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                         pax_type_name: p.pax_type?.name || '',
                         price: p.price
                     })) || [],
-                    tour_policy_id: v.tour_policy?.id,
+                    tour_policy_id: v.tour_policy?.id || 0,
                     sessions: v.tour_sessions?.map(s => ({
                         session_date: s.session_date,
                         start_time: s.start_time,
@@ -369,6 +446,8 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                 staff_score: initialData.staff_score || 9.0,
                 testimonial: initialData.testimonial || { name: '', country: '', text: '' },
                 map_preview: initialData.map_preview || '',
+                min_pax: initialData.min_pax || 1,
+                max_pax: initialData.max_pax || null,
             };
 
 
@@ -480,6 +559,17 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                 }
             }
 
+            // Upload map preview if pending
+            let finalMapPreview = data.map_preview;
+            if (data.map_preview_file) {
+                const fd = new FormData();
+                fd.append('file', data.map_preview_file);
+                const res = await adminTourApi.uploadImage(fd, token);
+                if (res) {
+                    finalMapPreview = res.secure_url;
+                }
+            }
+
             // 2. Prepare Nested Variants, Prices, and Sessions
             const nestedVariants = data.variants.map((v, i) => {
                 const vSched = scheduling[i];
@@ -556,13 +646,26 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                 };
             });
 
-            const finalPayload = {
+            const finalPayload: CreateTourDTO = {
                 ...data,
-                slug: data.slug || undefined,
-                images: uploadedImages.map(({ image_url, sort_no, is_cover }) => ({ image_url, sort_no, is_cover })),
+                images: uploadedImages.map(({ file, ...rest }) => rest),
+                map_preview: finalMapPreview,
                 variants: nestedVariants,
-                status: data.status as "draft" | "active" | "inactive"
             };
+
+            // Remove internal UI fields from payload
+            delete (finalPayload as any).map_preview_file;
+            delete (finalPayload as any).slug;
+
+            // Clean up empty optional objects
+            const testimonial = finalPayload.testimonial;
+            if (testimonial && (!testimonial.name && !testimonial.country && !testimonial.text)) {
+                delete finalPayload.testimonial;
+            }
+            const highlights = finalPayload.highlights;
+            if (highlights && (!highlights.items || highlights.items.length === 0)) {
+                delete finalPayload.highlights;
+            }
 
             // 3. Save Tour
             if (isEdit && tourId) {
@@ -578,8 +681,82 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
             }, 1500);
         } catch (error) {
             console.error('Failed to save tour', error);
-            const err = error as Error;
-            toast.error('Error saving tour: ' + err.message);
+            if (error instanceof ApiError && error.errors) {
+                // Field name mapping for better UX
+                const fieldLabels: Record<string, string> = {
+                    title: t('tour_wizard_title_label'),
+                    description: t('tour_wizard_description_label'),
+                    summary: t('tour_wizard_summary_label'),
+                    address: t('tour_wizard_address_label'),
+                    map_url: t('tour_wizard_map_url_label'),
+                    tax: t('tour_wizard_tax_label'),
+                    min_pax: t('tour_wizard_min_pax_label'),
+                    max_pax: t('tour_wizard_max_pax_label'),
+                    country_id: t('tour_wizard_country_label'),
+                    division_id: t('tour_wizard_division_label'),
+                    currency_id: t('tour_wizard_currency_label'),
+                    images: t('tour_wizard_images'),
+                    variants: t('tour_wizard_variants_label'),
+                    'variants.name': t('tour_wizard_variant_name_label'),
+                    'variants.tour_policy_id': t('tour_wizard_refund_policy_label'),
+                    'variants.prices': t('tour_wizard_pricing_label'),
+                    meeting_point: t('tour_wizard_meeting_point_label'),
+                    included: t('tour_wizard_included_label'),
+                    not_included: t('tour_wizard_not_included_label'),
+                    highlights: t('tour_wizard_highlights_label'),
+                    languages: t('tour_wizard_languages_label'),
+                    testimonial: t('tour_wizard_testimonial_name_label'),
+                };
+
+                const getFieldLabel = (field: string): string => {
+                    // Check for exact match first
+                    if (fieldLabels[field]) return fieldLabels[field];
+                    // Check for pattern match (e.g., variants.0.name -> variants.name)
+                    const normalized = field.replace(/\.\d+\./g, '.');
+                    if (fieldLabels[normalized]) return fieldLabels[normalized];
+                    return field;
+                };
+
+                const errorMessages = error.errors.map(err => {
+                    const label = getFieldLabel(err.field);
+                    const issue = err.issues?.[0] || t('tour_wizard_error_invalid');
+                    return `${label}: ${issue}`;
+                });
+
+                toast.error(
+                    <div className="space-y-1">
+                        <strong>{t('tour_wizard_error_invalid_data')}:</strong>
+                        <ul className="list-disc list-inside text-sm">
+                            {errorMessages.slice(0, 5).map((msg, i) => (
+                                <li key={i}>{msg}</li>
+                            ))}
+                            {errorMessages.length > 5 && <li>{t('tour_wizard_error_more_errors', { count: errorMessages.length - 5 })}</li>}
+                        </ul>
+                    </div>,
+                    { duration: 8000 }
+                );
+
+                // Recursive function to map nested errors to react-hook-form
+                const setNestedErrors = (errs: any[], path = "") => {
+                    errs.forEach(err => {
+                        const currentPath = path ? `${path}.${err.field}` : err.field;
+                        if (err.issues && err.issues.length > 0) {
+                            form.setError(currentPath as any, {
+                                type: 'manual',
+                                message: err.issues[0]
+                            });
+                        }
+                        if (err.errors && err.errors.length > 0) {
+                            setNestedErrors(err.errors, currentPath);
+                        }
+                    });
+                };
+
+                setNestedErrors(error.errors);
+            } else {
+                const err = error as Error;
+                toast.error(t('tour_wizard_error_save_tour') + ': ' + err.message);
+            }
             isSubmittingRef.current = false;
             setIsSubmitting(false);
         }
@@ -593,10 +770,10 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
         <div className="container w-full py-6 space-y-8 animate-in fade-in duration-500">
             <div className="flex flex-col gap-2">
                 <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-                    {isEdit ? 'Edit Tour' : 'Create New Tour'}
+                    {isEdit ? t('tour_wizard_edit_tour') : t('tour_wizard_create_new_tour')}
                 </h1>
                 <p className="text-muted-foreground">
-                    {isEdit ? `Editing tour #${tourId}: ${initialData?.title}` : 'Setup information and configuration for your tour package.'}
+                    {isEdit ? t('tour_wizard_editing_desc', { id: tourId, title: initialData?.title ?? '' }) : t('tour_wizard_setup_desc')}
                 </p>
             </div>
 
@@ -623,12 +800,13 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                     "text-xs font-medium truncate",
                                     isActive ? "text-foreground" : "text-muted-foreground"
                                 )}>
-                                    {step.title}
+                                    {t(step.title as any)}
                                 </span>
                             </div>
                         </div>
                     );
                 })}
+
             </div>
 
             <Separator className="bg-white/5" />
@@ -639,8 +817,8 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                         <div className="grid gap-6 animate-in slide-in-from-right-4 duration-300">
                             <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
                                 <CardHeader>
-                                    <CardTitle>Basic Information</CardTitle>
-                                    <CardDescription>Provide core information so customers can understand the tour.</CardDescription>
+                                    <CardTitle>{t('tour_wizard_basic_info')}</CardTitle>
+                                    <CardDescription>{t('tour_wizard_basic_info_desc')}</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     <FormField
@@ -648,23 +826,24 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         name="title"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Tour Title</FormLabel>
+                                                <FormLabel>{t('tour_wizard_title_label')}</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="e.g. Ha Long Bay 2 Days 1 Night" {...field} className="bg-background/50 border-white/10" />
+                                                    <Input placeholder={t('tour_wizard_title_placeholder')} {...field} className="bg-background/50 border-white/10" />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
                                     />
 
+
                                     <FormField
                                         control={form.control}
                                         name="summary"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Short Summary</FormLabel>
+                                                <FormLabel>{t('tour_wizard_summary_label')}</FormLabel>
                                                 <FormControl>
-                                                    <Textarea placeholder="Brief description..." {...field} className="bg-background/50 border-white/10 min-h-[80px]" />
+                                                    <Textarea placeholder={t('tour_wizard_summary_placeholder')} {...field} className="bg-background/50 border-white/10 min-h-[80px]" />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -676,20 +855,21 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         name="description"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Detailed Description</FormLabel>
+                                                <FormLabel>{t('tour_wizard_description_label')}</FormLabel>
                                                 <FormControl>
-                                                    <Textarea placeholder="Full itinerary details..." {...field} className="bg-background/50 border-white/10 min-h-[150px]" />
+                                                    <Textarea placeholder={t('tour_wizard_description_placeholder')} {...field} className="bg-background/50 border-white/10 min-h-[150px]" />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
                                     />
+
                                 </CardContent>
                             </Card>
 
                             <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
                                 <CardHeader>
-                                    <CardTitle>Location & Classification</CardTitle>
+                                    <CardTitle>{t('tour_wizard_location_classification')}</CardTitle>
                                 </CardHeader>
                                 <CardContent className="grid grid-cols-2 gap-6">
                                     <FormField
@@ -697,24 +877,25 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         name="address"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Address</FormLabel>
+                                                <FormLabel>{t('tour_wizard_address_label')}</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="Street address, city..." {...field} className="bg-background/50 border-white/10" />
+                                                    <Input placeholder={t('tour_wizard_address_placeholder')} {...field} className="bg-background/50 border-white/10" />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
                                     />
+
                                     <FormField
                                         control={form.control}
                                         name="country_id"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Country / Region</FormLabel>
+                                                <FormLabel>{t('tour_wizard_country_label')}</FormLabel>
                                                 <Select key={`country-${field.value}`} onValueChange={(val) => field.onChange(parseInt(val))} value={field.value?.toString()}>
                                                     <FormControl>
                                                         <SelectTrigger className="bg-background/50 border-white/10">
-                                                            <SelectValue placeholder="Select Country" />
+                                                            <SelectValue placeholder={t('tour_wizard_country_placeholder')} />
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
@@ -732,11 +913,11 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         name="division_id"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Province / City</FormLabel>
+                                                <FormLabel>{t('tour_wizard_division_label')}</FormLabel>
                                                 <Select key={`division-${watchedCountryId}-${field.value}`} onValueChange={(val) => field.onChange(parseInt(val))} value={field.value?.toString()} disabled={!watchedCountryId || (divisions.length === 0 && field.value !== 0)}>
                                                     <FormControl>
                                                         <SelectTrigger className="bg-background/50 border-white/10">
-                                                            <SelectValue placeholder="Select Province/City" />
+                                                            <SelectValue placeholder={t('tour_wizard_division_placeholder')} />
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
@@ -749,16 +930,17 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                             </FormItem>
                                         )}
                                     />
+
                                     <FormField
                                         control={form.control}
                                         name="currency_id"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Currency</FormLabel>
+                                                <FormLabel>{t('tour_wizard_currency_label')}</FormLabel>
                                                 <Select onValueChange={(val) => field.onChange(parseInt(val))} value={field.value?.toString()}>
                                                     <FormControl>
                                                         <SelectTrigger className="bg-background/50 border-white/10">
-                                                            <SelectValue placeholder="Select Currency" />
+                                                            <SelectValue placeholder={t('tour_wizard_currency_placeholder')} />
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
@@ -771,25 +953,55 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                             </FormItem>
                                         )}
                                     />
+
                                 </CardContent>
                             </Card>
 
                             <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
                                 <CardHeader>
-                                    <CardTitle>Configuration & Duration</CardTitle>
+                                    <CardTitle>{t('tour_wizard_config_duration')}</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
+                                    <div className="grid grid-cols-2 gap-6 pb-6 border-b border-white/5">
+                                        <FormField
+                                            control={form.control}
+                                            name="min_pax"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>{t('tour_wizard_min_pax_label')}</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} className="bg-background/50 border-white/10" />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="max_pax"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>{t('tour_wizard_max_pax_label')}</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="number" {...field} value={field.value || ''} onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)} className="bg-background/50 border-white/10" />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+
                                     <div className="grid grid-cols-3 gap-6">
                                         <FormField
                                             control={form.control}
                                             name="status"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Tour Status</FormLabel>
+                                                    <FormLabel>{t('tour_wizard_status_label')}</FormLabel>
                                                     <Select onValueChange={field.onChange} value={field.value}>
                                                         <FormControl>
                                                             <SelectTrigger className="bg-background/50 border-white/10">
-                                                                <SelectValue placeholder="Status" />
+                                                                <SelectValue placeholder={t('tour_wizard_status_placeholder')} />
                                                             </SelectTrigger>
                                                         </FormControl>
                                                         <SelectContent>
@@ -801,12 +1013,13 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                 </FormItem>
                                             )}
                                         />
+
                                         <FormField
                                             control={form.control}
                                             name="duration_days"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Duration (Days)</FormLabel>
+                                                    <FormLabel>{t('tour_wizard_duration_days_label')}</FormLabel>
                                                     <FormControl>
                                                         <Input type="number" {...field} value={field.value || ''} onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)} className="bg-background/50 border-white/10" />
                                                     </FormControl>
@@ -818,31 +1031,33 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                             name="duration_hours"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Extra Hours</FormLabel>
+                                                    <FormLabel>{t('tour_wizard_duration_hours_label')}</FormLabel>
                                                     <FormControl>
                                                         <Input type="number" {...field} value={field.value || ''} onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)} className="bg-background/50 border-white/10" />
                                                     </FormControl>
                                                     <FormDescription>
-                                                        Example: 2 days 5 hours (enter 5 here).
+                                                        {t('tour_wizard_duration_hours_desc')}
                                                         {(watchedDurationDays !== null || field.value) && (
                                                             <span className="block text-emerald-400 mt-1">
-                                                                → Total Time:
-                                                                {Number(watchedDurationDays || 0) > 0 ? ` ${watchedDurationDays} days` : ''}
-                                                                {Number(watchedDurationDays || 0) > 0 && Number(field.value || 0) > 0 ? ' and' : ''}
-                                                                {Number(field.value || 0) > 0 ? ` ${field.value} hours` : ''}
-                                                                {Number(watchedDurationDays || 0) === 0 && Number(field.value || 0) === 0 ? ' 0 hours' : ''}
+                                                                → {t('tour_wizard_total_time')}:
+                                                                {Number(watchedDurationDays || 0) > 0 ? ` ${watchedDurationDays} ${t('tour_wizard_days')}` : ''}
+                                                                {Number(watchedDurationDays || 0) > 0 && Number(field.value || 0) > 0 ? ` ${t('tour_wizard_and')}` : ''}
+                                                                {Number(field.value || 0) > 0 ? ` ${field.value} ${t('tour_wizard_hours')}` : ''}
+                                                                {Number(watchedDurationDays || 0) === 0 && Number(field.value || 0) === 0 ? ` 0 ${t('tour_wizard_hours')}` : ''}
                                                             </span>
                                                         )}
                                                     </FormDescription>
                                                 </FormItem>
                                             )}
                                         />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-6">
                                         <FormField
                                             control={form.control}
                                             name="tax"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Tax (%)</FormLabel>
+                                                    <FormLabel>{t('tour_wizard_tax_label')}</FormLabel>
                                                     <FormControl>
                                                         <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} className="bg-background/50 border-white/10" />
                                                     </FormControl>
@@ -850,18 +1065,23 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                             )}
                                         />
                                     </div>
-                                    <div className="mt-6 border-t border-white/5 pt-6">
+                                    <div className="mt-6 border-t border-white/5 pt-6 space-y-4">
+                                        <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                            <Eye className="h-4 w-4" />
+                                            {t('tour_wizard_visibility_settings')}
+                                        </h4>
                                         <FormField
                                             control={form.control}
                                             name="is_visible"
                                             render={({ field }) => (
                                                 <FormItem className="flex flex-row items-center justify-between rounded-lg border border-white/10 p-4 bg-background/50">
                                                     <div className="space-y-0.5">
-                                                        <FormLabel className="text-base text-white">Public Visibility</FormLabel>
+                                                        <FormLabel className="text-base text-white">{t('tour_wizard_visibility_label')}</FormLabel>
                                                         <FormDescription>
-                                                            Toggle whether this tour is visible to customers on the public site.
+                                                            {t('tour_wizard_visibility_desc')}
                                                         </FormDescription>
                                                     </div>
+
                                                     <FormControl>
                                                         <Switch
                                                             checked={field.value}
@@ -871,7 +1091,158 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                 </FormItem>
                                             )}
                                         />
+                                        <FormField
+                                            control={form.control}
+                                            name="published_at"
+                                            render={({ field }) => {
+                                                const isVisible = form.watch('is_visible');
+                                                const publishedAt = field.value;
+                                                const isScheduled = publishedAt && new Date(publishedAt) > new Date();
+
+                                                let statusColor = 'text-emerald-400';
+                                                let statusIcon = <Eye className="h-4 w-4" />;
+                                                let statusText = t('tour_wizard_visibility_status_visible');
+
+                                                if (!isVisible) {
+                                                    statusColor = 'text-red-400';
+                                                    statusIcon = <EyeOff className="h-4 w-4" />;
+                                                    statusText = t('tour_wizard_visibility_status_hidden');
+                                                } else if (isScheduled) {
+                                                    statusColor = 'text-amber-400';
+                                                    statusIcon = <Calendar className="h-4 w-4" />;
+                                                    statusText = t('tour_wizard_visibility_status_scheduled', { date: new Date(publishedAt).toLocaleDateString('vi-VN') });
+                                                }
+
+                                                return (
+                                                    <div className="space-y-3">
+                                                        <FormItem>
+                                                            <FormLabel>{t('tour_wizard_published_at_label')}</FormLabel>
+                                                            <FormControl>
+                                                                <div className="flex gap-2">
+                                                                    <Input
+                                                                        type="date"
+                                                                        {...field}
+                                                                        value={field.value || ''}
+                                                                        className="bg-background/50 border-white/10"
+                                                                    />
+                                                                    {field.value && (
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="outline"
+                                                                            size="icon"
+                                                                            onClick={() => field.onChange(null)}
+                                                                            className="shrink-0"
+                                                                        >
+                                                                            <X className="h-4 w-4" />
+                                                                        </Button>
+                                                                    )}
+                                                                </div>
+                                                            </FormControl>
+                                                            <FormDescription className="text-xs">
+                                                                {t('tour_wizard_published_at_hint')}
+                                                            </FormDescription>
+                                                        </FormItem>
+                                                        <div className={`flex items-center gap-2 p-3 rounded-lg bg-background/30 border border-white/5 ${statusColor}`}>
+                                                            {statusIcon}
+                                                            <span className="text-sm font-medium">{statusText}</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }}
+                                        />
                                     </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
+                                <CardHeader>
+                                    <div className="flex items-center gap-2">
+                                        <ImageIcon className="h-5 w-5 text-primary" />
+                                        <CardTitle>{t('tour_wizard_map_settings')}</CardTitle>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    <FormField
+                                        control={form.control}
+                                        name="map_url"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>{t('tour_wizard_map_url_label')}</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder={t('tour_wizard_map_url_placeholder')} {...field} className="bg-background/50 border-white/10" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="map_preview_file"
+                                        render={({ field: { value, onChange, ...fieldProps } }) => {
+                                            const mapPreviewInputRef = React.useRef<HTMLInputElement>(null);
+                                            return (
+                                                <FormItem>
+                                                    <FormLabel>{t('tour_wizard_map_preview_label')}</FormLabel>
+                                                    <FormControl>
+                                                        <div className="space-y-4">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="relative size-40 rounded-lg border-2 border-dashed border-white/10 bg-white/5 overflow-hidden group">
+                                                                    {watchedMapPreview ? (
+                                                                        <>
+                                                                            <img src={watchedMapPreview} alt="Map Preview" className="size-full object-cover" />
+                                                                            <Button
+                                                                                type="button"
+                                                                                variant="destructive"
+                                                                                size="icon"
+                                                                                className="absolute top-1 right-1 size-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                                onClick={() => {
+                                                                                    onChange(null);
+                                                                                    form.setValue('map_preview', '');
+                                                                                }}
+                                                                            >
+                                                                                <X className="size-3" />
+                                                                            </Button>
+                                                                        </>
+                                                                    ) : (
+                                                                        <div className="size-full flex items-center justify-center">
+                                                                            <ImageIcon className="size-8 text-muted-foreground/30" />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="space-y-2">
+                                                                    <input
+                                                                        ref={mapPreviewInputRef}
+                                                                        type="file"
+                                                                        className="hidden"
+                                                                        onChange={(e) => {
+                                                                            const file = e.target.files?.[0];
+                                                                            if (file) {
+                                                                                onChange(file);
+                                                                                form.setValue('map_preview', URL.createObjectURL(file));
+                                                                            }
+                                                                        }}
+                                                                        accept="image/*"
+                                                                    />
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={() => mapPreviewInputRef.current?.click()}
+                                                                    >
+                                                                        <Plus className="size-4 mr-2" /> {t('tour_wizard_upload_map_preview')}
+                                                                    </Button>
+                                                                    <p className="text-[10px] text-muted-foreground">
+                                                                        {t('tour_wizard_image_gallery_desc')}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            );
+                                        }}
+                                    />
                                 </CardContent>
                             </Card>
                         </div>
@@ -884,9 +1255,9 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                 <CardHeader>
                                     <div className="flex items-center gap-2">
                                         <ListChecks className="h-5 w-5 text-primary" />
-                                        <CardTitle>Highlights</CardTitle>
+                                        <CardTitle>{t('tour_wizard_highlights')}</CardTitle>
                                     </div>
-                                    <CardDescription>Key features that attract customers to this tour.</CardDescription>
+                                    <CardDescription>{t('tour_wizard_highlights_desc')}</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <FormField
@@ -894,9 +1265,9 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         name="highlights.title"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Section Title</FormLabel>
+                                                <FormLabel>{t('tour_wizard_section_title')}</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="e.g. Activity Highlights" {...field} className="bg-background/50 border-white/10" />
+                                                    <Input placeholder={t('tour_wizard_section_title_placeholder')} {...field} className="bg-background/50 border-white/10" />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -904,14 +1275,15 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                     />
 
                                     <div className="space-y-2">
-                                        <Label>Highlight Items</Label>
+                                        <Label>{t('tour_wizard_highlight_items')}</Label>
+
                                         {watchedHighlights?.items?.map((_, index) => (
                                             <div key={index} className="flex gap-2">
                                                 <FormField
                                                     control={form.control}
                                                     name={`highlights.items.${index}`}
                                                     render={({ field }) => (
-                                                        <Input {...field} className="bg-background/50 border-white/10" placeholder="Highlight detail..." />
+                                                        <Input {...field} className="bg-background/50 border-white/10" placeholder={t('tour_wizard_highlight_detail_placeholder')} />
                                                     )}
                                                 />
                                                 <Button type="button" variant="ghost" size="icon" onClick={() => {
@@ -932,8 +1304,9 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                 form.setValue('highlights.items', [...current, '']);
                                             }}
                                         >
-                                            <Plus className="size-4 mr-2" /> Add Highlight
+                                            <Plus className="size-4 mr-2" /> {t('tour_wizard_add_highlight')}
                                         </Button>
+
                                     </div>
                                 </CardContent>
                             </Card>
@@ -942,7 +1315,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                             <div className="grid grid-cols-2 gap-6">
                                 <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
                                     <CardHeader>
-                                        <CardTitle className="text-emerald-400">Included</CardTitle>
+                                        <CardTitle className="text-emerald-400">{t('tour_wizard_included')}</CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-3">
                                         {watchedInclusions?.map((_, index) => (
@@ -951,7 +1324,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                     control={form.control}
                                                     name={`included.${index}`}
                                                     render={({ field }) => (
-                                                        <Input {...field} className="bg-background/50 border-white/10" placeholder="e.g. Lunch, Bus..." />
+                                                        <Input {...field} className="bg-background/50 border-white/10" placeholder={t('tour_wizard_included_placeholder')} />
                                                     )}
                                                 />
                                                 <Button type="button" variant="ghost" size="icon" onClick={() => {
@@ -971,14 +1344,14 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                 form.setValue('included', [...current, '']);
                                             }}
                                         >
-                                            <Plus className="size-4 mr-2" /> Add Included Item
+                                            <Plus className="size-4 mr-2" /> {t('tour_wizard_add_included_item')}
                                         </Button>
                                     </CardContent>
                                 </Card>
 
                                 <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
                                     <CardHeader>
-                                        <CardTitle className="text-rose-400">Not Included</CardTitle>
+                                        <CardTitle className="text-rose-400">{t('tour_wizard_not_included')}</CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-3">
                                         {watchedExclusions?.map((_, index) => (
@@ -987,7 +1360,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                     control={form.control}
                                                     name={`not_included.${index}`}
                                                     render={({ field }) => (
-                                                        <Input {...field} className="bg-background/50 border-white/10" placeholder="e.g. Tips, Personal expenses..." />
+                                                        <Input {...field} className="bg-background/50 border-white/10" placeholder={t('tour_wizard_not_included_placeholder')} />
                                                     )}
                                                 />
                                                 <Button type="button" variant="ghost" size="icon" onClick={() => {
@@ -1007,16 +1380,17 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                 form.setValue('not_included', [...current, '']);
                                             }}
                                         >
-                                            <Plus className="size-4 mr-2" /> Add Excluded Item
+                                            <Plus className="size-4 mr-2" /> {t('tour_wizard_add_excluded_item')}
                                         </Button>
                                     </CardContent>
                                 </Card>
                             </div>
 
+
                             {/* Section: Other Info */}
                             <Card className="bg-card/30 border-white/5 backdrop-blur-xl">
                                 <CardHeader>
-                                    <CardTitle>Additional Info</CardTitle>
+                                    <CardTitle>{t('tour_wizard_additional_info')}</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     <FormField
@@ -1024,9 +1398,9 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         name="meeting_point"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Meeting Point</FormLabel>
+                                                <FormLabel>{t('tour_wizard_meeting_point')}</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="Gathering location..." {...field} className="bg-background/50 border-white/10" />
+                                                    <Input placeholder={t('tour_wizard_meeting_point_placeholder')} {...field} className="bg-background/50 border-white/10" />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -1034,7 +1408,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                     />
 
                                     <div className="space-y-2">
-                                        <Label>Languages Supported</Label>
+                                        <Label>{t('tour_wizard_languages_supported')}</Label>
                                         <div className="flex flex-wrap gap-2 p-4 rounded-lg border border-white/10 bg-background/20">
                                             {['Vietnamese', 'English', 'French', 'Chinese', 'Korean', 'Japanese'].map((lang) => (
                                                 <Badge
@@ -1050,7 +1424,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                         }
                                                     }}
                                                 >
-                                                    {lang}
+                                                    {t(`tour_wizard_language_${lang.toLowerCase()}` as any)}
                                                 </Badge>
                                             ))}
                                         </div>
@@ -1061,9 +1435,9 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                             name="testimonial.name"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Featured Testimonial Name</FormLabel>
+                                                    <FormLabel>{t('tour_wizard_testimonial_name')}</FormLabel>
                                                     <FormControl>
-                                                        <Input placeholder="Client Name" {...field} className="bg-background/50 border-white/10" />
+                                                        <Input placeholder={t('tour_wizard_testimonial_name_placeholder')} {...field} className="bg-background/50 border-white/10" />
                                                     </FormControl>
                                                 </FormItem>
                                             )}
@@ -1073,9 +1447,9 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                             name="testimonial.text"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Testimonial Content</FormLabel>
+                                                    <FormLabel>{t('tour_wizard_testimonial_content')}</FormLabel>
                                                     <FormControl>
-                                                        <Input placeholder="Review text..." {...field} className="bg-background/50 border-white/10" />
+                                                        <Input placeholder={t('tour_wizard_testimonial_content_placeholder')} {...field} className="bg-background/50 border-white/10" />
                                                     </FormControl>
                                                 </FormItem>
                                             )}
@@ -1083,6 +1457,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                     </div>
                                 </CardContent>
                             </Card>
+
                         </div>
                     )}
 
@@ -1090,8 +1465,8 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                         <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <h3 className="text-lg font-semibold">Image Gallery</h3>
-                                    <p className="text-sm text-muted-foreground">Drag and drop to reorder. The first image will be the cover.</p>
+                                    <h3 className="text-lg font-semibold">{t('tour_wizard_image_gallery')}</h3>
+                                    <p className="text-sm text-muted-foreground">{t('tour_wizard_image_gallery_desc')}</p>
                                 </div>
                                 <div className="relative">
                                     <input
@@ -1102,7 +1477,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         onChange={handleFileUpload}
                                     />
                                     <Button type="button" variant="outline" className="border-dashed border-primary text-primary hover:bg-primary/5">
-                                        <Plus className="size-4 mr-2" /> Upload Images
+                                        <Plus className="size-4 mr-2" /> {t('tour_wizard_upload_images')}
                                     </Button>
                                 </div>
                             </div>
@@ -1135,10 +1510,11 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                             {watchedImages.length === 0 && (
                                 <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-white/10 rounded-xl bg-white/5">
                                     <ImageIcon className="size-16 text-muted-foreground/30 mb-4" />
-                                    <p className="text-muted-foreground font-medium">No images yet</p>
-                                    <p className="text-xs text-muted-foreground/60">Upload at least one image to continue</p>
+                                    <p className="text-muted-foreground font-medium">{t('tour_wizard_no_images_yet')}</p>
+                                    <p className="text-xs text-muted-foreground/60">{t('tour_wizard_no_images_desc')}</p>
                                 </div>
                             )}
+
                         </div>
                     )}
 
@@ -1146,9 +1522,10 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                         <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <h3 className="text-lg font-semibold">Tour Variants</h3>
-                                    <p className="text-sm text-muted-foreground">Define different package options (Standard, Deluxe, etc.)</p>
+                                    <h3 className="text-lg font-semibold">{t('tour_wizard_tour_variants')}</h3>
+                                    <p className="text-sm text-muted-foreground">{t('tour_wizard_tour_variants_desc')}</p>
                                 </div>
+
                                 <Button type="button" onClick={() => appendVariant({
                                     name: 'Standard',
                                     min_pax_per_booking: 1,
@@ -1160,9 +1537,9 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         { pax_type_id: 1, pax_type_name: 'Adult', price: 0 },
                                         { pax_type_id: 2, pax_type_name: 'Child', price: 0 }
                                     ],
-                                    tour_policy_id: undefined
+                                    tour_policy_id: 0
                                 })} className="bg-primary hover:bg-primary/90 text-white shadow-sm flex items-center gap-2">
-                                    <Plus className="size-4 mr-2" /> Add Variant
+                                    <Plus className="size-4 mr-2" /> {t('tour_wizard_add_variant')}
                                 </Button>
                             </div>
 
@@ -1185,9 +1562,9 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                     name={`variants.${index}.name`}
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>Variant Name</FormLabel>
+                                                            <FormLabel>{t('tour_wizard_variant_name_label')}</FormLabel>
                                                             <FormControl>
-                                                                <Input {...field} placeholder="e.g. Standard" className="bg-background/50" />
+                                                                <Input {...field} placeholder={t('tour_wizard_variant_name_placeholder')} className="bg-background/50" />
                                                             </FormControl>
                                                         </FormItem>
                                                     )}
@@ -1197,7 +1574,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                     name={`variants.${index}.capacity_per_slot`}
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>Capacity</FormLabel>
+                                                            <FormLabel>{t('tour_wizard_capacity_label')}</FormLabel>
                                                             <FormControl>
                                                                 <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} className="bg-background/50" />
                                                             </FormControl>
@@ -1206,9 +1583,10 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                 />
                                             </div>
                                             <div>
-                                                <Label className="mb-2 block">Pricing</Label>
+                                                <Label className="mb-2 block">{t('tour_wizard_pricing')}</Label>
                                                 <VariantPricing control={form.control} index={index} />
                                             </div>
+
 
                                             <Separator className="bg-white/5 my-4" />
 
@@ -1219,7 +1597,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                     render={({ field }) => (
                                                         <FormItem>
                                                             <div className="flex items-center justify-between">
-                                                                <FormLabel className="text-base font-semibold text-primary">Refund Policy</FormLabel>
+                                                                <FormLabel className="text-base font-semibold text-primary">{t('tour_wizard_refund_policy')}</FormLabel>
                                                                 <Button
                                                                     type="button"
                                                                     variant="ghost"
@@ -1227,13 +1605,13 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                                     className="h-8 text-xs text-primary hover:text-primary/80"
                                                                     onClick={() => router.push('/admin/tour/policies')}
                                                                 >
-                                                                    Manage Policies
+                                                                    {t('tour_wizard_manage_policies')}
                                                                 </Button>
                                                             </div>
                                                             <Select onValueChange={field.onChange} value={field.value?.toString()}>
                                                                 <FormControl>
                                                                     <SelectTrigger className="bg-background/40 h-10 border-white/10">
-                                                                        <SelectValue placeholder="Select a refund policy" />
+                                                                        <SelectValue placeholder={t('tour_wizard_select_policy_placeholder')} />
                                                                     </SelectTrigger>
                                                                 </FormControl>
                                                                 <SelectContent className="bg-slate-900 border-white/10 text-white">
@@ -1244,13 +1622,13 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                                     ))}
                                                                     {policies.length === 0 && (
                                                                         <div className="p-2 text-xs text-muted-foreground italic">
-                                                                            No policies found for this supplier.
+                                                                            {t('tour_wizard_no_policies_found')}
                                                                         </div>
                                                                     )}
                                                                 </SelectContent>
                                                             </Select>
                                                             <FormDescription className="text-[10px] text-muted-foreground">
-                                                                Select a cancellation policy for this tour variant. Policies are shared across tours of the same supplier.
+                                                                {t('tour_wizard_refund_policy_desc')}
                                                             </FormDescription>
                                                             <FormMessage />
                                                         </FormItem>
@@ -1262,9 +1640,10 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                 ))}
                                 {variantFields.length === 0 && (
                                     <div className="text-center p-8 text-muted-foreground border border-dashed border-white/10 rounded-xl">
-                                        No variants added yet.
+                                        {t('tour_wizard_no_variants_yet')}
                                     </div>
                                 )}
+
                             </div>
                         </div>
                     )}
@@ -1273,14 +1652,15 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                         <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <h3 className="text-lg font-semibold">Schedule & Sessions</h3>
-                                    <p className="text-sm text-muted-foreground">Configure availability and departure times for each variant.</p>
+                                    <h3 className="text-lg font-semibold">{t('tour_wizard_schedule_sessions')}</h3>
+                                    <p className="text-sm text-muted-foreground">{t('tour_wizard_schedule_sessions_desc')}</p>
                                 </div>
                             </div>
 
+
                             {variantFields.length === 0 ? (
                                 <div className="p-8 text-center text-rose-400 bg-rose-500/10 rounded-xl border border-rose-500/20">
-                                    Please add at least one variant in the previous step first.
+                                    {t('tour_wizard_variants_step_required')}
                                 </div>
                             ) : (
                                 <div className="space-y-8">
@@ -1288,7 +1668,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         <div key={variant.id} className="border border-white/10 rounded-xl p-6 bg-card/10">
                                             <div className="mb-4">
                                                 <h4 className="font-bold text-primary text-lg">{form.getValues(`variants.${index}.name`)}</h4>
-                                                <p className="text-xs text-muted-foreground">Configure schedule for this variant</p>
+                                                <p className="text-xs text-muted-foreground">{t('tour_wizard_configure_schedule')}</p>
                                             </div>
                                             <VariantSchedulingEditor
                                                 value={scheduling[index] || { ranges: [], excluded: [], timeSlots: ['08:00'] }}
@@ -1298,11 +1678,13 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                         [index]: newSchedule
                                                     }));
                                                 }}
+                                                durationDays={Number(watchedDurationDays) || 0}
                                             />
                                         </div>
                                     ))}
                                 </div>
                             )}
+
                         </div>
                     )}
 
@@ -1311,31 +1693,32 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                             <div className="size-24 rounded-full bg-emerald-500/10 flex items-center justify-center mb-4 ring-4 ring-emerald-500/20 ring-offset-4 ring-offset-background">
                                 <CheckCircle2 className="size-12 text-emerald-500" />
                             </div>
-                            <h2 className="text-2xl font-bold">Ready to Launch!</h2>
+                            <h2 className="text-2xl font-bold">{t('tour_wizard_ready_launch')}</h2>
                             <p className="text-muted-foreground text-center max-w-lg">
-                                You have completed all the necessary steps. Review your information one last time before saving.
+                                {t('tour_wizard_ready_launch_desc')}
                             </p>
 
                             <div className="grid grid-cols-2 gap-4 w-full max-w-2xl mt-8">
                                 <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-2">
-                                    <span className="text-xs text-muted-foreground uppercase tracking-wider">Title</span>
+                                    <span className="text-xs text-muted-foreground uppercase tracking-wider">{t('tour_wizard_summary_title')}</span>
                                     <p className="font-medium truncate">{watchedTitle}</p>
                                 </div>
                                 <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-2">
-                                    <span className="text-xs text-muted-foreground uppercase tracking-wider">Location</span>
+                                    <span className="text-xs text-muted-foreground uppercase tracking-wider">{t('tour_wizard_summary_location')}</span>
                                     <p className="font-medium truncate">{watchedAddress}</p>
                                 </div>
                                 <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-2">
-                                    <span className="text-xs text-muted-foreground uppercase tracking-wider">Variants</span>
-                                    <p className="font-medium">{watchedVariants?.length || 0} variants configured</p>
+                                    <span className="text-xs text-muted-foreground uppercase tracking-wider">{t('tour_wizard_summary_variants')}</span>
+                                    <p className="font-medium">{t('tour_wizard_variants_configured', { count: watchedVariants?.length || 0 })}</p>
                                 </div>
                                 <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-2">
-                                    <span className="text-xs text-muted-foreground uppercase tracking-wider">Status</span>
+                                    <span className="text-xs text-muted-foreground uppercase tracking-wider">{t('tour_wizard_summary_status')}</span>
                                     <Badge variant="outline" className="capitalize">{watchedStatus}</Badge>
                                 </div>
                             </div>
                         </div>
                     )}
+
                 </form>
             </Form>
 
@@ -1347,12 +1730,12 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                     disabled={currentStep === 1 || isSubmitting}
                     className="text-muted-foreground hover:text-foreground"
                 >
-                    Back
+                    {t('tour_wizard_back')}
                 </Button>
                 <div className="flex items-center gap-3">
                     {currentStep < STEPS.length ? (
                         <Button type="button" onClick={nextStep} className="bg-primary hover:bg-primary/90 text-primary-foreground min-w-[120px]">
-                            Next Step
+                            {t('tour_wizard_next_step')}
                         </Button>
                     ) : (
                         <Button
@@ -1361,17 +1744,18 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                             className="bg-emerald-500 hover:bg-emerald-600 text-white min-w-[150px] shadow-lg shadow-emerald-500/20"
                         >
                             {isSubmitting ? (
-                                <>Saving...</>
+                                <>{t('tour_wizard_saving')}</>
                             ) : (
                                 <>
                                     <Save className="size-4 mr-2" />
-                                    {isEdit ? 'Update Tour' : 'Create Tour'}
+                                    {isEdit ? t('tour_wizard_update_tour') : t('tour_wizard_create_tour')}
                                 </>
                             )}
                         </Button>
                     )}
                 </div>
             </div>
+
         </div >
     );
 }

@@ -18,6 +18,17 @@ interface Option extends RequestInit {
     BaseURL?: string
 }
 
+export class ApiError extends Error {
+    constructor(
+        public message: string,
+        public status: number,
+        public errors?: any[]
+    ) {
+        super(message);
+        this.name = 'ApiError';
+    }
+}
+
 const fetchC = {
     get: async (url: string, init?: Option) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -31,7 +42,7 @@ const fetchC = {
         });
         const res = await data.json();
         if (!data.ok) {
-            throw new Error(res.message || res.data?.msg || "Đã xảy ra lỗi")
+            throw new ApiError(res.message || res.data?.msg || "Đã xảy ra lỗi", data.status, res.errors);
         }
         return res;
     },
@@ -47,7 +58,7 @@ const fetchC = {
         });
         const res = await data.json();
         if (!data.ok) {
-            throw new Error(res.message || res.data?.msg || "Đã xảy ra lỗi")
+            throw new ApiError(res.message || res.data?.msg || "Đã xảy ra lỗi", data.status, res.errors);
         }
         return res;
     },
@@ -62,7 +73,7 @@ const fetchC = {
         });
         const res = await data.json();
         if (!data.ok) {
-            throw new Error(res.message || res.data?.msg || "Đã xảy ra lỗi")
+            throw new ApiError(res.message || res.data?.msg || "Đã xảy ra lỗi", data.status, res.errors);
         }
         return res;
     },
@@ -78,7 +89,7 @@ const fetchC = {
         });
         const res = await data.json();
         if (!data.ok) {
-            throw new Error(res.message || res.data?.msg || "Đã xảy ra lỗi")
+            throw new ApiError(res.message || res.data?.msg || "Đã xảy ra lỗi", data.status, res.errors);
         }
         return res;
     },
@@ -94,7 +105,7 @@ const fetchC = {
         });
         const res = await data.json();
         if (!data.ok) {
-            throw new Error(res.message || res.data?.msg || "Đã xảy ra lỗi")
+            throw new ApiError(res.message || res.data?.msg || "Đã xảy ra lỗi", data.status, res.errors);
         }
         return res;
     },
@@ -111,7 +122,7 @@ const fetchC = {
         });
         const res = await data.json();
         if (!data.ok) {
-            throw new Error(res.message || res.data?.msg || "Đã xảy ra lỗi")
+            throw new ApiError(res.message || res.data?.msg || "Đã xảy ra lỗi", data.status, res.errors);
         }
         return res;
     }

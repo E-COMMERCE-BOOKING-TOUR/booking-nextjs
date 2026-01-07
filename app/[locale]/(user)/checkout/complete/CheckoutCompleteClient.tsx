@@ -29,20 +29,20 @@ export default function CheckoutCompleteClient({ initialBooking }: Props) {
 
     const steps = [
         {
-            label: t('checkout_step_info', { defaultValue: "Input information" }),
-            description: t('checkout_step_info_desc', { defaultValue: "Please provide your contact and traveler information" })
+            label: t('checkout_step_info'),
+            description: t('checkout_step_info_desc')
         },
         {
-            label: t('checkout_step_payment', { defaultValue: "Payment method" }),
-            description: t('checkout_step_payment_desc', { defaultValue: "Select your payment method" })
+            label: t('checkout_step_payment'),
+            description: t('checkout_step_payment_desc')
         },
         {
-            label: t('checkout_step_confirm', { defaultValue: "Confirmation" }),
-            description: t('checkout_step_confirm_desc', { defaultValue: "Review your booking information" })
+            label: t('checkout_step_confirm'),
+            description: t('checkout_step_confirm_desc')
         },
         {
-            label: t('checkout_step_complete', { defaultValue: "Complete" }),
-            description: t('checkout_step_complete_desc', { defaultValue: "Your booking is complete" })
+            label: t('checkout_step_complete'),
+            description: t('checkout_step_complete_desc')
         },
     ];
 
@@ -60,8 +60,8 @@ export default function CheckoutCompleteClient({ initialBooking }: Props) {
         } catch (error) {
             console.error(error);
             toaster.create({
-                title: t('error', { defaultValue: "Error" }),
-                description: t('failed_download', { type, defaultValue: `Failed to download ${type}. Please try again later.` }),
+                title: t('error'),
+                description: t('failed_download', { type }),
                 type: "error",
             });
             throw error;
@@ -91,24 +91,24 @@ export default function CheckoutCompleteClient({ initialBooking }: Props) {
                         {/* Success Message */}
                         <Box p={8} borderRadius="15px" textAlign="center">
                             <Badge colorPalette="green" variant="solid" px={4} py={2} borderRadius="full" mb={4}>
-                                {t('paid_and_confirmed', { defaultValue: "Paid and confirmed" })}
+                                {t('paid_and_confirmed')}
                             </Badge>
                             <Flex justify="center" align="center" gap={4} mb={4}>
                                 <Icon as={FaCheckCircle} boxSize={16} color="green.500" />
                             </Flex>
-                            <Heading as="h1" size="2xl" mb={2}>{t('all_set_title', { defaultValue: "You're all set!" })}</Heading>
+                            <Heading as="h1" size="2xl" mb={2}>{t('all_set_title')}</Heading>
                             <Text color="fg.muted" fontSize="lg" mb={4}>
-                                {t('confirmation_number', { id: initialBooking.id, defaultValue: `Confirmation #${initialBooking.id}` })}
+                                {t('confirmation_number', { id: initialBooking.id })}
                             </Text>
                             <Text color="fg.muted" mb={6}>
-                                {t('confirmation_email_sent', { email: initialBooking.contact_email, defaultValue: `We've sent the receipt and voucher to ${initialBooking.contact_email}.` })}
+                                {t('confirmation_email_sent', { email: initialBooking.contact_email })}
                                 <br />
-                                {t('present_qr_notice', { defaultValue: "Present the QR code on arrival with a valid ID." })}
+                                {t('present_qr_notice')}
                             </Text>
 
                             <Stack direction={{ base: "column", md: "row" }} gap={3} justify="center">
                                 <Button colorPalette="blue" size="lg" onClick={() => router.push("/mypage/bookings")}>
-                                    {t('view_my_bookings', { defaultValue: "View My Bookings" })}
+                                    {t('view_my_bookings')}
                                 </Button>
                                 <DownloadTrigger
                                     data={() => fetchDownloadData('receipt')}
@@ -121,7 +121,7 @@ export default function CheckoutCompleteClient({ initialBooking }: Props) {
                                         size="lg"
                                         loading={isDownloadingReceipt}
                                     >
-                                        {t('download_receipt', { defaultValue: "Download Receipt" })}
+                                        {t('download_receipt')}
                                     </Button>
                                 </DownloadTrigger>
                             </Stack>
@@ -129,10 +129,10 @@ export default function CheckoutCompleteClient({ initialBooking }: Props) {
 
                         {/* What's next */}
                         <Box p={8} pt={0} borderRadius="15px">
-                            <Heading as="h3" fontSize="xl" mb={4}>{t('whats_next_title', { defaultValue: "What's next?" })}</Heading>
+                            <Heading as="h3" fontSize="xl" mb={4}>{t('whats_next_title')}</Heading>
                             <Stack gap={3}>
                                 <Button variant="outline" onClick={() => router.push("/")}>
-                                    {t('plan_another_trip', { defaultValue: "Plan Another Trip" })}
+                                    {t('plan_another_trip')}
                                 </Button>
                                 <DownloadTrigger
                                     data={() => fetchDownloadData('invoice')}
@@ -144,7 +144,7 @@ export default function CheckoutCompleteClient({ initialBooking }: Props) {
                                         variant="outline"
                                         loading={isDownloadingInvoice}
                                     >
-                                        {t('download_invoice_pdf', { defaultValue: "Download Invoice (PDF)" })}
+                                        {t('download_invoice_pdf')}
                                     </Button>
                                 </DownloadTrigger>
                             </Stack>

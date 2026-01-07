@@ -6,14 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import SchedulingCalendar from './SchedulingCalendar';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, CalendarIcon, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/libs/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { CalendarIcon, Trash2 } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
+import { useTranslations } from 'next-intl';
 
 export interface ScheduleValue {
     ranges: { start: string; end: string }[];
@@ -33,6 +33,7 @@ export default function VariantSchedulingEditor({
     onChange,
     durationDays = 0
 }: VariantSchedulingEditorProps) {
+    const t = useTranslations('admin');
     const [newTimeSlot, setNewTimeSlot] = useState<string>('08:00');
     const [date, setDate] = React.useState<DateRange | undefined>();
 
@@ -75,7 +76,7 @@ export default function VariantSchedulingEditor({
                 const curr = new Date(range.start);
                 const end = new Date(range.end);
                 while (curr <= end) {
-                    const dStr = curr.toISOString().split('T')[0];
+                    const dStr = curr.toLocaleDateString('en-CA');
                     if (!excludedDates.includes(dStr)) {
                         dates.add(dStr);
                     }
@@ -93,7 +94,7 @@ export default function VariantSchedulingEditor({
                     {/* Time Slots & Duration Configuration */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-xs font-semibold uppercase text-muted-foreground">Departure Times</Label>
+                            <Label className="text-xs font-semibold uppercase text-muted-foreground">{t('tour_wizard_departure_times')}</Label>
                             <div className="flex gap-2">
                                 <Input
                                     type="time"
@@ -116,13 +117,13 @@ export default function VariantSchedulingEditor({
                                     </Badge>
                                 ))}
                                 {startTimeSlots.length === 0 && (
-                                    <span className="text-xs text-muted-foreground italic py-1">No time slots (Default all day)</span>
+                                    <span className="text-xs text-muted-foreground italic py-1">{t('tour_wizard_no_time_slots_default')}</span>
                                 )}
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-xs font-semibold uppercase text-muted-foreground">Custom Duration (Hours)</Label>
+                            <Label className="text-xs font-semibold uppercase text-muted-foreground">{t('tour_wizard_custom_duration')}</Label>
                             <div className="flex flex-col gap-1">
                                 <Input
                                     type="number"
@@ -132,7 +133,7 @@ export default function VariantSchedulingEditor({
                                     className="bg-background/50 border-white/10"
                                 />
                                 <span className="text-[10px] text-muted-foreground">
-                                    Overrides general duration. Total: (General Days) + (This Hours).
+                                    {t('tour_wizard_custom_duration_hint')}
                                 </span>
                             </div>
                         </div>
@@ -140,7 +141,7 @@ export default function VariantSchedulingEditor({
 
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <Label className="text-sm font-semibold text-primary">Operating Dates Range</Label>
+                            <Label className="text-sm font-semibold text-primary">{t('tour_wizard_operating_range')}</Label>
                             <div className="flex gap-2">
                                 <Popover>
                                     <PopoverTrigger asChild>
@@ -163,7 +164,7 @@ export default function VariantSchedulingEditor({
                                                     format(date.from, "LLL dd, y")
                                                 )
                                             ) : (
-                                                <span>Pick a date range</span>
+                                                <span>{t('tour_wizard_pick_range')}</span>
                                             )}
                                         </Button>
                                     </PopoverTrigger>
@@ -183,8 +184,8 @@ export default function VariantSchedulingEditor({
                                     onClick={() => {
                                         if (date?.from && date.to) {
                                             const newRange = {
-                                                start: date.from.toISOString().split('T')[0],
-                                                end: date.to.toISOString().split('T')[0]
+                                                start: date.from.toLocaleDateString('en-CA'),
+                                                end: date.to.toLocaleDateString('en-CA')
                                             };
                                             updateValue({ ranges: [...ranges, newRange] });
                                             setDate(undefined);
@@ -194,7 +195,7 @@ export default function VariantSchedulingEditor({
                                     className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/20"
                                 >
                                     <Plus className="h-4 w-4 mr-2" />
-                                    Add
+                                    {t('tour_wizard_add_button')}
                                 </Button>
                             </div>
                         </div>
@@ -236,7 +237,7 @@ export default function VariantSchedulingEditor({
                             ))}
                             {ranges.length === 0 && (
                                 <div className="py-8 text-center border font-medium border-dashed border-white/10 rounded-xl text-xs text-muted-foreground">
-                                    No date ranges set.
+                                    {t('tour_wizard_no_ranges')}
                                 </div>
                             )}
                         </div>
@@ -245,14 +246,14 @@ export default function VariantSchedulingEditor({
                     <Separator className="bg-white/5" />
 
                     <div className="space-y-3">
-                        <Label className="text-sm font-semibold text-primary">Estimated Sessions Stats</Label>
+                        <Label className="text-sm font-semibold text-primary">{t('tour_wizard_sessions_stats')}</Label>
                         <div className="p-4 rounded-xl bg-white/2 border border-white/5 grid grid-cols-2 gap-4">
                             <div>
-                                <div className="text-[10px] uppercase text-muted-foreground tracking-wider mb-1">Total Sessions</div>
+                                <div className="text-[10px] uppercase text-muted-foreground tracking-wider mb-1">{t('tour_wizard_total_sessions')}</div>
                                 <div className="text-xl font-bold text-emerald-400">{totalOpenDays}</div>
                             </div>
                             <div>
-                                <div className="text-[10px] uppercase text-muted-foreground tracking-wider mb-1">Excluded Days</div>
+                                <div className="text-[10px] uppercase text-muted-foreground tracking-wider mb-1">{t('tour_wizard_excluded_days')}</div>
                                 <div className="text-xl font-bold text-red-400">{excludedDates.length}</div>
                             </div>
                         </div>
@@ -261,8 +262,8 @@ export default function VariantSchedulingEditor({
 
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 mb-2">
-                        <Label className="text-sm font-semibold">Visual Calendar</Label>
-                        <div className="px-2 py-0.5 rounded text-[8px] bg-primary/10 text-primary border border-primary/20">CLICK TO TOGGLE</div>
+                        <Label className="text-sm font-semibold">{t('tour_wizard_visual_calendar')}</Label>
+                        <div className="px-2 py-0.5 rounded text-[8px] bg-primary/10 text-primary border border-primary/20">{t('tour_wizard_click_toggle')}</div>
                     </div>
                     <SchedulingCalendar
                         ranges={ranges}

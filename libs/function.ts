@@ -1,4 +1,4 @@
-export const numberFormat = (price: number, currency: boolean = true) => {
+export const numberFormat = (price: number, currency: boolean = false) => {
   const format = new Intl.NumberFormat("vi-VN", {
     style: currency ? "currency" : undefined,
     currency: currency ? "VND" : undefined,

@@ -107,10 +107,12 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
             prices.forEach(p => {
                 initialQuantities[p.pax_type_id] = 0;
             });
-            const firstValidPrice = prices.find(p => p.price > 0);
+            // 4 for adult
+            const firstValidPrice = prices.find(p => p.price > 0 && (p.pax_type.id === 4 || p.pax_type.name === "Adult"));
             if (firstValidPrice) {
                 initialQuantities[firstValidPrice.pax_type_id] = 1;
             }
+            console.log(firstValidPrice, prices)
             setPaxQuantities(initialQuantities);
             setSelectedSessionId(null);
         }
@@ -379,7 +381,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                                 <VStack gap={2} align="stretch">
                                                     {(selectedVariant.tour_variant_pax_type_prices || []).filter(p => p.price > 0).map((p, i) => (
                                                         <HStack key={`${p.id}-${i}`} justify="space-between">
-                                                            <Text>{p.pax_type.name} ({p.price.toLocaleString()} VND)</Text>
+                                                            <Text>{p.pax_type.name} ({p.price.toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US')} {currencySymbol})</Text>
                                                             <Input
                                                                 type="number"
                                                                 min={0}

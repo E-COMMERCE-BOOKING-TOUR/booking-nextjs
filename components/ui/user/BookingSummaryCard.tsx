@@ -12,7 +12,7 @@ export const BookingSummaryCard = ({ booking }: { booking: IBookingDetail }) => 
         <VStack gap={4}>
             <Box boxShadow="sm" rounded="2xl" overflow="hidden" bg="white">
                 <Box p={5} borderBottom="1px solid" borderColor="gray.200">
-                    <Heading as="h2" fontSize="2xl" fontWeight="bold">{t('order_summary', { defaultValue: 'Order summary' })}</Heading>
+                    <Heading as="h2" fontSize="2xl" fontWeight="bold">{t('order_summary')}</Heading>
                     <VStack align="start" mt={4}>
                         <HStack>
                             <Image src={booking.tour_image} alt="Tour" width={20} height={20} objectFit="cover" borderRadius="md" />
@@ -25,7 +25,7 @@ export const BookingSummaryCard = ({ booking }: { booking: IBookingDetail }) => 
                     <DataList.Root orientation="horizontal" mt={4}>
                         <DataList.Item>
                             <DataList.ItemLabel>
-                                {t('location_label', { defaultValue: 'Location' })}
+                                {t('location_label')}
                             </DataList.ItemLabel>
                             <DataList.ItemValue display="flex" flexDirection="column" gap={1}>
                                 <Text>{booking.tour_location}</Text>
@@ -33,7 +33,7 @@ export const BookingSummaryCard = ({ booking }: { booking: IBookingDetail }) => 
                         </DataList.Item>
                         <DataList.Item>
                             <DataList.ItemLabel>
-                                {t('start_time_label', { defaultValue: 'Start Time' })}
+                                {t('start_time_label')}
                             </DataList.ItemLabel>
                             <DataList.ItemValue display="flex" flexDirection="column" gap={1}>
                                 <Text>{new Date(booking.start_date).toLocaleDateString(lng === 'vi' ? 'vi-VN' : 'en-US')} {booking.session_start_time ? `(${booking.session_start_time.substring(0, 5)})` : ''}</Text>
@@ -42,7 +42,7 @@ export const BookingSummaryCard = ({ booking }: { booking: IBookingDetail }) => 
                         {booking.session_end_time && (
                             <DataList.Item>
                                 <DataList.ItemLabel>
-                                    {t('end_time_label', { defaultValue: 'End Time' })}
+                                    {t('end_time_label')}
                                 </DataList.ItemLabel>
                                 <DataList.ItemValue display="flex" flexDirection="column" gap={1}>
                                     <Text>{booking.session_end_time.substring(0, 5)}</Text>
@@ -51,7 +51,7 @@ export const BookingSummaryCard = ({ booking }: { booking: IBookingDetail }) => 
                         )}
                         <DataList.Item>
                             <DataList.ItemLabel>
-                                {t('date_end_label', { defaultValue: 'Date end' })}
+                                {t('date_end_label')}
                             </DataList.ItemLabel>
                             <DataList.ItemValue display="flex" flexDirection="column" gap={1}>
                                 {(() => {
@@ -63,7 +63,7 @@ export const BookingSummaryCard = ({ booking }: { booking: IBookingDetail }) => 
                         </DataList.Item>
                         <DataList.Item>
                             <DataList.ItemLabel>
-                                {t('duration_label', { defaultValue: 'Duration days' })}
+                                {t('duration_label')}
                             </DataList.ItemLabel>
                             <DataList.ItemValue display="flex" flexDirection="column" gap={1}>
                                 {booking.duration_days}
@@ -71,7 +71,7 @@ export const BookingSummaryCard = ({ booking }: { booking: IBookingDetail }) => 
                         </DataList.Item>
                         <DataList.Item>
                             <DataList.ItemLabel>
-                                {t('details_label', { defaultValue: 'Details' })}
+                                {t('details_label')}
                             </DataList.ItemLabel>
                             <DataList.ItemValue display="flex" flexDirection="column" gap={1} width="full">
                                 {booking.items.map((item, idx) => (
@@ -85,17 +85,17 @@ export const BookingSummaryCard = ({ booking }: { booking: IBookingDetail }) => 
                     </DataList.Root>
                 </Box>
                 <HStack justify="space-between" p={8} align="flex-start">
-                    <Heading as="h3" fontSize="xl" fontWeight="bold">{t('total_label', { defaultValue: 'Total' })}</Heading>
+                    <Heading as="h3" fontSize="xl" fontWeight="bold">{t('total_label')}</Heading>
                     <VStack align="end">
                         <Text fontSize="xl" fontWeight="bold">{numberFormat(booking.total_amount, false)} {booking.currency}</Text>
-                        <Text fontSize="sm" color="fg.muted">{t('taxes_included', { defaultValue: 'All taxes and fees included' })}</Text>
+                        <Text fontSize="sm" color="fg.muted">{t('taxes_included')}</Text>
                     </VStack>
                 </HStack>
             </Box>
             {booking.policy && (
                 <Box p={5} boxShadow="sm" rounded="2xl" mb={4}>
                     <Heading as="h3" fontSize="lg" fontWeight="bold" color="blue.800" mb={3}>
-                        {t('refund_policy_title', { defaultValue: "Cancellation & Refund Policy" })}: {booking.policy.name}
+                        {t('refund_policy_title')}: {booking.policy.name}
                     </Heading>
                     <Stack gap={2}>
                         {([...(booking.policy.rules || [])]).sort((a, b) => b.before_hours - a.before_hours).map((rule, idx) => {

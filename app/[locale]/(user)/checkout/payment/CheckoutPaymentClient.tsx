@@ -40,25 +40,25 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
 
     const steps = [
         {
-            label: t('checkout_step_info', { defaultValue: "Input information" }),
-            description: t('checkout_step_info_desc', { defaultValue: "Please provide your contact and traveler information" })
+            label: t('checkout_step_info'),
+            description: t('checkout_step_info_desc')
         },
         {
-            label: t('checkout_step_payment', { defaultValue: "Payment method" }),
-            description: t('checkout_step_payment_desc', { defaultValue: "Select your payment method" })
+            label: t('checkout_step_payment'),
+            description: t('checkout_step_payment_desc')
         },
         {
-            label: t('checkout_step_confirm', { defaultValue: "Confirmation" }),
-            description: t('checkout_step_confirm_desc', { defaultValue: "Review your booking information" })
+            label: t('checkout_step_confirm'),
+            description: t('checkout_step_confirm_desc')
         },
         {
-            label: t('checkout_step_complete', { defaultValue: "Complete" }),
-            description: t('checkout_step_complete_desc', { defaultValue: "Your booking is complete" })
+            label: t('checkout_step_complete'),
+            description: t('checkout_step_complete_desc')
         },
     ];
 
     const checkoutPaymentSchema = z.object({
-        booking_payment_id: z.number().min(1, t('please_select_payment', { defaultValue: "Please select a payment method" })),
+        booking_payment_id: z.number().min(1, t('please_select_payment')),
     });
 
     type CheckoutPaymentFormData = z.infer<typeof checkoutPaymentSchema>;
@@ -115,14 +115,14 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
         mutationFn: (data: UpdatePaymentDTO) => bookingApi.updatePayment(data, session?.user?.accessToken),
         onSuccess: () => {
             toaster.create({
-                title: t('payment_method_saved', { defaultValue: "Payment method saved" }),
+                title: t('payment_method_saved'),
                 type: "success",
             });
             router.push("/checkout/confirm");
         },
         onError: (error: Error) => {
             toaster.create({
-                title: t('failed_save_payment', { defaultValue: "Failed to save payment method" }),
+                title: t('failed_save_payment'),
                 description: error.message,
                 type: "error",
             });
@@ -134,13 +134,13 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
         onSuccess: () => {
             setIsCardSaved(true);
             toaster.create({
-                title: t('card_saved_success', { defaultValue: "Card saved successfully" }),
+                title: t('card_saved_success'),
                 type: "success"
             });
         },
         onError: (error: Error) => {
             toaster.create({
-                title: t('failed_save_card', { defaultValue: "Failed to save card info" }),
+                title: t('failed_save_card'),
                 description: error.message,
                 type: "error"
             });
@@ -154,8 +154,8 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
     const onSubmit = (data: CheckoutPaymentFormData) => {
         if (isExpired) {
             toaster.create({
-                title: t('booking_expired_title', { defaultValue: "Booking expired" }),
-                description: t('booking_expired_desc', { defaultValue: "Your booking hold has expired. Please start a new booking." }),
+                title: t('booking_expired_title'),
+                description: t('booking_expired_desc'),
                 type: "error",
             });
             return;
@@ -164,7 +164,7 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
         const selectedMethod = paymentMethods.find(m => m.id === data.booking_payment_id);
         if (!selectedMethod) {
             toaster.create({
-                title: t('please_select_payment', { defaultValue: "Please select a payment method" }),
+                title: t('please_select_payment'),
                 type: "error",
             });
             return;
@@ -173,7 +173,7 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
         // If Credit Card selected but not saved
         if (isCreditCard && !isCardSaved) {
             toaster.create({
-                title: t('save_card_first', { defaultValue: "Please save your card details first" }),
+                title: t('save_card_first'),
                 type: "error"
             });
             return;
@@ -193,7 +193,6 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
             // But if they switch methods, the saved ID is only relevant for Credit Card.
         }
     };
-    console.log(initialBooking.currency)
 
     return (
         <Elements stripe={stripePromise}>
@@ -217,14 +216,14 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
                     <Stack gridColumn={{ base: "1 / -1", md: "1 / 9" }} boxShadow="sm" rounded="2xl" marginBottom="2rem" bg="white">
                         <form onSubmit={handleSubmit(onSubmit)} noValidate>
                             <Box p={5} borderRadius="15px">
-                                <Heading as="h2" fontSize="2xl" fontWeight="bold">{t('choose_payment_title', { defaultValue: "Choose how you'd like to pay" })}</Heading>
+                                <Heading as="h2" fontSize="2xl" fontWeight="bold">{t('choose_payment_title')}</Heading>
                                 <Text mt={2} color="fg.muted">
-                                    {t('order_total', { defaultValue: "Order total:" })} <Text as="span" fontWeight="bold">{numberFormat(initialBooking.total_amount)} {initialBooking.currency}</Text>
+                                    {t('order_total')} <Text as="span" fontWeight="bold">{numberFormat(initialBooking.total_amount)} {initialBooking.currency}</Text>
                                 </Text>
 
                                 {paymentMethods.length === 0 ? (
                                     <Box mt={6} p={4} bg="yellow.50" borderRadius="md">
-                                        <Text color="yellow.800">{t('no_payment_methods', { defaultValue: "No payment methods available at this time." })}</Text>
+                                        <Text color="yellow.800">{t('no_payment_methods')}</Text>
                                     </Box>
                                 ) : (
                                     <RadioGroup.Root
@@ -281,15 +280,15 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
                                                                     <Box p={3} bg="green.50" border="1px solid" borderColor="green.200" borderRadius="md">
                                                                         <Flex justify="space-between" align="center">
                                                                             <Box>
-                                                                                <Text color="green.700" fontWeight="medium">{t('card_linked_success', { defaultValue: "Card details linked successfully" })}</Text>
+                                                                                <Text color="green.700" fontWeight="medium">{t('card_linked_success')}</Text>
                                                                                 {initialBooking.payment_information && (
                                                                                     <Text fontSize="xs" color="green.600">
-                                                                                        {initialBooking.payment_information.brand} {t('ending_in', { defaultValue: 'ending in' })} {initialBooking.payment_information.last4}
+                                                                                        {initialBooking.payment_information.brand} {t('ending_in')} {initialBooking.payment_information.last4}
                                                                                     </Text>
                                                                                 )}
                                                                             </Box>
                                                                             <Button size="xs" variant="ghost" colorPalette="green" onClick={() => setIsCardSaved(false)}>
-                                                                                {t('use_another_card', { defaultValue: "Use Another Card" })}
+                                                                                {t('use_another_card')}
                                                                             </Button>
                                                                         </Flex>
                                                                     </Box>
@@ -313,7 +312,7 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
                                     size="lg"
                                     onClick={() => router.push("/checkout")}
                                 >
-                                    {t('back_to_details', { defaultValue: "Back to Details" })}
+                                    {t('back_to_details')}
                                 </Button>
                                 <Button
                                     size="lg"
@@ -323,8 +322,7 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
                                 >
                                     {t('continue_to_review', {
                                         amount: numberFormat(initialBooking.total_amount),
-                                        currency: initialBooking.currency,
-                                        defaultValue: `Continue to Review (${numberFormat(initialBooking.total_amount)} ${initialBooking.currency})`
+                                        currency: initialBooking.currency
                                     })}
                                 </Button>
                             </Flex>

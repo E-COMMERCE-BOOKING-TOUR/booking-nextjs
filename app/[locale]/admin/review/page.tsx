@@ -219,7 +219,7 @@ export default function AdminReview() {
               </div>
             </div>
 
-            <div className="w-full md:w-[200px] space-y-1.5">
+            <div className="w-full space-y-1.5">
               <label className="text-sm font-medium">{t('filter_by_tour_label')}</label>
               <Select value={tourId} onValueChange={setTourId}>
                 <SelectTrigger>
@@ -234,7 +234,7 @@ export default function AdminReview() {
               </Select>
             </div>
 
-            <div className="w-full md:w-[150px] space-y-1.5">
+            <div className="w-full space-y-1.5">
               <label className="text-sm font-medium">{t('status_filter_label')}</label>
               <Select value={status} onValueChange={setStatus}>
                 <SelectTrigger>

@@ -1,9 +1,12 @@
+'use client';
+
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Image as ImageIcon, GripVertical } from 'lucide-react';
+import { GripVertical, X } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/libs/utils';
+import { useTranslations } from 'next-intl';
 
 interface SortableTourImageProps {
     id: string;
@@ -16,6 +19,7 @@ interface SortableTourImageProps {
 }
 
 const SortableTourImage: React.FC<SortableTourImageProps> = ({ id, image, onRemove }) => {
+    const t = useTranslations('admin');
     const {
         attributes,
         listeners,
@@ -50,7 +54,7 @@ const SortableTourImage: React.FC<SortableTourImageProps> = ({ id, image, onRemo
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
                 <div className="flex justify-between items-start">
                     <div className="px-2 py-1 rounded bg-white/10 backdrop-blur-md text-[9px] font-bold uppercase tracking-wider border border-white/20 text-white">
-                        {image.file ? 'Chờ upload' : 'Đã upload'}
+                        {image.file ? t('tour_wizard_waiting_upload') : t('tour_wizard_uploaded')}
                     </div>
                     <button
                         type="button"
@@ -60,7 +64,7 @@ const SortableTourImage: React.FC<SortableTourImageProps> = ({ id, image, onRemo
                         }}
                         className="p-1.5 rounded-full bg-red-500/80 text-white hover:bg-red-500 transition-colors shadow-lg"
                     >
-                        <ImageIcon className="h-3.5 w-3.5" />
+                        <X className="h-3.5 w-3.5" />
                     </button>
                 </div>
 
@@ -75,7 +79,7 @@ const SortableTourImage: React.FC<SortableTourImageProps> = ({ id, image, onRemo
 
             {image.is_cover && (
                 <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary text-[10px] font-bold uppercase shadow-lg text-white">
-                    Ảnh bìa
+                    {t('tour_wizard_cover_image')}
                 </div>
             )}
         </div>
