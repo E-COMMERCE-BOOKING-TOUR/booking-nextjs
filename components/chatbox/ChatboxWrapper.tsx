@@ -183,7 +183,7 @@ export default function ChatboxWrapper() {
                     _active={{ transform: 'scale(0.95)' }}
                     transition="all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
                     animation="pulse 2s infinite"
-                    isLoading={isLoading}
+                    loading={isLoading}
                 >
                     <MessageCircle size={28} />
                 </Button>
@@ -258,11 +258,11 @@ export default function ChatboxWrapper() {
                                         >
                                             <VStack align="stretch" gap={1}>
                                                 <HStack justify="space-between">
-                                                    <Text fontWeight="bold" noOfLines={1}>{booking.tourTitle}</Text>
-                                                    <Icon as={ExternalLink} size={4} color="gray.400" />
+                                                    <Text fontWeight="bold" lineClamp={1}>{booking.tourTitle}</Text>
+                                                    <Icon as={ExternalLink} size="sm" color="gray.400" />
                                                 </HStack>
                                                 <HStack color="gray.500" fontSize="xs">
-                                                    <Icon as={Calendar} size={3} />
+                                                    <Icon as={Calendar} size="xs" />
                                                     <Text>{booking.startDate ? new Date(booking.startDate).toLocaleDateString() : 'N/A'}</Text>
                                                     <Text>•</Text>
                                                     <Text textTransform="uppercase">{booking.status}</Text>

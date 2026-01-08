@@ -3,7 +3,7 @@ import * as z from "zod";
 export const LoginSchema = z.object({
     username: z.string().min(5, "username_min").regex(/^\S+$/, "username_no_spaces"),
     password: z.string().min(8, "password_min"),
-    remember: z.boolean().optional().default(true),
+    remember: z.boolean().default(true),
 })
 
 // Schema for NextAuth credentials validation (no remember field, accepts string guest_id)

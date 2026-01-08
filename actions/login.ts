@@ -5,7 +5,7 @@ import { LoginSchema } from '@/schemas';
 import { AuthError } from 'next-auth';
 import * as z from 'zod';
 
-export const login = async (values: z.infer<typeof LoginSchema>, guestId?: string) => {
+export const login = async (values: z.input<typeof LoginSchema>, guestId?: string) => {
     const validatedFields = LoginSchema.safeParse(values);
 
     if (!validatedFields.success) {

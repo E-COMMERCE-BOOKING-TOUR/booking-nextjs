@@ -36,7 +36,7 @@ export default function LoginPage() {
     handleSubmit,
     control,
     formState: { errors },
-  } = useForm<z.infer<typeof LoginSchema>>({
+  } = useForm<z.input<typeof LoginSchema>>({
     resolver: zodResolver(LoginSchema),
     defaultValues: {
       username: "",
@@ -45,7 +45,7 @@ export default function LoginPage() {
     }
   });
 
-  const onSubmit = (values: z.infer<typeof LoginSchema>) => {
+  const onSubmit = (values: z.input<typeof LoginSchema>) => {
     startTransition(async () => {
       try {
         const guestId = getGuestId();
