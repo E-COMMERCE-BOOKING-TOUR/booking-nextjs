@@ -6,13 +6,17 @@ import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { toaster } from "@/components/chakra/toaster";
 import { createBooking } from "@/actions/booking";
-import logout from "@/actions/logout";
 import { tourApi } from "@/apis/tour";
 import { IUserTourSession, TourVariantStatus } from "@/types/response/tour.type";
 import { useQuery } from "@tanstack/react-query";
 import Breadcrumb from "./breadcrumb";
 import { formatPriceValue } from '@/utils/currency';
 import { useTranslations, useLocale } from "next-intl";
+
+// Helper to format date in local timezone (avoids UTC shift issues)
+const formatDateLocal = (d: Date): string => {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 /**
  * Variant type for TourHeader component
@@ -120,10 +124,10 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
 
     // Fetch sessions for the selected variant and date
     const { data: sessions } = useQuery({
-        queryKey: ['tourSessions', slug, selectedVariantId, startDate?.toISOString().split('T')[0]],
+        queryKey: ['tourSessions', slug, selectedVariantId, startDate ? formatDateLocal(startDate) : null],
         queryFn: () => {
             if (!selectedVariantId || !startDate) return [];
-            const dateStr = startDate.toISOString().split('T')[0];
+            const dateStr = formatDateLocal(startDate);
             return tourApi.getSessions(slug, selectedVariantId, dateStr, dateStr);
         },
         enabled: !!selectedVariantId && !!startDate
@@ -181,7 +185,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
 
         startTransition(async () => {
             const result = await createBooking({
-                startDate: startDate.toISOString().split('T')[0],
+                startDate: formatDateLocal(startDate),
                 pax,
                 variantId: selectedVariantId,
                 tourSessionId: selectedSessionId || undefined
@@ -446,7 +450,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                             variantId={selectedVariant.id}
                                             durationDays={durationDays}
                                             onSelectDate={onSelectDate}
-                                            initialSelectedDate={startDate ? startDate.toISOString().split('T')[0] : undefined}
+                                            initialSelectedDate={startDate ? formatDateLocal(startDate) : undefined}
                                         />
                                     )}
                                 </Dialog.Body>

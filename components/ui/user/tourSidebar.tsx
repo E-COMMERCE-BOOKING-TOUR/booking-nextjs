@@ -36,7 +36,7 @@ export default async function TourSidebar({
                                 {scoreLabel}
                             </Text>
                             <Text fontSize="xs" fontWeight="black" color="main" textTransform="uppercase" letterSpacing="widest">
-                                {t("found_tours", { count: reviewCount })}
+                                {t("found_reviews", { count: reviewCount })}
                             </Text>
                         </Box>
                         <Box

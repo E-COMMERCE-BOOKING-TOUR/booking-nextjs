@@ -247,7 +247,7 @@ export default function TourReviews({
                             ))}
                         </HStack>
                         <Text fontSize="sm" fontWeight="black" color="gray.600" textTransform="uppercase" letterSpacing="widest">
-                            {t("found_tours", { count: totalReviews })}
+                            {t("found_reviews", { count: totalReviews })}
                         </Text>
                     </VStack>
                 </Box>
