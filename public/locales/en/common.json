@@ -82,6 +82,7 @@
     "checkout_step_complete_desc": "Your booking is complete",
     "full_name_label": "Full name",
     "full_name_placeholder": "Enter your full name",
+    "Email": "Email",
     "email_label": "Email",
     "email_address_label": "Email Address",
     "email_placeholder": "email@example.com",

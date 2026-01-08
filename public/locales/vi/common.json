@@ -82,6 +82,7 @@
     "checkout_step_complete_desc": "Đặt chỗ đã hoàn tất",
     "full_name_label": "Họ và tên",
     "full_name_placeholder": "Nhập họ và tên của bạn",
+    "Email": "Email",
     "email_label": "Email",
     "email_address_label": "Địa chỉ Email",
     "email_placeholder": "email@example.com",
