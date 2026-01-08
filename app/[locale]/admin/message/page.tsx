@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { io, Socket } from 'socket.io-client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, MessageCircle, Send, User, Loader2, EyeOff, Eye, Brain, UserCheck } from 'lucide-react';
+import { Search, MessageCircle, Send, User, Loader2, EyeOff, Eye, Brain, UserCheck, Volume2 } from 'lucide-react';
 import { adminChatboxApi } from '@/apis/admin/chatbox';
 import { IConversation, IMessage, IConversationListResponse } from '@/apis/chatbox';
 import { cn } from '@/libs/utils';
@@ -38,7 +38,26 @@ export default function AdminMessagePage() {
     const [isSocketConnecting, setIsSocketConnecting] = useState(false);
     const [isSocketConnected, setIsSocketConnected] = useState(false);
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+    const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+    const [soundEnabled, setSoundEnabled] = useState(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const notificationSoundRef = useRef<HTMLAudioElement | null>(null);
+
+    // Initialize notification sound
+    useEffect(() => {
+        notificationSoundRef.current = new Audio('/sounds/notification.mp3');
+        notificationSoundRef.current.volume = 0.5;
+    }, []);
+
+    // Play notification sound
+    const playNotificationSound = useCallback(() => {
+        if (soundEnabled && notificationSoundRef.current) {
+            notificationSoundRef.current.currentTime = 0;
+            notificationSoundRef.current.play().catch(() => {
+                // Ignore autoplay errors
+            });
+        }
+    }, [soundEnabled]);
 
     const getCategories = () => [
         { value: 'all', label: t('category_all') },
@@ -47,6 +66,7 @@ export default function AdminMessagePage() {
         { value: 'urgent', label: t('category_urgent') },
         { value: 'tour_query', label: t('category_tour_query') },
         { value: 'hidden', label: t('category_hidden') },
+        { value: 'empty', label: t('category_empty', { defaultValue: 'Empty' }) },
     ];
 
     // Fetch conversations using react-query
@@ -61,9 +81,24 @@ export default function AdminMessagePage() {
     // Filter conversations
     const filteredConversations = conversations.filter((c: IConversation) => {
         const matchesSearch = !searchTerm || getParticipantName(c).toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesCategory = selectedCategory === 'all'
-            ? !c.isHidden // Only show non-hidden in 'All'
-            : (selectedCategory === 'hidden' ? c.isHidden : (c.category === selectedCategory && !c.isHidden));
+        const isEmpty = !c.lastMessage;
+
+        let matchesCategory = false;
+        switch (selectedCategory) {
+            case 'all':
+                // Show non-hidden and non-empty by default
+                matchesCategory = !c.isHidden && !isEmpty;
+                break;
+            case 'hidden':
+                matchesCategory = !!c.isHidden;
+                break;
+            case 'empty':
+                matchesCategory = isEmpty && !c.isHidden;
+                break;
+            default:
+                matchesCategory = c.category === selectedCategory && !c.isHidden;
+        }
+
         return matchesSearch && matchesCategory;
     });
 
@@ -99,8 +134,29 @@ export default function AdminMessagePage() {
             setIsSocketConnected(false);
         });
 
-        s.on('newMessage', () => {
+        s.on('newMessage', (msg: IMessage) => {
             refetch(); // Refresh conversation list on new message
+            // Play sound if message is from user (not admin)
+            if (msg && msg.senderRole !== 'ADMIN' && msg.senderRole !== 'admin') {
+                playNotificationSound();
+            }
+        });
+
+        // User presence tracking
+        s.on('userJoined', (data: { conversationId: string; userId: string }) => {
+            setOnlineUsers(prev => new Set(prev).add(data.userId));
+        });
+
+        s.on('userLeft', (data: { conversationId: string; userId: string }) => {
+            setOnlineUsers(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(data.userId);
+                return newSet;
+            });
+        });
+
+        s.on('roomUsers', (data: { conversationId: string; users: string[] }) => {
+            setOnlineUsers(new Set(data.users));
         });
 
         Promise.resolve().then(() => setSocket(s));
@@ -108,8 +164,9 @@ export default function AdminMessagePage() {
             s.disconnect();
             setSocket(null);
             setIsSocketConnected(false);
+            setOnlineUsers(new Set());
         };
-    }, [token, refetch]);
+    }, [token, refetch, playNotificationSound]);
 
     const scrollToBottom = () => {
         setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
@@ -163,6 +220,16 @@ export default function AdminMessagePage() {
     function getParticipantName(c: IConversation) {
         const p = c.participants.find((p: { role: string; name?: string; userId?: string }) => p.role !== 'ADMIN' && p.role !== 'admin');
         return p?.name || p?.userId || t('unknown_user');
+    }
+
+    function getParticipantUserId(c: IConversation): string | null {
+        const p = c.participants.find((p: { role: string; userId?: string }) => p.role !== 'ADMIN' && p.role !== 'admin');
+        return p?.userId || null;
+    }
+
+    function isUserOnline(c: IConversation): boolean {
+        const userId = getParticipantUserId(c);
+        return userId ? onlineUsers.has(userId) : false;
     }
 
     const handleUpdateCategory = async (category: string) => {
@@ -351,8 +418,13 @@ export default function AdminMessagePage() {
                                 <div className="p-4 border-b border-white/10 bg-white/5">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
-                                            <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center">
+                                            <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center relative">
                                                 <User className="size-5 text-primary" />
+                                                {/* Online status indicator */}
+                                                <div className={cn(
+                                                    "absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-background",
+                                                    isUserOnline(selectedConvo) ? "bg-green-500" : "bg-gray-400"
+                                                )} />
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2">
@@ -361,10 +433,28 @@ export default function AdminMessagePage() {
                                                         {t(`category_${selectedConvo.category || 'general'}`)}
                                                     </Badge>
                                                 </div>
-                                                <p className="text-xs text-muted-foreground">{t('active_conversation')}</p>
+                                                <p className={cn(
+                                                    "text-xs",
+                                                    isUserOnline(selectedConvo) ? "text-green-500" : "text-muted-foreground"
+                                                )}>
+                                                    {isUserOnline(selectedConvo) ? t('user_online', { defaultValue: 'Online' }) : t('user_offline', { defaultValue: 'Offline' })}
+                                                </p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-4">
+                                            {/* Sound Toggle */}
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => setSoundEnabled(!soundEnabled)}
+                                                className={cn(
+                                                    "h-8 px-2",
+                                                    soundEnabled ? "text-primary" : "text-muted-foreground"
+                                                )}
+                                                title={soundEnabled ? t('sound_on', { defaultValue: 'Sound On' }) : t('sound_off', { defaultValue: 'Sound Off' })}
+                                            >
+                                                <Volume2 className="size-4" />
+                                            </Button>
                                             {/* AI Control Toggles */}
                                             <div className="flex items-center gap-6 border-x border-white/10 px-4">
                                                 <div className="flex items-center space-x-2">
