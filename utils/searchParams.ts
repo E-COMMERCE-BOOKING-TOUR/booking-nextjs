@@ -5,6 +5,9 @@ import { IUserTourSearchParams } from "@/types/response/tour.type";
 /**
  * Parse URLSearchParams into IUserTourSearchParams
  */
+/**
+ * Parse URLSearchParams into IUserTourSearchParams
+ */
 export function parseSearchParamsToFilters(
     searchParams: URLSearchParams | { get: (key: string) => string | null }
 ): IUserTourSearchParams {
@@ -12,19 +15,19 @@ export function parseSearchParamsToFilters(
 
     return {
         keyword: getParam("keyword") || "",
-        minPrice: getParam("minPrice") ? Number(getParam("minPrice")) : undefined,
-        maxPrice: getParam("maxPrice") ? Number(getParam("maxPrice")) : undefined,
-        currency_id: getParam("currency_id") ? Number(getParam("currency_id")) : undefined,
+        minPrice: getParam("minPrice") ? Number(getParam("minPrice")) : "" as any,
+        maxPrice: getParam("maxPrice") ? Number(getParam("maxPrice")) : "" as any,
+        currency_id: getParam("currency_id") ? Number(getParam("currency_id")) : "" as any,
         minRating: getParam("minRating") ? Number(getParam("minRating")) : undefined,
         startDate: getParam("startDate") || undefined,
         endDate: getParam("endDate") || undefined,
-        travelers: getParam("travelers") ? Number(getParam("travelers")) : undefined,
-        adults: getParam("adults") ? Number(getParam("adults")) : undefined,
-        seniors: getParam("seniors") ? Number(getParam("seniors")) : undefined,
-        youth: getParam("youth") ? Number(getParam("youth")) : undefined,
-        children: getParam("children") ? Number(getParam("children")) : undefined,
-        infants: getParam("infants") ? Number(getParam("infants")) : undefined,
-        rooms: getParam("rooms") ? Number(getParam("rooms")) : undefined,
+        travelers: getParam("travelers") ? Number(getParam("travelers")) : "" as any,
+        adults: getParam("adults") ? Number(getParam("adults")) : "" as any,
+        seniors: getParam("seniors") ? Number(getParam("seniors")) : "" as any,
+        youth: getParam("youth") ? Number(getParam("youth")) : "" as any,
+        children: getParam("children") ? Number(getParam("children")) : "" as any,
+        infants: getParam("infants") ? Number(getParam("infants")) : "" as any,
+        rooms: getParam("rooms") ? Number(getParam("rooms")) : "" as any,
         country_ids: getParam("country_ids") ? getParam("country_ids")!.split(",").map(Number) : [],
         division_ids: getParam("division_ids") ? getParam("division_ids")!.split(",").map(Number) : [],
         sort: (getParam("sort") as IUserTourSearchParams['sort']) || "popular",
@@ -65,19 +68,19 @@ export function filtersToQueryString(filters: IUserTourSearchParams): string {
  */
 export const EMPTY_FILTERS: IUserTourSearchParams = {
     keyword: "",
-    minPrice: undefined,
-    maxPrice: undefined,
-    currency_id: undefined,
+    minPrice: "" as any,
+    maxPrice: "" as any,
+    currency_id: "" as any,
     minRating: undefined,
     startDate: undefined,
     endDate: undefined,
-    travelers: undefined,
-    adults: undefined,
-    seniors: undefined,
-    youth: undefined,
-    children: undefined,
-    infants: undefined,
-    rooms: undefined,
+    travelers: "" as any,
+    adults: "" as any,
+    seniors: "" as any,
+    youth: "" as any,
+    children: "" as any,
+    infants: "" as any,
+    rooms: "" as any,
     country_ids: [],
     division_ids: [],
     sort: "popular",

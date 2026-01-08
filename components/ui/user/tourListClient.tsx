@@ -114,7 +114,7 @@ export const TourListClient = () => {
     return (
         <FormProvider {...methods}>
             <Container maxW="2xl" py={8}>
-                <Grid templateColumns={{ base: "1fr", lg: "280px 1fr" }} gap={4}>
+                <Grid templateColumns={{ base: "1fr", lg: "280px 1fr" }} gap={5}>
                     {/* Sidebar */}
                     <Box display={{ base: "none", lg: "block" }}>
                         <FilterSidebar onApply={onApplyFilters} />

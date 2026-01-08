@@ -13,7 +13,7 @@ export default function AuthLayout({
 }>) {
   return (
     <Provider>
-      <Box position={"relative"}>
+      <Box position={"relative"} overflowX="hidden">
         <Container
           as={SimpleGrid}
           maxW="7xl"

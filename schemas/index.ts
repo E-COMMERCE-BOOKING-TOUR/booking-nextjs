@@ -1,27 +1,32 @@
 import * as z from "zod";
 
 export const LoginSchema = z.object({
-    username: z.string().min(4),
-    password: z.string().min(5),
-    // remember: z.boolean()
+    username: z.string().min(4, "username_min").regex(/^\S+$/, "username_no_spaces"),
+    password: z.string().min(5, "password_min"),
+    remember: z.boolean().optional().default(true),
 })
 
 export const RegisterSchema = z.object({
-    username: z.string().min(4, "Username must be at least 4 characters"),
-    password: z.string().min(5, "Password must be at least 5 characters"),
-    confirmPassword: z.string().min(5, "Confirm password must be at least 5 characters"),
-    full_name: z.string().min(2, "Full name must be at least 2 characters"),
-    email: z.string().email("Invalid email address"),
-    phone: z.string().optional(),
-}).refine(
-    (values) => {
-        return values.password === values.confirmPassword;
-    },
-    {
-        message: "Passwords do not match!",
-        path: ["confirmPassword"],
-    }
-);
+    username: z.string().min(4, "username_min").regex(/^\S+$/, "username_no_spaces"),
+    password: z.string().min(5, "password_min"),
+    confirmPassword: z.string().min(5, "password_min"),
+    full_name: z.string().min(2, "full_name_min"),
+    email: z.string().email("invalid_email"),
+    phone: z.string().optional().refine(val => !val || /^\+?\d{1,15}$/.test(val), {
+        message: "phone_invalid_format"
+    }),
+    acceptedTerms: z.boolean().refine(val => val === true, {
+        message: "agree_terms_required"
+    }),
+});
+
+export const ResetPasswordSchema = z.object({
+    password: z.string().min(5, "password_min"),
+    confirmPassword: z.string().min(5, "password_min"),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "passwords_dont_match",
+    path: ["confirmPassword"],
+});
 
 export const ForgotPasswordSchema = z.object({
     email: z.string().email("Invalid email address"),
@@ -53,7 +58,7 @@ export const CreateCategorySchema = z.object({
 export const ChangeInfoSchema = z.object({
     name: z.string().min(1).max(200),
     description: z.string().max(500).nullable().optional()
-})
+});
 
 export const CreateMovieSchema = z.object({
     movie_name: z.string().min(1).max(5000),

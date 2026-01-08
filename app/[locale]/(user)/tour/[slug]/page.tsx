@@ -10,13 +10,26 @@ import tourApi from "@/apis/tour";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { auth } from "@/libs/auth/auth";
-import {
-    IUserTourDetail,
-    IUserTourRelated,
-    IUserTourReviewCategory,
-    ITourTestimonial,
-    ITourActivity,
-} from "@/types/response/tour.type";
+import { IUserTourDetail, IUserTourRelated, IUserTourReviewCategory, ITourTestimonial, ITourActivity } from "@/types/response/tour.type";
+import { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string, locale: string }> }): Promise<Metadata> {
+    const { slug } = await params;
+    try {
+        const tourDetail = await tourApi.detail(slug);
+        return {
+            title: `${tourDetail.title} | Travel`,
+            description: tourDetail.location + ' - ' + (tourDetail.description?.substring(0, 160) || ''),
+            openGraph: {
+                images: tourDetail.images?.[0] ? [tourDetail.images[0]] : [],
+            }
+        };
+    } catch {
+        return {
+            title: 'Tour Details | Travel',
+        };
+    }
+}
 
 /**
  * Local type for tour data used within this page

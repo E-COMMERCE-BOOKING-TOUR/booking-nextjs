@@ -2,43 +2,63 @@
 
 import authApi from "@/apis/auth";
 import { toaster } from "@/components/chakra/toaster";
-import { ForgotPasswordSchema } from "@/schemas";
+import { ResetPasswordSchema } from "@/schemas";
 import {
     Box,
     Button,
-    Center,
-    Field,
     Heading,
     Input,
     Stack,
+    Field,
+    Center,
 } from "@chakra-ui/react";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { Link } from "@/i18n/navigation";
-import { useTransition } from "react";
+import { Link, useRouter } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
+import { useTransition, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import * as z from "zod";
 
-export default function ForgetPasswordPage() {
+export default function ResetPasswordPage() {
+    const t = useTranslations('common');
+    const searchParams = useSearchParams();
+    const router = useRouter();
     const [isLoading, startTransition] = useTransition();
+
+    const token = searchParams.get("token");
+
     const {
         formState: { errors },
         handleSubmit,
         register,
-    } = useForm<z.infer<typeof ForgotPasswordSchema>>({
-        resolver: standardSchemaResolver(ForgotPasswordSchema),
+    } = useForm<z.infer<typeof ResetPasswordSchema>>({
+        resolver: standardSchemaResolver(ResetPasswordSchema),
     });
 
-    const onSubmit = (values: z.infer<typeof ForgotPasswordSchema>) => {
+    useEffect(() => {
+        if (!token) {
+            toaster.create({
+                description: t('reset_token_missing', { defaultValue: "Reset token is missing!" }),
+                type: "error",
+            });
+            router.push("/user-login");
+        }
+    }, [token, router, t]);
+
+    const onSubmit = (values: z.infer<typeof ResetPasswordSchema>) => {
+        if (!token) return;
+
         startTransition(async () => {
             try {
-                const response = await authApi.forgotPassword(values.email);
+                const response = await authApi.resetPassword(token, values.password);
                 toaster.create({
-                    description: response.message ? t(response.message, { defaultValue: response.message as string }) : t('request_sent_success', { defaultValue: "Request sent successfully!" }),
+                    description: response.message ? t(response.message, { defaultValue: response.message as string }) : t('reset_password_success', { defaultValue: "Password reset successfully!" }),
                     type: "success",
                 });
+                router.push("/user-login");
             } catch (error: unknown) {
-                const message = error instanceof Error ? error.message : t('recovery_failed', { defaultValue: "An error occurred during password recovery" });
+                const message = error instanceof Error ? error.message : t('reset_failed', { defaultValue: "An error occurred during password reset" });
                 toaster.create({
                     description: t(message, { defaultValue: message }),
                     type: "error",
@@ -47,7 +67,7 @@ export default function ForgetPasswordPage() {
         });
     };
 
-    const t = useTranslations('common');
+    if (!token) return null;
 
     return (
         <Box
@@ -78,28 +98,49 @@ export default function ForgetPasswordPage() {
                         fontWeight="black"
                         letterSpacing="tight"
                     >
-                        {t('forgot_password_title', { defaultValue: "Forgot Password?" })}
+                        {t('reset_password_title', { defaultValue: "Reset Password" })}
                     </Heading>
                     <Heading color="gray.500" fontSize="md" fontWeight="medium">
-                        {t('forgot_password_desc', { defaultValue: "Enter your email to receive recovery instructions" })}
+                        {t('reset_password_desc', { defaultValue: "Enter your new password below" })}
                     </Heading>
                 </Stack>
 
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <Stack gap={6}>
-                        <Field.Root invalid={!!errors.email}>
-                            <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700">{t('email_address_label', { defaultValue: "Email Address" })}</Field.Label>
+                        <Field.Root invalid={!!errors.password}>
+                            <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700">
+                                {t('new_password_label', { defaultValue: "New Password" })}
+                            </Field.Label>
                             <Input
+                                type="password"
                                 variant="subtle"
                                 bg="gray.50"
                                 _focus={{ bg: "white", borderColor: "brand.500", shadow: "sm" }}
                                 px={4}
                                 py={6}
                                 rounded="xl"
-                                placeholder={t('email_placeholder', { defaultValue: "email@example.com" })}
-                                {...register("email")}
+                                placeholder="••••••••"
+                                {...register("password")}
                             />
-                            <Field.ErrorText>{errors.email?.message && t(errors.email.message as string)}</Field.ErrorText>
+                            <Field.ErrorText>{errors.password?.message && t(errors.password.message as string)}</Field.ErrorText>
+                        </Field.Root>
+
+                        <Field.Root invalid={!!errors.confirmPassword}>
+                            <Field.Label fontWeight="semibold" fontSize="sm" color="gray.700">
+                                {t('confirm_new_password_label', { defaultValue: "Confirm Password" })}
+                            </Field.Label>
+                            <Input
+                                type="password"
+                                variant="subtle"
+                                bg="gray.50"
+                                _focus={{ bg: "white", borderColor: "brand.500", shadow: "sm" }}
+                                px={4}
+                                py={6}
+                                rounded="xl"
+                                placeholder="••••••••"
+                                {...register("confirmPassword")}
+                            />
+                            <Field.ErrorText>{errors.confirmPassword?.message && t(errors.confirmPassword.message as string)}</Field.ErrorText>
                         </Field.Root>
 
                         <Button
@@ -115,7 +156,7 @@ export default function ForgetPasswordPage() {
                             fontSize="md"
                             loading={isLoading}
                         >
-                            {t('send_request_button', { defaultValue: "SEND REQUEST" })}
+                            {t('reset_password_button', { defaultValue: "Reset Password" })}
                         </Button>
                     </Stack>
                 </form>

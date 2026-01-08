@@ -9,26 +9,27 @@ export const login = async (values: z.infer<typeof LoginSchema>, guestId?: strin
     const validatedFields = LoginSchema.safeParse(values);
 
     if (!validatedFields.success) {
-        return { message: 'Thông tin không hợp lệ', type: 'error' }
+        return { message: 'invalid_info', type: 'error' }
     }
-    const { username, password } = validatedFields.data;
+    const { username, password, remember } = validatedFields.data;
     try {
         await signIn("credentials", {
             username,
             password,
+            remember: remember ? "true" : "false",
             guest_id: guestId,
             redirect: false,
         });
 
         // Return success before redirect so toast can show
-        return { message: "Đăng nhập thành công!", type: "success", shouldRedirect: true };
+        return { message: "login_success", type: "success", shouldRedirect: true };
     } catch (error) {
         if (error instanceof AuthError) {
             switch (error.type) {
                 case "CredentialsSignin":
-                    return { message: "Tài khoản hoặc mật khẩu không đúng!", type: "error" };
+                    return { message: "invalid_credentials", type: "error" };
                 default:
-                    return { message: "Đã xảy ra lỗi. Vui lòng thử lại!", type: "error" };
+                    return { message: "login_failed", type: "error" };
             }
         }
         throw error;

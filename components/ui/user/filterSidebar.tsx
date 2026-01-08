@@ -119,6 +119,7 @@ import { masterApi } from "@/apis/master";
 import { currencyApi } from "@/apis/tour";
 import { useQuery } from "@tanstack/react-query";
 import { ICurrency } from "@/types/response/base.type";
+import { EMPTY_FILTERS } from "@/utils/searchParams";
 
 const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
     const t = useTranslations('common');
@@ -209,19 +210,9 @@ const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
     }, [getValues, setValue]);
 
     const handleReset = useCallback(() => {
-        reset({
-            keyword: "",
-            minPrice: undefined,
-            maxPrice: undefined,
-            currency_id: undefined,
-            minRating: undefined,
-            country_ids: [],
-            division_ids: [],
-            sort: "popular",
-            offset: 0,
-            limit: 12
-        } as IUserTourSearchParams);
-    }, [reset]);
+        reset(EMPTY_FILTERS);
+        onApply(EMPTY_FILTERS);
+    }, [reset, onApply]);
 
     const handleApplyAndClose = useCallback(() => {
         handleSubmit((data) => {
@@ -231,10 +222,10 @@ const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
     }, [handleSubmit, onApply, onClose]);
 
     return (
-        <VStack gap={6} align="stretch">
+        <VStack gap={4} align="stretch">
             {/* Keyword Search */}
             <Box>
-                <Text fontWeight="bold" mb={3} fontSize="sm" textTransform="uppercase" color="gray.500">{t('search', { defaultValue: 'Search' })}</Text>
+                <Text fontWeight="bold" mb={2} fontSize="sm" textTransform="uppercase" color="gray.500">{t('search', { defaultValue: 'Search' })}</Text>
                 <Box position="relative">
                     <Box position="absolute" left={3} top="50%" transform="translateY(-50%)" color="gray.300" zIndex={1}>
                         <FaSearch />
@@ -257,15 +248,15 @@ const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
             <Box h="1px" bg="gray.100" />
 
             {/* Filter Accordion Sections */}
-            <Accordion.Root multiple defaultValue={["currency", "price", "rating", "locations"]} variant="plain" size="sm">
+            <Accordion.Root multiple defaultValue={["currency", "price", "locations"]} variant="plain" size="sm">
                 {/* Currency */}
                 <Accordion.Item value="currency">
-                    <Accordion.ItemTrigger py={2} px={0}>
+                    <Accordion.ItemTrigger py={1.5} px={0}>
                         <Span flex="1" fontWeight="bold" fontSize="sm" textTransform="uppercase" color="gray.500">{t('currency', { defaultValue: 'Currency' })}</Span>
                         <Accordion.ItemIndicator />
                     </Accordion.ItemTrigger>
                     <Accordion.ItemContent>
-                        <Accordion.ItemBody pt={2} pb={4}>
+                        <Accordion.ItemBody pt={1} pb={3}>
                             <NativeSelect.Root size="sm">
                                 <NativeSelect.Field
                                     {...register("currency_id", { valueAsNumber: true })}
@@ -281,12 +272,12 @@ const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
                 </Accordion.Item>
                 {/* Price Range */}
                 <Accordion.Item value="price">
-                    <Accordion.ItemTrigger py={2} px={0}>
+                    <Accordion.ItemTrigger py={1.5} px={0}>
                         <Span flex="1" fontWeight="bold" fontSize="sm" textTransform="uppercase" color="gray.500">{t('price_range', { defaultValue: 'Price Range' })}</Span>
                         <Accordion.ItemIndicator />
                     </Accordion.ItemTrigger>
                     <Accordion.ItemContent>
-                        <Accordion.ItemBody pt={2} pb={4}>
+                        <Accordion.ItemBody pt={1} pb={3}>
                             <HStack gap={2} mb={2}>
                                 <Input
                                     type="number"
@@ -314,12 +305,12 @@ const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
 
                 {/* Rating */}
                 <Accordion.Item value="rating">
-                    <Accordion.ItemTrigger py={2} px={0}>
+                    <Accordion.ItemTrigger py={1.5} px={0}>
                         <Span flex="1" fontWeight="bold" fontSize="sm" textTransform="uppercase" color="gray.500">{t('rating', { defaultValue: 'Rating' })}</Span>
                         <Accordion.ItemIndicator />
                     </Accordion.ItemTrigger>
                     <Accordion.ItemContent>
-                        <Accordion.ItemBody pt={2} pb={4}>
+                        <Accordion.ItemBody pt={1} pb={3}>
                             <Stack gap={2}>
                                 {[5, 4, 3].map((star) => (
                                     <RatingItem
@@ -338,12 +329,12 @@ const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
 
                 {/* Locations */}
                 <Accordion.Item value="locations">
-                    <Accordion.ItemTrigger py={2} px={0}>
+                    <Accordion.ItemTrigger py={1.5} px={0}>
                         <Span flex="1" fontWeight="bold" fontSize="sm" textTransform="uppercase" color="gray.500">{t('locations', { defaultValue: 'Locations' })}</Span>
                         <Accordion.ItemIndicator />
                     </Accordion.ItemTrigger>
                     <Accordion.ItemContent>
-                        <Accordion.ItemBody pt={2} pb={4}>
+                        <Accordion.ItemBody pt={1} pb={3}>
                             <Box maxH="300px" overflowY="auto" pr={2} className="custom-scrollbar">
                                 <Accordion.Root multiple defaultValue={expandedAccordions} variant="plain" size="sm">
                                     {locationData.map((country) => (
@@ -422,7 +413,7 @@ export const FilterSidebar = memo(({ onApply }: FilterSidebarProps) => {
     return (
         <Box
             bg="white"
-            p={6}
+            p={5}
             borderRadius="xl"
             shadow="sm"
             border="1px solid"
@@ -430,7 +421,7 @@ export const FilterSidebar = memo(({ onApply }: FilterSidebarProps) => {
             position="sticky"
             top="100px"
         >
-            <Heading size="md" mb={6} display="flex" alignItems="center" gap={2}>
+            <Heading size="md" mb={4} display="flex" alignItems="center" gap={2}>
                 <Icon as={FaFilter} color="main" />
                 {t('filters', { defaultValue: 'Filters' })}
             </Heading>

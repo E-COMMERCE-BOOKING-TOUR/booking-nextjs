@@ -3,7 +3,7 @@ import { Box, Flex, Heading, HStack, Text, Button, Badge, VStack, Dialog, Portal
 import dynamic from "next/dynamic";
 import StarRating from "./starRating";
 import { useState, useTransition, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { toaster } from "@/components/chakra/toaster";
 import { createBooking } from "@/actions/booking";
 import logout from "@/actions/logout";
@@ -196,7 +196,9 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                 });
 
                 if (result.code === "UNAUTHENTICATED") {
-                    logout("/user-login");
+                    // Redirect to login with callback to current tour page
+                    const currentPath = `/tour/${slug}`;
+                    router.push(`/user-login?callbackUrl=${encodeURIComponent(currentPath)}`);
                 }
                 return;
             }

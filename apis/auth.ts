@@ -44,6 +44,15 @@ const authApi = {
             }
         });
         return res;
+    },
+    resetPassword: async (token: string, password: string) => {
+        const url = "/auth/reset-password";
+        const res: IResponseAuth = await fetchC.post(url, {
+            token, password
+        }, {
+            cache: "no-store"
+        });
+        return res;
     }
 }
 

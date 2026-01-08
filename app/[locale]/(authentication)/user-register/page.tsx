@@ -18,8 +18,7 @@ import {
 } from "@chakra-ui/react";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useMutation } from "@tanstack/react-query";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useForm } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import * as z from "zod";
@@ -30,9 +29,13 @@ export default function RegisterPage() {
   const {
     register: registerFrom,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<z.infer<typeof RegisterSchema>>({
     resolver: standardSchemaResolver(RegisterSchema),
+    defaultValues: {
+      acceptedTerms: false,
+    }
   });
 
   const registerMutate = useMutation({
@@ -42,8 +45,9 @@ export default function RegisterPage() {
     },
     onSuccess: async (data, variables) => {
       if (data.error) {
+        const errorKey = data.message || 'registration_failed';
         toaster.create({
-          description: data.message,
+          description: t(errorKey, { defaultValue: data.message || "Registration failed" }),
           type: "error",
         });
       } else {
@@ -55,6 +59,7 @@ export default function RegisterPage() {
         await login({
           username: variables.username,
           password: variables.password,
+          remember: true,
         });
         router.push("/");
         router.refresh();
@@ -127,7 +132,7 @@ export default function RegisterPage() {
                     placeholder={t('full_name_placeholder_eg', { defaultValue: "e.g. John Doe" })}
                     {...registerFrom("full_name")}
                   />
-                  <Field.ErrorText>{errors.full_name?.message}</Field.ErrorText>
+                  <Field.ErrorText>{errors.full_name?.message && t(errors.full_name.message as string, { count: 2 })}</Field.ErrorText>
                 </Field.Root>
               </GridItem>
 
@@ -144,7 +149,7 @@ export default function RegisterPage() {
                     placeholder="username123"
                     {...registerFrom("username")}
                   />
-                  <Field.ErrorText>{errors.username?.message}</Field.ErrorText>
+                  <Field.ErrorText>{errors.username?.message && t(errors.username.message as string, { count: 4 })}</Field.ErrorText>
                 </Field.Root>
               </GridItem>
 
@@ -161,7 +166,7 @@ export default function RegisterPage() {
                     placeholder={t('phone_placeholder_eg', { defaultValue: "e.g. 0912345678" })}
                     {...registerFrom("phone")}
                   />
-                  <Field.ErrorText>{errors.phone?.message}</Field.ErrorText>
+                  <Field.ErrorText>{errors.phone?.message && t(errors.phone.message as string)}</Field.ErrorText>
                 </Field.Root>
               </GridItem>
 
@@ -178,7 +183,7 @@ export default function RegisterPage() {
                     placeholder={t('email_placeholder', { defaultValue: "email@example.com" })}
                     {...registerFrom("email")}
                   />
-                  <Field.ErrorText>{errors.email?.message}</Field.ErrorText>
+                  <Field.ErrorText>{errors.email?.message && t(errors.email.message as string)}</Field.ErrorText>
                 </Field.Root>
               </GridItem>
 
@@ -196,7 +201,7 @@ export default function RegisterPage() {
                     placeholder="••••••••"
                     {...registerFrom("password")}
                   />
-                  <Field.ErrorText>{errors.password?.message}</Field.ErrorText>
+                  <Field.ErrorText>{errors.password?.message && t(errors.password.message as string, { count: 5 })}</Field.ErrorText>
                 </Field.Root>
               </GridItem>
 
@@ -214,22 +219,36 @@ export default function RegisterPage() {
                     placeholder={t('register_confirm_password_placeholder', { defaultValue: "••••••••" })}
                     {...registerFrom("confirmPassword")}
                   />
-                  <Field.ErrorText>{errors.confirmPassword?.message}</Field.ErrorText>
+                  <Field.ErrorText>{errors.confirmPassword?.message && t(errors.confirmPassword.message as string, { count: 5 })}</Field.ErrorText>
                 </Field.Root>
               </GridItem>
             </Grid>
 
-            <Checkbox.Root
-              size="md"
-              variant="subtle"
-              colorPalette="blue"
-              defaultChecked
-              mt={2}
-            >
-              <Checkbox.Label fontSize="sm" color="gray.600" fontWeight="medium">
-                {t('agree_terms', { defaultValue: "I agree to the" })} <Box as="span" color="blue.500">{t('terms_services', { defaultValue: "Terms & Services" })}</Box>
-              </Checkbox.Label>
-            </Checkbox.Root>
+            <Field.Root invalid={!!errors.acceptedTerms}>
+              <Checkbox.Root
+                size="md"
+                variant="subtle"
+                colorPalette="blue"
+                onCheckedChange={({ checked }) => {
+                  setValue("acceptedTerms", !!checked, { shouldValidate: true });
+                }}
+                mt={2}
+              >
+                <Checkbox.HiddenInput {...registerFrom("acceptedTerms")} />
+                <Checkbox.Control>
+                  <Checkbox.Indicator />
+                </Checkbox.Control>
+                <Checkbox.Label fontSize="sm" color="gray.600" fontWeight="medium">
+                  {t('agree_terms', { defaultValue: "I agree to the" })}{" "}
+                  <Link href="/page/terms-of-use" onClick={(e) => e.stopPropagation()}>
+                    <Box as="span" color="blue.500" cursor="pointer" textDecoration="underline">
+                      {t('terms_services', { defaultValue: "Terms & Services" })}
+                    </Box>
+                  </Link>
+                </Checkbox.Label>
+              </Checkbox.Root>
+              <Field.ErrorText>{errors.acceptedTerms?.message && t(errors.acceptedTerms.message as string)}</Field.ErrorText>
+            </Field.Root>
 
             <Button
               type="submit"

@@ -14,8 +14,8 @@ import {
   Stack,
 } from "@chakra-ui/react";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslations } from "next-intl";
@@ -25,13 +25,22 @@ import { getGuestId } from "@/utils/guest";
 export default function LoginPage() {
   const [isLoading, startTransition] = useTransition();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const t = useTranslations('common');
+
+  // Get callback URL from query parameters (set by middleware when redirecting)
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<z.infer<typeof LoginSchema>>({
     resolver: standardSchemaResolver(LoginSchema),
+    defaultValues: {
+      remember: true,
+    }
   });
 
   const onSubmit = (values: z.infer<typeof LoginSchema>) => {
@@ -41,7 +50,7 @@ export default function LoginPage() {
         const response = await login(values, guestId || undefined);
         if (response.type === "error") {
           toaster.create({
-            description: response.message,
+            description: t(response.message, { defaultValue: response.message as string }),
             type: "error",
           });
         } else {
@@ -49,7 +58,8 @@ export default function LoginPage() {
             description: t('login_success', { defaultValue: "Login successful!" }),
             type: "success",
           });
-          router.push("/");
+          // Redirect to callback URL (the page user was trying to access)
+          router.push(callbackUrl);
           router.refresh();
         }
       } catch (error: unknown) {
@@ -61,8 +71,6 @@ export default function LoginPage() {
       }
     });
   };
-
-  const t = useTranslations('common');
 
   return (
     <Box
@@ -115,7 +123,7 @@ export default function LoginPage() {
                   placeholder={t('username_placeholder', { defaultValue: "Enter your username" })}
                   {...register("username")}
                 />
-                <Field.ErrorText>{errors.username?.message}</Field.ErrorText>
+                <Field.ErrorText>{errors.username?.message && t(errors.username.message as string, { count: 4 })}</Field.ErrorText>
               </Field.Root>
 
               <Field.Root invalid={!!errors.password}>
@@ -138,7 +146,7 @@ export default function LoginPage() {
                   placeholder={t('password_placeholder', { defaultValue: "Enter your password" })}
                   {...register("password")}
                 />
-                <Field.ErrorText>{errors.password?.message}</Field.ErrorText>
+                <Field.ErrorText>{errors.password?.message && t(errors.password.message as string, { count: 5 })}</Field.ErrorText>
               </Field.Root>
             </Stack>
 
@@ -146,8 +154,15 @@ export default function LoginPage() {
               size="md"
               variant="subtle"
               colorPalette="blue"
+              onCheckedChange={({ checked }) => {
+                setValue("remember", !!checked);
+              }}
               defaultChecked
             >
+              <Checkbox.HiddenInput {...register("remember")} />
+              <Checkbox.Control>
+                <Checkbox.Indicator />
+              </Checkbox.Control>
               <Checkbox.Label fontSize="sm" color="gray.600" fontWeight="medium">{t('remember_me', { defaultValue: "Remember me" })}</Checkbox.Label>
             </Checkbox.Root>
 
