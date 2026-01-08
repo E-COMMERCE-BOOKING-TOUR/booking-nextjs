@@ -16,10 +16,10 @@ import {
   Input,
   Stack,
 } from "@chakra-ui/react";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { Link, useRouter } from "@/i18n/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import * as z from "zod";
 
@@ -29,11 +29,17 @@ export default function RegisterPage() {
   const {
     register: registerFrom,
     handleSubmit,
-    setValue,
+    control,
     formState: { errors },
   } = useForm<z.infer<typeof RegisterSchema>>({
-    resolver: standardSchemaResolver(RegisterSchema),
+    resolver: zodResolver(RegisterSchema),
     defaultValues: {
+      username: "",
+      password: "",
+      confirmPassword: "",
+      full_name: "",
+      email: "",
+      phone: "",
       acceptedTerms: false,
     }
   });
@@ -224,31 +230,36 @@ export default function RegisterPage() {
               </GridItem>
             </Grid>
 
-            <Field.Root invalid={!!errors.acceptedTerms}>
-              <Checkbox.Root
-                size="md"
-                variant="subtle"
-                colorPalette="blue"
-                onCheckedChange={({ checked }) => {
-                  setValue("acceptedTerms", !!checked, { shouldValidate: true });
-                }}
-                mt={2}
-              >
-                <Checkbox.HiddenInput {...registerFrom("acceptedTerms")} />
-                <Checkbox.Control>
-                  <Checkbox.Indicator />
-                </Checkbox.Control>
-                <Checkbox.Label fontSize="sm" color="gray.600" fontWeight="medium">
-                  {t('agree_terms', { defaultValue: "I agree to the" })}{" "}
-                  <Link href="/page/terms-of-use" onClick={(e) => e.stopPropagation()}>
-                    <Box as="span" color="blue.500" cursor="pointer" textDecoration="underline">
-                      {t('terms_services', { defaultValue: "Terms & Services" })}
-                    </Box>
-                  </Link>
-                </Checkbox.Label>
-              </Checkbox.Root>
-              <Field.ErrorText>{errors.acceptedTerms?.message && t(errors.acceptedTerms.message as string)}</Field.ErrorText>
-            </Field.Root>
+            <Controller
+              control={control}
+              name="acceptedTerms"
+              render={({ field }) => (
+                <Field.Root invalid={!!errors.acceptedTerms}>
+                  <Checkbox.Root
+                    size="md"
+                    variant="subtle"
+                    colorPalette="blue"
+                    checked={field.value}
+                    onCheckedChange={({ checked }) => field.onChange(checked)}
+                    mt={2}
+                  >
+                    <Checkbox.HiddenInput />
+                    <Checkbox.Control>
+                      <Checkbox.Indicator />
+                    </Checkbox.Control>
+                    <Checkbox.Label fontSize="sm" color="gray.600" fontWeight="medium">
+                      {t('agree_terms', { defaultValue: "I agree to the" })}{" "}
+                      <Link href="/page/terms-of-use" onClick={(e) => e.stopPropagation()}>
+                        <Box as="span" color="blue.500" cursor="pointer" textDecoration="underline">
+                          {t('terms_services', { defaultValue: "Terms & Services" })}
+                        </Box>
+                      </Link>
+                    </Checkbox.Label>
+                  </Checkbox.Root>
+                  <Field.ErrorText>{errors.acceptedTerms?.message && t(errors.acceptedTerms.message as string)}</Field.ErrorText>
+                </Field.Root>
+              )}
+            />
 
             <Button
               type="submit"

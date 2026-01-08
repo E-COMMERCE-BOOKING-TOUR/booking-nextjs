@@ -1,7 +1,7 @@
 import { Session, type NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import authApi from "@/apis/auth";
-import { LoginSchema } from "@/schemas";
+import { CredentialsSchema } from "@/schemas";
 import { JWT } from "next-auth/jwt";
 import { userApi } from "@/apis/user";
 
@@ -61,7 +61,7 @@ export default {
     providers: [
         Credentials({
             authorize: async (credentials) => {
-                const validatedFields = LoginSchema.safeParse(credentials)
+                const validatedFields = CredentialsSchema.safeParse(credentials)
                 if (validatedFields.success) {
                     const { username, password } = validatedFields.data;
                     const guestId = credentials.guest_id as string | undefined;

@@ -12,7 +12,7 @@ import {
     Input,
     Stack,
 } from "@chakra-ui/react";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "@/i18n/navigation";
 import { useTransition } from "react";
 import { useForm } from "react-hook-form";
@@ -26,7 +26,10 @@ export default function ForgetPasswordPage() {
         handleSubmit,
         register,
     } = useForm<z.infer<typeof ForgotPasswordSchema>>({
-        resolver: standardSchemaResolver(ForgotPasswordSchema),
+        resolver: zodResolver(ForgotPasswordSchema),
+        defaultValues: {
+            email: "",
+        }
     });
 
     const onSubmit = (values: z.infer<typeof ForgotPasswordSchema>) => {

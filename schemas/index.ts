@@ -1,15 +1,21 @@
 import * as z from "zod";
 
 export const LoginSchema = z.object({
-    username: z.string().min(4, "username_min").regex(/^\S+$/, "username_no_spaces"),
-    password: z.string().min(5, "password_min"),
+    username: z.string().min(5, "username_min").regex(/^\S+$/, "username_no_spaces"),
+    password: z.string().min(8, "password_min"),
     remember: z.boolean().optional().default(true),
 })
 
+// Schema for NextAuth credentials validation (no remember field, accepts string guest_id)
+export const CredentialsSchema = z.object({
+    username: z.string().min(5),
+    password: z.string().min(8),
+})
+
 export const RegisterSchema = z.object({
-    username: z.string().min(4, "username_min").regex(/^\S+$/, "username_no_spaces"),
-    password: z.string().min(5, "password_min"),
-    confirmPassword: z.string().min(5, "password_min"),
+    username: z.string().min(5, "username_min").regex(/^\S+$/, "username_no_spaces"),
+    password: z.string().min(8, "password_min"),
+    confirmPassword: z.string().min(8, "password_min"),
     full_name: z.string().min(2, "full_name_min"),
     email: z.string().email("invalid_email"),
     phone: z.string().optional().refine(val => !val || /^\+?\d{1,15}$/.test(val), {
@@ -18,11 +24,14 @@ export const RegisterSchema = z.object({
     acceptedTerms: z.boolean().refine(val => val === true, {
         message: "agree_terms_required"
     }),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "passwords_dont_match",
+    path: ["confirmPassword"],
 });
 
 export const ResetPasswordSchema = z.object({
-    password: z.string().min(5, "password_min"),
-    confirmPassword: z.string().min(5, "password_min"),
+    password: z.string().min(8, "password_min"),
+    confirmPassword: z.string().min(8, "password_min"),
 }).refine((data) => data.password === data.confirmPassword, {
     message: "passwords_dont_match",
     path: ["confirmPassword"],
@@ -37,9 +46,9 @@ export const CommentSchema = z.object({
 })
 
 export const ChangePasswordSchema = z.object({
-    current_password: z.string().min(5),
-    password: z.string().min(5),
-    confirmPassword: z.string().min(5),
+    current_password: z.string().min(8),
+    password: z.string().min(8),
+    confirmPassword: z.string().min(8),
 }).refine(
     (values) => {
         return values.password === values.confirmPassword;

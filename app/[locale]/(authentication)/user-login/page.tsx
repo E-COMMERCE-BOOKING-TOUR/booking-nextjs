@@ -13,11 +13,11 @@ import {
   Input,
   Stack,
 } from "@chakra-ui/react";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import * as z from "zod";
 import { getGuestId } from "@/utils/guest";
@@ -34,11 +34,13 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
-    setValue,
+    control,
     formState: { errors },
   } = useForm<z.infer<typeof LoginSchema>>({
-    resolver: standardSchemaResolver(LoginSchema),
+    resolver: zodResolver(LoginSchema),
     defaultValues: {
+      username: "",
+      password: "",
       remember: true,
     }
   });
@@ -150,21 +152,27 @@ export default function LoginPage() {
               </Field.Root>
             </Stack>
 
-            <Checkbox.Root
-              size="md"
-              variant="subtle"
-              colorPalette="blue"
-              onCheckedChange={({ checked }) => {
-                setValue("remember", !!checked);
-              }}
-              defaultChecked
-            >
-              <Checkbox.HiddenInput {...register("remember")} />
-              <Checkbox.Control>
-                <Checkbox.Indicator />
-              </Checkbox.Control>
-              <Checkbox.Label fontSize="sm" color="gray.600" fontWeight="medium">{t('remember_me', { defaultValue: "Remember me" })}</Checkbox.Label>
-            </Checkbox.Root>
+            <Controller
+              control={control}
+              name="remember"
+              render={({ field }) => (
+                <Checkbox.Root
+                  size="md"
+                  variant="subtle"
+                  colorPalette="blue"
+                  checked={field.value}
+                  onCheckedChange={({ checked }) => field.onChange(checked)}
+                >
+                  <Checkbox.HiddenInput />
+                  <Checkbox.Control>
+                    <Checkbox.Indicator />
+                  </Checkbox.Control>
+                  <Checkbox.Label fontSize="sm" color="gray.600" fontWeight="medium">
+                    {t('remember_me', { defaultValue: "Remember me" })}
+                  </Checkbox.Label>
+                </Checkbox.Root>
+              )}
+            />
 
             <Button
               type="submit"

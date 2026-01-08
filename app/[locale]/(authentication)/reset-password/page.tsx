@@ -12,7 +12,7 @@ import {
     Field,
     Center,
 } from "@chakra-ui/react";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { useTransition, useEffect } from "react";
@@ -33,7 +33,11 @@ export default function ResetPasswordPage() {
         handleSubmit,
         register,
     } = useForm<z.infer<typeof ResetPasswordSchema>>({
-        resolver: standardSchemaResolver(ResetPasswordSchema),
+        resolver: zodResolver(ResetPasswordSchema),
+        defaultValues: {
+            password: "",
+            confirmPassword: "",
+        }
     });
 
     useEffect(() => {
