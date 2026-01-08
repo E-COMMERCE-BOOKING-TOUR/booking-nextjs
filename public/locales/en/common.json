@@ -425,5 +425,11 @@
     "cancel_before_days": "Cancel before {count} day(s)",
     "cancel_before_hours": "Cancel before {count} hour(s)",
     "free_cancellation": "Free cancellation",
-    "cancellation_fee_pct": "{pct}% cancellation fee"
+    "cancellation_fee_pct": "{pct}% cancellation fee",
+    "select_booking_chat": "Select a booking to discuss",
+    "select_booking_desc": "We found recent bookings. Would you like to chat about one of these?",
+    "skip_booking_selection": "Something else",
+    "chat_with_admin": "Chat with TripConnect (AI)",
+    "chat_with_supplier": "Chat with {name}",
+    "select_chat_target": "Start a conversation"
 }

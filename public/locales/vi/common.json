@@ -425,5 +425,11 @@
     "cancel_before_days": "Hủy trước {count} ngày",
     "cancel_before_hours": "Hủy trước {count} giờ",
     "free_cancellation": "Hủy miễn phí",
-    "cancellation_fee_pct": "Phí hủy {pct}%"
+    "cancellation_fee_pct": "Phí hủy {pct}%",
+    "select_booking_chat": "Chọn đặt chỗ để thảo luận",
+    "select_booking_desc": "Chúng tôi thấy bạn có đặt chỗ gần đây. Bạn có muốn đặt câu hỏi về một trong số này không?",
+    "skip_booking_selection": "Hỏi về vấn đề khác",
+    "chat_with_admin": "Trò chuyện với TripConnect (AI)",
+    "chat_with_supplier": "Trò chuyện với {name}",
+    "select_chat_target": "Bắt đầu trò chuyện"
 }

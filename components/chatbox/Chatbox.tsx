@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, memo } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { X, Compass, Send, Loader2 } from 'lucide-react';
 import {
@@ -13,12 +13,85 @@ import {
     Flex,
     Circle
 } from '@chakra-ui/react';
-import chatboxApi, { IMessage, IStartChatResponse } from '@/apis/chatbox';
+import chatboxApi, { IMessage, IStartChatResponse, IChatContext } from '@/apis/chatbox';
 import { useTranslations } from "next-intl";
 import { useSession } from 'next-auth/react';
 
+import { useForm } from 'react-hook-form';
 
-export default function Chatbox({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+// --- Sub-component for Input to prevent re-rendering the whole message list ---
+const ChatInput = memo(({
+    isConnected,
+    onSend,
+    placeholder
+}: {
+    isConnected: boolean;
+    onSend: (text: string) => void;
+    placeholder: string;
+}) => {
+    const { register, handleSubmit, reset } = useForm<{ message: string }>();
+
+    const onSubmit = (data: { message: string }) => {
+        if (!data.message.trim()) return;
+        onSend(data.message);
+        reset();
+    };
+
+    return (
+        <HStack
+            as="form"
+            onSubmit={handleSubmit(onSubmit)}
+            p={4}
+            bg="white"
+            borderTop="1px solid"
+            borderColor="gray.100"
+            gap={2}
+            flexShrink={0}
+        >
+            <Input
+                {...register('message')}
+                placeholder={placeholder}
+                disabled={!isConnected}
+                borderRadius="full"
+                py={5}
+                px={4}
+                border="1px solid"
+                borderColor="gray.200"
+                _focus={{ borderColor: 'secondary', boxShadow: '0 0 0 1px rgba(77, 201, 230, 0.2)' }}
+                fontSize="sm"
+                autoComplete="off"
+            />
+            <Button
+                type="submit"
+                bg="main"
+                color="white"
+                disabled={!isConnected}
+                borderRadius="full"
+                w="44px"
+                h="44px"
+                p={0}
+                flexShrink={0}
+                _hover={{ transform: 'translateY(-1px)', shadow: 'md' }}
+                _active={{ transform: 'translateY(0)' }}
+                transition="all 0.2s"
+            >
+                <Send size={18} />
+            </Button>
+        </HStack>
+    );
+});
+
+export default function Chatbox({
+    isOpen,
+    onClose,
+    context = {},
+    target = 'ADMIN'
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    context?: Partial<IChatContext>;
+    target?: 'ADMIN' | 'SUPPLIER';
+}) {
     const t = useTranslations('common');
     const { data: session, status } = useSession();
     const token = session?.user?.accessToken;
@@ -26,7 +99,6 @@ export default function Chatbox({ isOpen, onClose }: { isOpen: boolean; onClose:
     const [isConnecting, setIsConnecting] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
     const [messages, setMessages] = useState<IMessage[]>([]);
-    const [input, setInput] = useState('');
     const [socket, setSocket] = useState<Socket | null>(null);
     const [conversationId, setConversationId] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -56,7 +128,11 @@ export default function Chatbox({ isOpen, onClose }: { isOpen: boolean; onClose:
         // Use a timeout to move setState out of synchronous effect execution
         setTimeout(() => setIsConnecting(true), 0);
 
-        chatboxApi.startChatAdmin(token)
+        const startChat = target === 'SUPPLIER' && context.supplierId
+            ? chatboxApi.startChatSupplier(context.supplierId, context, token)
+            : chatboxApi.startChatAdmin(context, token);
+
+        startChat
             .then((data: IStartChatResponse) => {
                 if (!data?._id) {
                     throw new Error('No conversation ID returned');
@@ -120,31 +196,17 @@ export default function Chatbox({ isOpen, onClose }: { isOpen: boolean; onClose:
             });
 
         return () => {
-            // No automatic disconnect here to allow keeping connection alive if needed,
-            // or we can disconnect if that's the desired behavior.
-            // Component stays mounted even when closed (display: none), so we only disconnect on unmount.
+            // Cleanup on unmount
         };
-    }, [status, token, isOpen, socket]); // Keep socket here to detect if it's already set
+    }, [status, token, isOpen, socket, context]);
 
-    // Handle closing/disconnecting explicitly if desired
-    useEffect(() => {
-        if (!isOpen && socket) {
-            // If you want to disconnect when the box is closed:
-            // socket.disconnect();
-            // setSocket(null);
-            // setIsConnected(false);
-        }
-    }, [isOpen, socket]);
-
-
-    const handleSend = () => {
-        if (!input.trim() || !socket || !conversationId || !isConnected) return;
+    const handleSend = (text: string) => {
+        if (!socket || !conversationId || !isConnected) return;
 
         socket.emit('sendMessage', {
             conversationId,
-            content: input,
+            content: text,
         });
-        setInput('');
     };
 
     if (status !== 'authenticated') {
@@ -280,42 +342,14 @@ export default function Chatbox({ isOpen, onClose }: { isOpen: boolean; onClose:
                             <div ref={messagesEndRef} />
                         </VStack>
 
-                        <HStack p={4} bg="white" borderTop="1px solid" borderColor="gray.100" gap={2} flexShrink={0}>
-                            <Input
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                                placeholder={t('type_message', { defaultValue: 'Type a message...' })}
-                                disabled={!isConnected}
-                                borderRadius="full"
-                                py={5}
-                                px={4}
-                                border="1px solid"
-                                borderColor="gray.200"
-                                _focus={{ borderColor: 'secondary', boxShadow: '0 0 0 1px rgba(77, 201, 230, 0.2)' }}
-                                fontSize="sm"
-                            />
-                            <Button
-                                bg="main"
-                                color="white"
-                                onClick={handleSend}
-                                disabled={!isConnected || !input.trim()}
-                                borderRadius="full"
-                                w="44px"
-                                h="44px"
-                                p={0}
-                                flexShrink={0}
-                                _hover={{ transform: 'translateY(-1px)', shadow: 'md' }}
-                                _active={{ transform: 'translateY(0)' }}
-                                transition="all 0.2s"
-                            >
-                                <Send size={18} />
-                            </Button>
-                        </HStack>
+                        <ChatInput
+                            isConnected={isConnected}
+                            onSend={handleSend}
+                            placeholder={t('type_message', { defaultValue: 'Type a message...' })}
+                        />
                     </>
                 )}
             </Flex>
         </Box>
     );
 }
-
