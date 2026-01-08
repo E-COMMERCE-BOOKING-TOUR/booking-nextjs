@@ -15,8 +15,9 @@ import {
     CloseButton,
     Accordion,
     Span,
+    NativeSelect,
 } from "@chakra-ui/react";
-import { useState, useCallback, memo } from "react";
+import { useState, useCallback, memo, useMemo } from "react";
 import { FaSearch, FaFilter, FaStar, FaCheck, FaSlidersH } from "react-icons/fa";
 import { IUserTourSearchParams } from "@/types/response/tour.type";
 import { useFormContext } from "react-hook-form";
@@ -115,46 +116,76 @@ interface FilterContentProps {
 }
 
 import { masterApi } from "@/apis/master";
+import { currencyApi } from "@/apis/tour";
 import { useQuery } from "@tanstack/react-query";
+import { ICurrency } from "@/types/response/base.type";
 
 const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
     const t = useTranslations('common');
     const { register, setValue, getValues, reset, handleSubmit, watch } = useFormContext<IUserTourSearchParams>();
 
-    // Fetch countries and divisions
     const { data: countries = [] } = useQuery({
         queryKey: ['countries'],
         queryFn: masterApi.getCountries,
+        staleTime: 1000 * 60 * 60, // 1 hour - countries rarely change
+        gcTime: 1000 * 60 * 60 * 24, // 24 hours
     });
 
     const { data: divisions = [] } = useQuery({
         queryKey: ['divisions'],
         queryFn: masterApi.getDivisions,
+        staleTime: 1000 * 60 * 60, // 1 hour
+        gcTime: 1000 * 60 * 60 * 24, // 24 hours
     });
 
-    // Filter to get only level 1 divisions
-    const level1Divisions = divisions.filter(d =>
-        d.level === 1 || d.level === '1'
+    const { data: currencies = [] } = useQuery<ICurrency[]>({
+        queryKey: ['currencies'],
+        queryFn: currencyApi.getAll,
+        staleTime: 1000 * 60 * 60, // 1 hour - currencies rarely change
+        gcTime: 1000 * 60 * 60 * 24, // 24 hours
+    });
+
+    // Memoize level 1 divisions filter
+    const level1Divisions = useMemo(() =>
+        divisions.filter(d => d.level === 1 || d.level === '1'),
+        [divisions]
     );
 
-    // Group divisions by country
-    const locationData = countries.map(country => ({
-        ...country,
-        level1Divisions: level1Divisions.filter(d => d.country?.id === country.id)
-    })).filter(country => country.level1Divisions.length > 0 || divisions.some(d => d.country?.id === country.id));
+    // Memoize location data grouping
+    const locationData = useMemo(() =>
+        countries.map(country => ({
+            ...country,
+            level1Divisions: level1Divisions.filter(d => d.country?.id === country.id)
+        })).filter(country =>
+            country.level1Divisions.length > 0 ||
+            divisions.some(d => d.country?.id === country.id)
+        ),
+        [countries, level1Divisions, divisions]
+    );
 
     // Get current values from form state
     const selectedCountryIds = watch("country_ids") || [];
     const selectedDivisionIds = watch("division_ids") || [];
     const selectedRating = watch("minRating");
+    const selectedCurrencyId = watch("currency_id");
 
-    // Calculate which accordions should be expanded (countries with selected divisions)
-    const expandedAccordions = locationData
-        .filter(country =>
-            selectedCountryIds.includes(country.id) ||
-            country.level1Divisions.some(d => selectedDivisionIds.includes(d.id))
-        )
-        .map(country => country.id.toString());
+    // Get selected currency symbol
+    const selectedCurrencySymbol = useMemo(() => {
+        if (!selectedCurrencyId) return null;
+        const currency = currencies.find(c => c.id === selectedCurrencyId);
+        return currency?.symbol || null;
+    }, [selectedCurrencyId, currencies]);
+
+    // Memoize expanded accordions calculation
+    const expandedAccordions = useMemo(() =>
+        locationData
+            .filter(country =>
+                selectedCountryIds.includes(country.id) ||
+                country.level1Divisions.some(d => selectedDivisionIds.includes(d.id))
+            )
+            .map(country => country.id.toString()),
+        [locationData, selectedCountryIds, selectedDivisionIds]
+    );
 
     const handleCountryChange = useCallback((id: number, checked: boolean) => {
         const currentIds = getValues("country_ids") || [];
@@ -182,6 +213,7 @@ const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
             keyword: "",
             minPrice: undefined,
             maxPrice: undefined,
+            currency_id: undefined,
             minRating: undefined,
             country_ids: [],
             division_ids: [],
@@ -225,7 +257,28 @@ const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
             <Box h="1px" bg="gray.100" />
 
             {/* Filter Accordion Sections */}
-            <Accordion.Root multiple defaultValue={["price", "rating", "locations"]} variant="plain" size="sm">
+            <Accordion.Root multiple defaultValue={["currency", "price", "rating", "locations"]} variant="plain" size="sm">
+                {/* Currency */}
+                <Accordion.Item value="currency">
+                    <Accordion.ItemTrigger py={2} px={0}>
+                        <Span flex="1" fontWeight="bold" fontSize="sm" textTransform="uppercase" color="gray.500">{t('currency', { defaultValue: 'Currency' })}</Span>
+                        <Accordion.ItemIndicator />
+                    </Accordion.ItemTrigger>
+                    <Accordion.ItemContent>
+                        <Accordion.ItemBody pt={2} pb={4}>
+                            <NativeSelect.Root size="sm">
+                                <NativeSelect.Field
+                                    {...register("currency_id", { valueAsNumber: true })}
+                                    placeholder={t('select_currency', { defaultValue: 'Select Currency' })}
+                                >
+                                    {currencies.map(c => (
+                                        <option key={c.id} value={c.id}>{c.name} ({c.symbol})</option>
+                                    ))}
+                                </NativeSelect.Field>
+                            </NativeSelect.Root>
+                        </Accordion.ItemBody>
+                    </Accordion.ItemContent>
+                </Accordion.Item>
                 {/* Price Range */}
                 <Accordion.Item value="price">
                     <Accordion.ItemTrigger py={2} px={0}>
@@ -237,6 +290,7 @@ const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
                             <HStack gap={2} mb={2}>
                                 <Input
                                     type="number"
+                                    min={0}
                                     placeholder={t('min', { defaultValue: 'Min' })}
                                     {...register("minPrice")}
                                     size="sm"
@@ -244,14 +298,15 @@ const FilterContent = memo(({ onApply, onClose }: FilterContentProps) => {
                                 <Text>-</Text>
                                 <Input
                                     type="number"
+                                    min={0}
                                     placeholder={t('max', { defaultValue: 'Max' })}
                                     {...register("maxPrice")}
                                     size="sm"
                                 />
                             </HStack>
                             <HStack justify="space-between" fontSize="xs" color="gray.600">
-                                <Text>VND</Text>
-                                <Text>VND</Text>
+                                <Text>{selectedCurrencySymbol || ''}</Text>
+                                <Text>{selectedCurrencySymbol || ''}</Text>
                             </HStack>
                         </Accordion.ItemBody>
                     </Accordion.ItemContent>

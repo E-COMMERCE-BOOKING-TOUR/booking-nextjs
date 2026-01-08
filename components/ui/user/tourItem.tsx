@@ -1,9 +1,10 @@
 "use client";
 
+import { memo } from "react";
 import { Badge, Box, HStack, Image, Text, VStack } from "@chakra-ui/react";
 import { Link } from "@/i18n/navigation";
 import { FaMapMarkerAlt } from "react-icons/fa";
-import { formatPriceValue } from '@/utils/currency';
+import { formatCompactPrice } from '@/utils/currency';
 import { useTranslations } from "next-intl";
 
 interface TourItemProps {
@@ -22,7 +23,13 @@ interface TourItemProps {
   currencyCode?: string;
 }
 
-const TourRating = ({ rating, ratingText, reviews, t }: { rating: number; ratingText: string; reviews: number; t: ReturnType<typeof useTranslations> }) => (
+// Memoized TourRating sub-component
+const TourRating = memo(({ rating, ratingText, reviews, t }: {
+  rating: number;
+  ratingText: string;
+  reviews: number;
+  t: ReturnType<typeof useTranslations>
+}) => (
   <HStack gap={2}>
     <Box bg="main" color="white" px={2} py={1} borderRadius="10px 10px 10px 0" fontWeight="bold" fontSize="lg">
       {parseFloat(rating.toString()).toFixed(1)}
@@ -32,7 +39,8 @@ const TourRating = ({ rating, ratingText, reviews, t }: { rating: number; rating
       <Text fontSize="xs" color="gray.500">{reviews} {t('reviews', { count: reviews })}</Text>
     </VStack>
   </HStack>
-);
+));
+TourRating.displayName = "TourRating";
 
 export default function TourItem({
   image,
@@ -94,13 +102,15 @@ export default function TourItem({
           <Text fontSize="sm" color="gray.700" fontWeight="medium">{capacity}</Text>
         </HStack>
         <HStack justify="space-between" align="baseline" mt={1}>
-          {originalPrice && (
-            <Text fontSize="sm" color="red.400" textDecoration="line-through">
-              {currencySymbol} {formatPriceValue(originalPrice, currencyCode)}~
+          {originalPrice ? (
+            <Text fontSize="xs" color="red.400" textDecoration="line-through" whiteSpace="nowrap">
+              {currencySymbol} {formatCompactPrice(originalPrice, currencyCode)}
             </Text>
+          ) : (
+            <Box />
           )}
-          <Text fontSize="md" fontWeight="bold" color="gray.900">
-            {currencySymbol} {formatPriceValue(currentPrice, currencyCode)}~
+          <Text fontSize="md" fontWeight="bold" color="main" whiteSpace="nowrap">
+            {currencySymbol} {formatCompactPrice(currentPrice, currencyCode)}~
           </Text>
         </HStack>
       </VStack>

@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, Fragment, useState, useMemo, useCallback, memo } from "react";
+import { useEffect, Fragment, useState, useMemo, useCallback, memo, useTransition } from "react";
 import { Box, Container, Grid, SimpleGrid, Spinner, Text, VStack, Button, HStack, NativeSelect } from "@chakra-ui/react";
 import { IUserTourSearchParams } from "@/types/response/tour.type";
 import { useTranslations } from "next-intl";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import tourApi from "@/apis/tour";
 import TourItem from "@/components/ui/user/tourItem";
 import { FilterSidebar, MobileFilterDrawer } from "./filterSidebar";
 import { FormProvider, useForm } from "react-hook-form";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { parseSearchParamsToFilters, filtersToQueryString, EMPTY_FILTERS } from "@/utils/searchParams";
 
 // Memoized TourItem wrapper to prevent unnecessary re-renders
 const MemoizedTourItem = memo(TourItem);
@@ -17,50 +18,14 @@ const MemoizedTourItem = memo(TourItem);
 export const TourListClient = () => {
     const searchParams = useSearchParams();
     const t = useTranslations('common');
+    const [isPending, startTransition] = useTransition();
 
     // Initial state from URL - computed ONCE on mount
-    const initialFilters = useMemo<IUserTourSearchParams>(() => ({
-        keyword: searchParams.get("keyword") || "",
-        minPrice: searchParams.get("minPrice") ? Number(searchParams.get("minPrice")) : undefined,
-        maxPrice: searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : undefined,
-        minRating: searchParams.get("minRating") ? Number(searchParams.get("minRating")) : undefined,
-        startDate: searchParams.get("startDate") || undefined,
-        endDate: searchParams.get("endDate") || undefined,
-        travelers: searchParams.get("travelers") ? Number(searchParams.get("travelers")) : undefined,
-        adults: searchParams.get("adults") ? Number(searchParams.get("adults")) : undefined,
-        seniors: searchParams.get("seniors") ? Number(searchParams.get("seniors")) : undefined,
-        youth: searchParams.get("youth") ? Number(searchParams.get("youth")) : undefined,
-        children: searchParams.get("children") ? Number(searchParams.get("children")) : undefined,
-        infants: searchParams.get("infants") ? Number(searchParams.get("infants")) : undefined,
-        rooms: searchParams.get("rooms") ? Number(searchParams.get("rooms")) : undefined,
-        country_ids: searchParams.get("country_ids") ? searchParams.get("country_ids")?.split(",").map(Number) : [],
-        division_ids: searchParams.get("division_ids") ? searchParams.get("division_ids")?.split(",").map(Number) : [],
-        sort: (searchParams.get("sort") as IUserTourSearchParams['sort']) || "popular",
-        limit: 12,
-        offset: 0,
+    const initialFilters = useMemo<IUserTourSearchParams>(
+        () => parseSearchParamsToFilters(searchParams),
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }), []); // Empty deps = only compute once on mount
-
-    const emptyFilters = useMemo<IUserTourSearchParams>(() => ({
-        keyword: "",
-        minPrice: undefined,
-        maxPrice: undefined,
-        minRating: undefined,
-        startDate: undefined,
-        endDate: undefined,
-        travelers: undefined,
-        adults: undefined,
-        seniors: undefined,
-        youth: undefined,
-        children: undefined,
-        infants: undefined,
-        rooms: undefined,
-        country_ids: [],
-        division_ids: [],
-        sort: "popular",
-        limit: 12,
-        offset: 0,
-    }), []);
+        [] // Empty deps = only compute once on mount
+    );
 
     const methods = useForm<IUserTourSearchParams>({
         defaultValues: initialFilters,
@@ -73,13 +38,14 @@ export const TourListClient = () => {
 
     // Memoized apply filters handler
     const onApplyFilters = useCallback((data: IUserTourSearchParams) => {
-        const sanitizedValue = {
+        const sanitizedValue: IUserTourSearchParams = {
             ...data,
             minPrice: data.minPrice ? Number(data.minPrice) : undefined,
             maxPrice: data.maxPrice ? Number(data.maxPrice) : undefined,
             minRating: data.minRating ? Number(data.minRating) : undefined,
+            currency_id: data.currency_id ? Number(data.currency_id) : undefined,
         };
-        setAppliedFilters(sanitizedValue as IUserTourSearchParams);
+        setAppliedFilters(sanitizedValue);
     }, []);
 
     const {
@@ -93,8 +59,7 @@ export const TourListClient = () => {
         queryKey: ['tours', appliedFilters],
         queryFn: async ({ pageParam = 0 }) => {
             const params = { ...appliedFilters, offset: pageParam as number };
-            const res = await tourApi.search(params);
-            return res;
+            return tourApi.search(params);
         },
         initialPageParam: 0,
         getNextPageParam: (lastPage, allPages) => {
@@ -105,103 +70,44 @@ export const TourListClient = () => {
         refetchOnWindowFocus: false,
     });
 
-    // Synchronize URL params to state (e.g. when searching from another page or header)
+    // Synchronize URL params to state ONLY when searchParams changes externally
     useEffect(() => {
-        const keyword = searchParams.get("keyword") || "";
-        const minPrice = searchParams.get("minPrice") ? Number(searchParams.get("minPrice")) : undefined;
-        const maxPrice = searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : undefined;
-        const minRating = searchParams.get("minRating") ? Number(searchParams.get("minRating")) : undefined;
-        const startDate = searchParams.get("startDate") || undefined;
-        const endDate = searchParams.get("endDate") || undefined;
-        const travelers = searchParams.get("travelers") ? Number(searchParams.get("travelers")) : undefined;
-        const adults = searchParams.get("adults") ? Number(searchParams.get("adults")) : undefined;
-        const seniors = searchParams.get("seniors") ? Number(searchParams.get("seniors")) : undefined;
-        const youth = searchParams.get("youth") ? Number(searchParams.get("youth")) : undefined;
-        const children = searchParams.get("children") ? Number(searchParams.get("children")) : undefined;
-        const infants = searchParams.get("infants") ? Number(searchParams.get("infants")) : undefined;
-        const rooms = searchParams.get("rooms") ? Number(searchParams.get("rooms")) : undefined;
-        const countryIds = searchParams.get("country_ids") ? searchParams.get("country_ids")?.split(",").map(Number) : [];
-        const divisionIds = searchParams.get("division_ids") ? searchParams.get("division_ids")?.split(",").map(Number) : [];
-        const sort = (searchParams.get("sort") as IUserTourSearchParams['sort']) || "popular";
+        const newFilters = parseSearchParamsToFilters(searchParams);
+        setAppliedFilters(newFilters);
+        reset(newFilters);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams]);
 
-        setAppliedFilters({
-            keyword,
-            minPrice,
-            maxPrice,
-            minRating,
-            startDate,
-            endDate,
-            travelers,
-            adults,
-            seniors,
-            youth,
-            children,
-            infants,
-            rooms,
-            country_ids: countryIds,
-            division_ids: divisionIds,
-            sort,
-            limit: 12,
-            offset: 0,
-        });
-
-        reset({
-            keyword,
-            minPrice,
-            maxPrice,
-            minRating,
-            startDate,
-            endDate,
-            travelers,
-            adults,
-            seniors,
-            youth,
-            children,
-            infants,
-            rooms,
-            country_ids: countryIds,
-            division_ids: divisionIds,
-            sort,
-        });
-    }, [searchParams, reset]);
-
-    // Update URL when applied filters change (using window.history to avoid React re-renders)
+    // Update URL when applied filters change
     useEffect(() => {
-        const query = new URLSearchParams();
+        const queryString = filtersToQueryString(appliedFilters);
+        const currentQuery = new URLSearchParams(window.location.search).toString();
 
-        if (appliedFilters.keyword) query.set("keyword", appliedFilters.keyword);
-        if (appliedFilters.minPrice) query.set("minPrice", appliedFilters.minPrice.toString());
-        if (appliedFilters.maxPrice) query.set("maxPrice", appliedFilters.maxPrice.toString());
-        if (appliedFilters.minRating) query.set("minRating", appliedFilters.minRating.toString());
-        if (appliedFilters.country_ids && appliedFilters.country_ids.length > 0) query.set("country_ids", appliedFilters.country_ids.join(","));
-        if (appliedFilters.division_ids && appliedFilters.division_ids.length > 0) query.set("division_ids", appliedFilters.division_ids.join(","));
-        if (appliedFilters.sort && appliedFilters.sort !== "popular") query.set("sort", appliedFilters.sort);
-        if (appliedFilters.startDate) query.set("startDate", appliedFilters.startDate);
-        if (appliedFilters.endDate) query.set("endDate", appliedFilters.endDate);
-        if (appliedFilters.travelers) query.set("travelers", appliedFilters.travelers.toString());
-        if (appliedFilters.adults) query.set("adults", appliedFilters.adults.toString());
-        if (appliedFilters.seniors) query.set("seniors", appliedFilters.seniors.toString());
-        if (appliedFilters.youth) query.set("youth", appliedFilters.youth.toString());
-        if (appliedFilters.children) query.set("children", appliedFilters.children.toString());
-        if (appliedFilters.infants) query.set("infants", appliedFilters.infants.toString());
-        if (appliedFilters.rooms) query.set("rooms", appliedFilters.rooms.toString());
-
-        const queryString = query.toString();
-        const newUrl = queryString ? `/tour/list?${queryString}` : '/tour/list';
-        window.history.replaceState(null, '', newUrl);
+        if (queryString !== currentQuery) {
+            const newUrl = queryString ? `/tour/list?${queryString}` : '/tour/list';
+            window.history.replaceState(null, '', newUrl);
+        }
     }, [appliedFilters]);
 
     // Memoized handlers
     const handleLoadMore = useCallback(() => fetchNextPage(), [fetchNextPage]);
 
     const handleClearFilters = useCallback(() => {
-        reset(emptyFilters);
-        onApplyFilters(emptyFilters);
-    }, [reset, emptyFilters, onApplyFilters]);
+        reset(EMPTY_FILTERS);
+        onApplyFilters(EMPTY_FILTERS);
+    }, [reset, onApplyFilters]);
 
     const handleSortChange = useCallback(() => {
-        handleSubmit(onApplyFilters)();
+        startTransition(() => {
+            handleSubmit(onApplyFilters)();
+        });
     }, [handleSubmit, onApplyFilters]);
+
+    // Memoize flattened tour list to prevent re-computation on every render
+    const allTours = useMemo(() => {
+        if (!data?.pages) return [];
+        return data.pages.flatMap(page => page.data);
+    }, [data?.pages]);
 
     const total = data?.pages[0]?.total || 0;
 
@@ -224,6 +130,7 @@ export const TourListClient = () => {
                             <NativeSelect.Root w="auto" size="sm" borderRadius="lg" cursor="pointer">
                                 <NativeSelect.Field
                                     {...register("sort", { onChange: handleSortChange })}
+                                    opacity={isPending ? 0.6 : 1}
                                 >
                                     <option value="popular">{t('popular', { defaultValue: 'Popular' })}</option>
                                     <option value="newest">{t('newest', { defaultValue: 'Newest' })}</option>
@@ -234,7 +141,7 @@ export const TourListClient = () => {
                             </NativeSelect.Root>
                         </HStack>
 
-                        {/* Mobile Filters - uses Drawer instead of inline component */}
+                        {/* Mobile Filters */}
                         <Box display={{ base: "block", lg: "none" }} mb={4}>
                             <MobileFilterDrawer onApply={onApplyFilters} />
                         </Box>
@@ -249,29 +156,25 @@ export const TourListClient = () => {
                             <Text color="red.500">Error loading tours: {error instanceof Error ? error.message : String(error)}</Text>
                         ) : (
                             <>
-                                {total > 0 ? (
+                                {allTours.length > 0 ? (
                                     <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} gap={3}>
-                                        {data.pages.map((page, i) => (
-                                            <Fragment key={i}>
-                                                {page.data.map((tour) => (
-                                                    <MemoizedTourItem
-                                                        key={tour.id}
-                                                        image={tour.image}
-                                                        title={tour.title}
-                                                        location={tour.location}
-                                                        rating={tour.rating}
-                                                        reviews={tour.reviews}
-                                                        ratingText={tour.ratingText}
-                                                        capacity={tour.capacity}
-                                                        currentPrice={tour.currentPrice}
-                                                        originalPrice={tour.originalPrice}
-                                                        tags={tour.tags}
-                                                        slug={tour.slug}
-                                                        currencySymbol={tour.currencySymbol}
-                                                        currencyCode={tour.currencyCode}
-                                                    />
-                                                ))}
-                                            </Fragment>
+                                        {allTours.map((tour) => (
+                                            <MemoizedTourItem
+                                                key={tour.id}
+                                                image={tour.image}
+                                                title={tour.title}
+                                                location={tour.location}
+                                                rating={tour.rating}
+                                                reviews={tour.reviews}
+                                                ratingText={tour.ratingText}
+                                                capacity={tour.capacity}
+                                                currentPrice={tour.currentPrice}
+                                                originalPrice={tour.originalPrice}
+                                                tags={tour.tags}
+                                                slug={tour.slug}
+                                                currencySymbol={tour.currencySymbol}
+                                                currencyCode={tour.currencyCode}
+                                            />
                                         ))}
                                     </SimpleGrid>
                                 ) : (

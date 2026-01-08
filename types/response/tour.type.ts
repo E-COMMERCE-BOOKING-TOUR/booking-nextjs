@@ -232,6 +232,7 @@ export interface IUserTourSearchParams {
   division_ids?: number[];
   minPrice?: number;
   maxPrice?: number;
+  currency_id?: number;
   minRating?: number;
   startDate?: string;
   endDate?: string;

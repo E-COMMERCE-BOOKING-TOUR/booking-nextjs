@@ -42,6 +42,8 @@
     "reset_filters": "Reset Filters",
     "min": "Min",
     "max": "Max",
+    "currency": "Currency",
+    "select_currency": "Select Currency",
     "hero_title": "Welcome to TripConnect's Travel Platform.",
     "hero_description": "Discover the best destinations for your next trip with TripConnect's Travel Platform",
     "popular_cities_title": "Explore Popular Cities",

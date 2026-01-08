@@ -61,6 +61,10 @@ const toQueryRecord = (params?: IUserTourSearchParams): Record<string, string> |
         query.maxPrice = params.maxPrice.toString();
     }
 
+    if (typeof params.currency_id === 'number') {
+        query.currency_id = params.currency_id.toString();
+    }
+
     if (typeof params.minRating === 'number') {
         query.minRating = params.minRating.toString();
     }
@@ -221,6 +225,14 @@ export const tourApi = {
         }
         const url = `/user/tour/favorite/toggle`;
         return fetchC.post(url, { tour_id: tourId, guest_id: guestId }, { headers });
+    }
+};
+
+export const currencyApi = {
+    getAll: async () => {
+        const url = `/user/currency/all`;
+        const res = await fetchC.get(url, { next: { revalidate: 3600 } });
+        return Array.isArray(res) ? res : (res?.data || []);
     }
 };
 

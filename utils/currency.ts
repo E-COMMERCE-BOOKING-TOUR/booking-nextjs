@@ -41,3 +41,49 @@ export const formatPriceValue = (price: number, currencyCode?: string): string =
     const locale = getLocaleFromCurrency(currencyCode);
     return price.toLocaleString(locale);
 };
+
+/**
+ * Formats a price in compact notation for display in tight spaces.
+ * Examples:
+ * - VND: 1,500,000 -> "1.5tr", 500,000 -> "500K"
+ * - USD: 1,500,000 -> "1.5M", 50,000 -> "50K"
+ */
+export const formatCompactPrice = (price: number, currencyCode?: string): string => {
+    if (!price || price === 0) return '0';
+
+    const code = currencyCode?.toUpperCase();
+    const isVND = code === 'VND' || !code;
+
+    // For VND, use Vietnamese-style abbreviations
+    if (isVND) {
+        if (price >= 1_000_000_000) {
+            const value = price / 1_000_000_000;
+            return `${value % 1 === 0 ? value : value.toFixed(1)}tỷ`;
+        }
+        if (price >= 1_000_000) {
+            const value = price / 1_000_000;
+            return `${value % 1 === 0 ? value : value.toFixed(1)}tr`;
+        }
+        if (price >= 1_000) {
+            const value = price / 1_000;
+            return `${value % 1 === 0 ? value : value.toFixed(1)}K`;
+        }
+        return price.toString();
+    }
+
+    // For other currencies, use standard abbreviations
+    if (price >= 1_000_000_000) {
+        const value = price / 1_000_000_000;
+        return `${value % 1 === 0 ? value : value.toFixed(1)}B`;
+    }
+    if (price >= 1_000_000) {
+        const value = price / 1_000_000;
+        return `${value % 1 === 0 ? value : value.toFixed(1)}M`;
+    }
+    if (price >= 1_000) {
+        const value = price / 1_000;
+        return `${value % 1 === 0 ? value : value.toFixed(1)}K`;
+    }
+
+    return price.toLocaleString(getLocaleFromCurrency(currencyCode));
+};

@@ -42,6 +42,8 @@
     "reset_filters": "Đặt lại",
     "min": "Tối thiểu",
     "max": "Tối đa",
+    "currency": "Tiền tệ",
+    "select_currency": "Chọn tiền tệ",
     "hero_title": "Chào mừng bạn đến với Nền tảng Du lịch TripConnect",
     "hero_description": "Khám phá những điểm đến tốt nhất cho chuyến đi tiếp theo của bạn với Nền tảng Du lịch TripConnect",
     "popular_cities_title": "Khám phá các thành phố phổ biến",
