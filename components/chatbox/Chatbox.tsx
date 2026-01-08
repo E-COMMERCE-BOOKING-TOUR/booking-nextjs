@@ -13,6 +13,7 @@ import {
     Flex,
     Circle
 } from '@chakra-ui/react';
+import { toast } from 'sonner';
 import chatboxApi, { IMessage, IStartChatResponse, IChatContext } from '@/apis/chatbox';
 import { useTranslations } from "next-intl";
 import { useSession } from 'next-auth/react';
@@ -156,10 +157,14 @@ export default function Chatbox({
                     console.log('Authenticated as:', authData.user?.full_name);
                 });
 
-                newSocket.on('error', (err: Error) => {
+                newSocket.on('error', (err: { message: string } | any) => {
                     console.error('Socket error:', err);
-                    setIsConnecting(false);
-                    setIsConnected(false);
+                    toast.error(err.message || t('unknown_error'));
+                    // Don't disconnect on rate limit or minor errors
+                    if (err.message && !err.message.includes('wait')) {
+                        setIsConnecting(false);
+                        setIsConnected(false);
+                    }
                 });
 
                 newSocket.on('connect_error', (err: Error) => {

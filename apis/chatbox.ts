@@ -20,6 +20,8 @@ export interface IConversation {
 }
 
 export interface IMessage {
+    _id?: string;
+    conversationId: string;
     senderId: string;
     senderRole: string;
     senderName?: string;

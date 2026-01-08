@@ -812,5 +812,7 @@
     "tour_wizard_refund_policy": "Refund Policy",
     "tour_wizard_refund_policy_desc": "Select a cancellation policy for this tour variant. Policies are shared across tours of the same supplier.",
     "tour_wizard_tour_variants": "Tour Variants",
-    "tour_wizard_tour_variants_desc": "Define different package options (Standard, Deluxe, etc.)"
+    "tour_wizard_tour_variants_desc": "Define different package options (Standard, Deluxe, etc.)",
+    "new_message_from": "New message from {name}",
+    "view": "View"
 }

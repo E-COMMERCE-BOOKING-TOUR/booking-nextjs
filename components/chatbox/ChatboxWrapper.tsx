@@ -70,11 +70,13 @@ export default function ChatboxWrapper() {
     }, [params]);
 
     const handleOpen = async () => {
+        // If session is still loading, wait for it to resolve
         if (status === 'loading') {
             setIsLoading(true);
             return;
         }
 
+        // If not authenticated, show login prompt
         if (status !== 'authenticated') {
             setShowLoginPrompt(true);
             return;
@@ -107,6 +109,17 @@ export default function ChatboxWrapper() {
         setChatTarget('ADMIN');
         setIsOpen(true);
         setHasOpened(true);
+    };
+
+    // Handle opening chatbox directly when authenticated (for cases like after login redirect)
+    const openChatDirectly = () => {
+        if (chatContext.supplierId) {
+            setShowTargetSelector(true);
+        } else {
+            setChatTarget('ADMIN');
+            setIsOpen(true);
+            setHasOpened(true);
+        }
     };
 
     const handleSelectTarget = (target: 'ADMIN' | 'SUPPLIER') => {
@@ -150,16 +163,19 @@ export default function ChatboxWrapper() {
         router.push(`/user-login?callbackUrl=${encodeURIComponent(pathname)}`);
     };
 
-    // Handle loading state resolution
+    // Handle loading state resolution - when session finishes loading after user clicked chat button
     useEffect(() => {
         if (isLoading && status !== 'loading') {
             setIsLoading(false);
             if (status === 'authenticated') {
-                handleOpen();
+                // User is now authenticated, open chatbox directly
+                openChatDirectly();
             } else {
+                // User is not authenticated
                 setShowLoginPrompt(true);
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isLoading, status]);
 
     return (

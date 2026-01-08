@@ -45,7 +45,11 @@ export default function AdminMessagePage() {
 
     // Initialize notification sound
     useEffect(() => {
-        notificationSoundRef.current = new Audio('/sounds/notification.mp3');
+        // Use absolute URL to avoid locale prefix issue
+        const soundUrl = typeof window !== 'undefined'
+            ? `${window.location.origin}/sounds/notification.mp3`
+            : '/sounds/notification.mp3';
+        notificationSoundRef.current = new Audio(soundUrl);
         notificationSoundRef.current.volume = 0.5;
     }, []);
 
@@ -134,12 +138,24 @@ export default function AdminMessagePage() {
             setIsSocketConnected(false);
         });
 
-        s.on('newMessage', (msg: IMessage) => {
+        // Listen for admin-specific new message notifications (from users)
+        s.on('adminNewMessage', (msg: IMessage) => {
+            console.log('Admin received new message from user:', msg);
             refetch(); // Refresh conversation list on new message
-            // Play sound if message is from user (not admin)
-            if (msg && msg.senderRole !== 'ADMIN' && msg.senderRole !== 'admin') {
-                playNotificationSound();
-            }
+            import('sonner').then(({ toast }) => {
+                toast(t('new_message_from', { name: msg.senderName || t('unknown_user') }), {
+                    description: msg.content.substring(0, 50) + (msg.content.length > 50 ? '...' : ''),
+                    action: {
+                        label: t('view'),
+                        onClick: () => {
+                            // Find the conversation and select it
+                            const convo = conversations.find(c => c._id === msg.conversationId);
+                            if (convo) setSelectedConvo(convo);
+                        }
+                    }
+                });
+            });
+            playNotificationSound();
         });
 
         // User presence tracking

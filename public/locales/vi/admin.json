@@ -813,5 +813,7 @@
     "tour_wizard_refund_policy": "Chính sách hoàn tiền",
     "tour_wizard_refund_policy_desc": "Chọn chính sách hủy cho biến thể tour này. Chính sách được chia sẻ trên các tour của cùng một nhà cung cấp.",
     "tour_wizard_tour_variants": "Biến thể Tour",
-    "tour_wizard_tour_variants_desc": "Xác định các lựa chọn gói khác nhau (Tiêu chuẩn, Cao cấp, v.v.)"
+    "tour_wizard_tour_variants_desc": "Xác định các lựa chọn gói khác nhau (Tiêu chuẩn, Cao cấp, v.v.)",
+    "new_message_from": "Tin nhắn mới từ {name}",
+    "view": "Xem"
 }
