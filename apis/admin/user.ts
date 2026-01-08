@@ -37,4 +37,9 @@ export const adminUserApi = {
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.delete(`/admin/user/remove/${id}`, { headers: authHeaders.headers });
     },
+    resetPassword: async (id: number | string, newPassword?: string, token?: string) => {
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+        return fetchC.post(`/admin/user/reset-password/${id}`, { newPassword }, { headers: authHeaders.headers });
+    },
 };

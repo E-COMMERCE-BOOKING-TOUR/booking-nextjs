@@ -16,6 +16,8 @@ import {
   Trash2,
   Plus,
   Loader2,
+  KeyRound,
+  Copy,
 } from 'lucide-react';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminFilterBar } from '@/components/admin/AdminFilterBar';
@@ -81,6 +83,8 @@ export default function AdminUserListPage() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<IAdminUser | null>(null);
+  const [resetPasswordUser, setResetPasswordUser] = useState<IAdminUser | null>(null);
+  const [newPassword, setNewPassword] = useState<string | null>(null);
 
   const [page, setPage] = useState(1);
   const limit = 10;
@@ -159,6 +163,18 @@ export default function AdminUserListPage() {
     },
     onError: (error: Error) => {
       toast.error(error.message || t('toast_delete_user_error'));
+    }
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: (id: number) => adminUserApi.resetPassword(id, undefined, token),
+    onSuccess: (data: { newPassword?: string }) => {
+      setNewPassword(data.newPassword || null);
+      toast.success(t('toast_reset_password_success'));
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || t('toast_reset_password_error'));
+      setResetPasswordUser(null);
     }
   });
 
@@ -319,7 +335,8 @@ export default function AdminUserListPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col">
                           <span className="text-sm font-bold text-foreground">{user.full_name}</span>
-                          <span className="text-xs text-muted-foreground">{user.email || user.username}</span>
+                          <span className="text-xs text-muted-foreground">@{user.username}</span>
+                          {user.email && <span className="text-xs text-muted-foreground/60">{user.email}</span>}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -358,6 +375,12 @@ export default function AdminUserListPage() {
                             <HasPermission permission="user:update">
                               <DropdownMenuItem onClick={() => handleOpenEdit(user)} className="cursor-pointer">
                                 <Pencil className="mr-2 size-4" /> {t('action_edit')}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => setResetPasswordUser(user)}
+                                className="cursor-pointer"
+                              >
+                                <KeyRound className="mr-2 size-4" /> {t('action_reset_password')}
                               </DropdownMenuItem>
                             </HasPermission>
                             <DropdownMenuSeparator />
@@ -415,7 +438,7 @@ export default function AdminUserListPage() {
                   id="username"
                   disabled={!!editingUser}
                   {...register('username', { required: !editingUser })}
-                  placeholder="username"
+                  placeholder={editingUser?.username || t('username_placeholder')}
                 />
                 {errors.username && <span className="text-xs text-rose-500">{t('required_field')}</span>}
               </div>
@@ -545,6 +568,79 @@ export default function AdminUserListPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog
+        open={!!resetPasswordUser}
+        onOpenChange={(open) => {
+          if (!open) {
+            setResetPasswordUser(null);
+            setNewPassword(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>{t('reset_password_title')}</DialogTitle>
+            <DialogDescription>
+              {newPassword
+                ? t('reset_password_success_desc', { username: resetPasswordUser?.username || '' })
+                : t('reset_password_confirm_desc', { username: resetPasswordUser?.username || '' })}
+            </DialogDescription>
+          </DialogHeader>
+
+          {newPassword ? (
+            <div className="space-y-4 py-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <Label className="text-xs text-muted-foreground">{t('new_password_label')}</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <code className="text-lg font-mono font-bold text-primary">{newPassword}</code>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      navigator.clipboard.writeText(newPassword);
+                      toast.success(t('copied_to_clipboard'));
+                    }}
+                  >
+                    <Copy className="size-4" />
+                  </Button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t('share_password_note')}
+              </p>
+            </div>
+          ) : (
+            <div className="py-4">
+              <p className="text-sm text-muted-foreground">
+                {t('reset_password_warning')}
+              </p>
+            </div>
+          )}
+
+          <DialogFooter>
+            {newPassword ? (
+              <Button onClick={() => { setResetPasswordUser(null); setNewPassword(null); }}>
+                {t('close_button')}
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setResetPasswordUser(null)}>
+                  {t('cancel_button')}
+                </Button>
+                <Button
+                  onClick={() => resetPasswordUser && resetPasswordMutation.mutate(resetPasswordUser.id)}
+                  disabled={resetPasswordMutation.isPending}
+                >
+                  {resetPasswordMutation.isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
+                  {t('reset_password_button')}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
