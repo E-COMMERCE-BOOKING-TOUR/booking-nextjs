@@ -41,5 +41,10 @@ export const adminChatboxApi = {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.patch(`/admin/chatbox/conversation/${conversationId}/human`, { isHumanTakeover }, { headers: authHeaders.headers });
+    },
+    syncUserNames: async (users: { userId: string; name: string }[], token?: string) => {
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+        return fetchC.post('/admin/chatbox/sync-user-names', { users }, { headers: authHeaders.headers });
     }
 }
