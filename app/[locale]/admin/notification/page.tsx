@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { TargetGroup, NotificationType, INotification } from '@/types/notification';
 import { useTranslations, useFormatter } from 'next-intl';
+import { useForm } from 'react-hook-form';
 
 const TargetBadge = ({ group }: { group: TargetGroup }) => {
     const t = useTranslations("admin");
@@ -102,37 +103,54 @@ export default function AdminNotificationListPage() {
     const token = session?.user?.accessToken;
     const queryClient = useQueryClient();
     const [deleteId, setDeleteId] = useState<number | null>(null);
-    const [keyword, setKeyword] = useState('');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [typeFilter, setTypeFilter] = useState('all');
-    const [groupFilter, setGroupFilter] = useState('all');
+
+    // Filter form for staged inputs
+    interface NotificationFilterForm {
+        keyword: string;
+        typeFilter: string;
+        groupFilter: string;
+    }
+
+    const filterForm = useForm<NotificationFilterForm>({
+        defaultValues: {
+            keyword: '',
+            typeFilter: 'all',
+            groupFilter: 'all'
+        }
+    });
+
+    // Applied filter values (what is used in API query)
+    const [appliedFilters, setAppliedFilters] = useState<NotificationFilterForm>({
+        keyword: '',
+        typeFilter: 'all',
+        groupFilter: 'all'
+    });
     const [page, setPage] = useState(1);
     const limit = 10;
 
-    const isFiltered = searchTerm !== '' || typeFilter !== 'all' || groupFilter !== 'all';
+    const isFiltered = appliedFilters.keyword !== '' || appliedFilters.typeFilter !== 'all' || appliedFilters.groupFilter !== 'all';
 
-    const handleSearch = () => {
-        setSearchTerm(keyword);
+    const handleSearch = filterForm.handleSubmit((data) => {
+        setAppliedFilters(data);
         setPage(1);
-    };
+    });
 
     const handleClear = () => {
-        setKeyword('');
-        setSearchTerm('');
-        setTypeFilter('all');
-        setGroupFilter('all');
+        const defaultValues = { keyword: '', typeFilter: 'all', groupFilter: 'all' };
+        filterForm.reset(defaultValues);
+        setAppliedFilters(defaultValues);
         setPage(1);
     };
 
     const { data, isLoading: isQueryLoading } = useQuery({
-        queryKey: ['admin-notifications', token, page, searchTerm, typeFilter, groupFilter],
+        queryKey: ['admin-notifications', token, page, appliedFilters.keyword, appliedFilters.typeFilter, appliedFilters.groupFilter],
         queryFn: () => adminNotificationApi.getAll(
             token!,
             page,
             limit,
-            searchTerm,
-            typeFilter === 'all' ? undefined : typeFilter,
-            groupFilter === 'all' ? undefined : groupFilter
+            appliedFilters.keyword,
+            appliedFilters.typeFilter === 'all' ? undefined : appliedFilters.typeFilter,
+            appliedFilters.groupFilter === 'all' ? undefined : appliedFilters.groupFilter
         ),
         enabled: !!token,
     });
@@ -187,21 +205,21 @@ export default function AdminNotificationListPage() {
             <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
                 <AdminFilterBar
                     searchPlaceholder={t('search_notification_placeholder')}
-                    searchTerm={keyword}
-                    onSearchChange={setKeyword}
+                    searchTerm={filterForm.watch('keyword')}
+                    onSearchChange={(val) => filterForm.setValue('keyword', val)}
                     onSearch={handleSearch}
                     onClear={handleClear}
                     isFiltered={isFiltered}
                 >
                     <AdminSelect
-                        value={typeFilter}
-                        onValueChange={setTypeFilter}
+                        value={filterForm.watch('typeFilter')}
+                        onValueChange={(val) => filterForm.setValue('typeFilter', val)}
                         placeholder={t('notification_type_placeholder')}
                         options={typeOptions}
                     />
                     <AdminSelect
-                        value={groupFilter}
-                        onValueChange={setGroupFilter}
+                        value={filterForm.watch('groupFilter')}
+                        onValueChange={(val) => filterForm.setValue('groupFilter', val)}
                         placeholder={t('audience_placeholder')}
                         options={groupOptions}
                         width="w-[180px]"

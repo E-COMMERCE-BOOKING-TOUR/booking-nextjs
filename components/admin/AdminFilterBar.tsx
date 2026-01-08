@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CardHeader } from "@/components/ui/card";
 import { useTranslations } from "next-intl";
+import { cn } from "@/libs/utils";
 
 interface AdminFilterBarProps {
     searchPlaceholder?: string;
@@ -15,6 +16,7 @@ interface AdminFilterBarProps {
     onClear?: () => void;
     isFiltered?: boolean;
     children?: React.ReactNode;
+    className?: string;
 }
 
 export const AdminFilterBar = ({
@@ -25,11 +27,12 @@ export const AdminFilterBar = ({
     onClear,
     isFiltered,
     children,
+    className,
 }: AdminFilterBarProps) => {
     const t = useTranslations("admin");
     const placeholder = searchPlaceholder || t('search_placeholder');
     return (
-        <CardHeader className="border-b border-white/5 pb-6 px-6">
+        <CardHeader className={cn("border-b border-white/5 pb-6 px-6", className)}>
             <div className="flex flex-col md:flex-row md:items-center gap-4">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />

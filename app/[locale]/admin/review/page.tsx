@@ -1,22 +1,15 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
+import { useForm } from "react-hook-form";
 import { Card, CardTitle, CardHeader, CardDescription, CardContent, CardAction } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { Star, MoreVertical, Trash2, Eye, EyeOff, ThumbsUp, Flag, Search, X } from "lucide-react";
+import { Star, MoreVertical, Trash2, Eye, EyeOff, ThumbsUp, Flag, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +23,8 @@ import { Separator } from "@/components/ui/separator";
 import { IReview } from "@/types/response/review.type";
 import { IAdminTour } from "@/types/admin/tour.dto";
 import { useTranslations } from "next-intl";
+import { AdminFilterBar } from "@/components/admin/AdminFilterBar";
+import { AdminSelect } from "@/components/admin/AdminSelect";
 
 export default function AdminReview() {
   const t = useTranslations("admin");
@@ -37,30 +32,69 @@ export default function AdminReview() {
   const token = session?.user?.accessToken;
   const queryClient = useQueryClient();
 
-  // Filters State
-  const [keyword, setKeyword] = React.useState("");
-  const [status, setStatus] = React.useState<string>("all");
-  const [tourId, setTourId] = React.useState<string>("all");
-  const [debouncedKeyword, setDebouncedKeyword] = React.useState("");
+  // Filter form for staged inputs
+  interface ReviewFilterForm {
+    keyword: string;
+    status: string;
+    tourId: string;
+  }
 
-  // Debounce keyword
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedKeyword(keyword);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [keyword]);
+  const filterForm = useForm<ReviewFilterForm>({
+    defaultValues: {
+      keyword: '',
+      status: 'all',
+      tourId: 'all'
+    }
+  });
 
-  const { data: reviews = [], isLoading } = useQuery({
-    queryKey: ['admin-reviews', token, debouncedKeyword, status, tourId],
+  // Applied filter values (what is used in API query)
+  const [appliedFilters, setAppliedFilters] = useState<ReviewFilterForm>({
+    keyword: '',
+    status: 'all',
+    tourId: 'all'
+  });
+
+  const handleSearch = filterForm.handleSubmit((data) => {
+    setAppliedFilters(data);
+  });
+
+  const handleClear = () => {
+    const defaultValues = { keyword: '', status: 'all', tourId: 'all' };
+    filterForm.reset(defaultValues);
+    setAppliedFilters(defaultValues);
+  };
+
+  const isFiltered = appliedFilters.keyword !== '' || appliedFilters.status !== 'all' || appliedFilters.tourId !== 'all';
+
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(12);
+  const limitOptions = [6, 12, 24, 48];
+
+  interface ReviewResponse {
+    data: IReview[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }
+
+  const { data: reviewsData, isLoading } = useQuery<ReviewResponse>({
+    queryKey: ['admin-reviews', token, appliedFilters.keyword, appliedFilters.status, appliedFilters.tourId, page, limit],
     queryFn: () => adminReviewApi.getAll({
-      keyword: debouncedKeyword || undefined,
-      status: status === "all" ? undefined : status,
-      tour_id: tourId === "all" ? undefined : Number(tourId),
-      sortOrder: 'DESC'
+      keyword: appliedFilters.keyword || undefined,
+      status: appliedFilters.status === "all" ? undefined : appliedFilters.status,
+      tour_id: appliedFilters.tourId === "all" ? undefined : Number(appliedFilters.tourId),
+      sortOrder: 'DESC',
+      page,
+      limit
     }, token),
     enabled: !!token,
   });
+
+  const reviews = reviewsData?.data || [];
+  const total = reviewsData?.total || 0;
+  const totalPages = reviewsData?.totalPages || 1;
 
   // Fetch Tours for filter
   const { data: toursData } = useQuery({
@@ -81,6 +115,10 @@ export default function AdminReview() {
     }
   });
 
+  const handleSearchWithReset = filterForm.handleSubmit((data) => {
+    setAppliedFilters(data);
+    setPage(1); // Reset to page 1 when searching
+  });
   const filteredReviews = Array.isArray(reviews) ? reviews : [];
 
   const toggleVisibilityMutation = useMutation({
@@ -127,13 +165,19 @@ export default function AdminReview() {
 
   const chartData = getStatsChartData();
 
-  if (isLoading) return <div>{t('loading_status')}</div>;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">
       {/* Stats Cards (Keep visual) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 bg-card/20">
           <CardHeader className="border-b">
             <CardTitle className="text-xl">{t('review_statistics_title')}</CardTitle>
             <CardDescription>{t('ratings_distribution_desc')}</CardDescription>
@@ -157,7 +201,7 @@ export default function AdminReview() {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-card/20">
           <CardHeader className="border-b">
             <CardTitle className="text-xl">{t('ratings_title')}</CardTitle>
             <CardAction>
@@ -195,75 +239,44 @@ export default function AdminReview() {
       </div>
 
       {/* Filters Section */}
-      <Card>
-        <CardContent className="py-4">
-          <div className="flex flex-col md:flex-row gap-4 items-end">
-            <div className="flex-1 w-full space-y-1.5">
-              <label className="text-sm font-medium">{t('search_reviews_label')}</label>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder={t('search_reviews_placeholder')}
-                  className="pl-9"
-                  value={keyword}
-                  onChange={(e) => setKeyword(e.target.value)}
-                />
-                {keyword && (
-                  <button
-                    onClick={() => setKeyword("")}
-                    className="absolute right-2.5 top-2.5"
-                  >
-                    <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="w-full space-y-1.5">
-              <label className="text-sm font-medium">{t('filter_by_tour_label')}</label>
-              <Select value={tourId} onValueChange={setTourId}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('all_tours_option')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('all_tours_option')}</SelectItem>
-                  {tours.map((t: IAdminTour) => (
-                    <SelectItem key={t.id} value={t.id.toString()}>{t.title}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="w-full space-y-1.5">
-              <label className="text-sm font-medium">{t('status_filter_label')}</label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('all_status_option')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('all_status_option')}</SelectItem>
-                  <SelectItem value="approved">{t('status_approved')}</SelectItem>
-                  <SelectItem value="pending">{t('status_pending')}</SelectItem>
-                  <SelectItem value="rejected">{t('status_rejected')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button
-              variant="outline"
-              onClick={() => {
-                setKeyword("");
-                setStatus("all");
-                setTourId("all");
-              }}
-            >
-              {t('reset_button')}
-            </Button>
-          </div>
-        </CardContent>
+      <Card className="border-white/5 bg-card/20">
+        <AdminFilterBar
+          className="border-none pb-0 border-b-0"
+          searchPlaceholder={t('search_reviews_placeholder')}
+          searchTerm={filterForm.watch('keyword')}
+          onSearchChange={(val) => filterForm.setValue('keyword', val)}
+          onSearch={handleSearchWithReset}
+          onClear={handleClear}
+          isFiltered={isFiltered}
+        >
+          <AdminSelect
+            value={filterForm.watch('tourId')}
+            onValueChange={(val) => filterForm.setValue('tourId', val)}
+            placeholder={t('filter_by_tour_label')}
+            options={[
+              { label: t('all_tours_option'), value: 'all' },
+              ...tours.map((tour: IAdminTour) => ({
+                label: tour.title,
+                value: tour.id.toString()
+              }))
+            ]}
+            width="w-[200px]"
+          />
+          <AdminSelect
+            value={filterForm.watch('status')}
+            onValueChange={(val) => filterForm.setValue('status', val)}
+            placeholder={t('status_filter_label')}
+            options={[
+              { label: t('all_status_option'), value: 'all' },
+              { label: t('status_approved'), value: 'approved' },
+              { label: t('status_pending'), value: 'pending' },
+              { label: t('status_rejected'), value: 'rejected' }
+            ]}
+          />
+        </AdminFilterBar>
       </Card>
 
-      <Card>
+      <Card className="bg-card/20">
         <CardHeader className="border-b">
           <CardTitle className="text-xl">{t('traveler_feedback_title')}</CardTitle>
         </CardHeader>
@@ -342,8 +355,78 @@ export default function AdminReview() {
             ))}
           </div>
 
-          <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-            <div>{t('showing_reviews_count_total', { count: filteredReviews.length })}</div>
+          {/* Pagination Controls */}
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-white/5 pt-4">
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground">
+                {t('showing_of_total', {
+                  from: total > 0 ? (page - 1) * limit + 1 : 0,
+                  to: Math.min(page * limit, total),
+                  total
+                })}
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">{t('per_page_label') || 'Per page'}:</span>
+                <AdminSelect
+                  value={limit.toString()}
+                  onValueChange={(val) => {
+                    setLimit(Number(val));
+                    setPage(1);
+                  }}
+                  placeholder="12"
+                  options={limitOptions.map((opt) => ({
+                    label: opt.toString(),
+                    value: opt.toString()
+                  }))}
+                  width="w-[80px]"
+                />
+              </div>
+            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  <ChevronLeft className="size-4" />
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (page <= 3) {
+                      pageNum = i + 1;
+                    } else if (page >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = page - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={page === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setPage(pageNum)}
+                        className="w-9"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  <ChevronRight className="size-4" />
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

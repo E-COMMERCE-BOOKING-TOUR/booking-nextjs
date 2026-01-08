@@ -84,10 +84,24 @@ export default function AdminDivisionPage() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCountryId, setSelectedCountryId] = useState<number | null>(
-    null,
-  );
+  // Filter form for staged inputs
+  interface DivisionFilterForm {
+    keyword: string;
+    countryId: string;
+  }
+
+  const filterForm = useForm<DivisionFilterForm>({
+    defaultValues: {
+      keyword: '',
+      countryId: 'all'
+    }
+  });
+
+  // Applied filter values (what is used in API query)
+  const [appliedFilters, setAppliedFilters] = useState<{ keyword: string; countryId: number | null }>({
+    keyword: '',
+    countryId: null
+  });
   const [parentFilter, setParentFilter] = useState<{ id: number; name: string } | null>(null);
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -122,13 +136,13 @@ export default function AdminDivisionPage() {
 
   // Fetch divisions with pagination
   const { data: divisionsResponse, isLoading } = useQuery<PaginatedDivisionsResponse>({
-    queryKey: ["admin-divisions", token, selectedCountryId, parentFilter?.id, page, searchTerm],
+    queryKey: ["admin-divisions", token, appliedFilters.countryId, parentFilter?.id, page, appliedFilters.keyword],
     queryFn: () =>
       adminDivisionApi.getAll({
         page,
         limit: ITEMS_PER_PAGE,
-        keyword: searchTerm || undefined,
-        country_id: selectedCountryId || undefined,
+        keyword: appliedFilters.keyword || undefined,
+        country_id: appliedFilters.countryId || undefined,
         parent_id: parentFilter?.id,
       }, token),
     enabled: !!token,
@@ -222,7 +236,7 @@ export default function AdminDivisionPage() {
       name_local: "",
       level: 1,
       code: "",
-      country_id: selectedCountryId || 0,
+      country_id: appliedFilters.countryId || 0,
       parent_id: null,
     });
     setImagePreview(null);
@@ -289,14 +303,19 @@ export default function AdminDivisionPage() {
     });
   };
 
-  // Reset page when filters change
-  const handleSearchChange = (value: string) => {
-    setSearchTerm(value);
+  // Apply filters when search button is clicked
+  const handleSearch = filterForm.handleSubmit((data) => {
+    setAppliedFilters({
+      keyword: data.keyword,
+      countryId: data.countryId === 'all' ? null : parseInt(data.countryId)
+    });
     setPage(1);
-  };
+  });
 
-  const handleCountryChange = (value: number | null) => {
-    setSelectedCountryId(value);
+  const handleClear = () => {
+    filterForm.reset({ keyword: '', countryId: 'all' });
+    setAppliedFilters({ keyword: '', countryId: null });
+    setParentFilter(null);
     setPage(1);
   };
 
@@ -330,22 +349,15 @@ export default function AdminDivisionPage() {
       <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
         <AdminFilterBar
           searchPlaceholder={t("search_division_placeholder")}
-          searchTerm={searchTerm}
-          onSearchChange={handleSearchChange}
-          onSearch={() => { }}
-          onClear={() => {
-            setSearchTerm("");
-            setSelectedCountryId(null);
-            setParentFilter(null);
-            setPage(1);
-          }}
-          isFiltered={searchTerm !== "" || selectedCountryId !== null || parentFilter !== null}
+          searchTerm={filterForm.watch('keyword')}
+          onSearchChange={(val) => filterForm.setValue('keyword', val)}
+          onSearch={handleSearch}
+          onClear={handleClear}
+          isFiltered={appliedFilters.keyword !== '' || appliedFilters.countryId !== null || parentFilter !== null}
         >
           <AdminSelect
-            value={selectedCountryId?.toString() || "all"}
-            onValueChange={(val: string) =>
-              handleCountryChange(val === "all" ? null : parseInt(val))
-            }
+            value={filterForm.watch('countryId')}
+            onValueChange={(val: string) => filterForm.setValue('countryId', val)}
             placeholder={t("select_country_placeholder")}
             options={[
               { label: t("all_countries_option"), value: "all" },

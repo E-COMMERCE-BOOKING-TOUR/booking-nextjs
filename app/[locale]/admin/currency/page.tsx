@@ -60,7 +60,13 @@ export default function AdminCurrencyPage() {
     const token = session?.user?.accessToken;
     const queryClient = useQueryClient();
 
-    const [searchTerm, setSearchTerm] = useState('');
+    // Filter form for staged inputs
+    const filterForm = useForm<{ keyword: string }>({
+        defaultValues: { keyword: '' }
+    });
+
+    // Applied filter value (what is used for filtering)
+    const [appliedKeyword, setAppliedKeyword] = useState('');
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [editCurrency, setEditCurrency] = useState<ICurrency | null>(null);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -150,10 +156,19 @@ export default function AdminCurrencyPage() {
         });
     };
 
+    const handleSearch = filterForm.handleSubmit((data) => {
+        setAppliedKeyword(data.keyword);
+    });
+
+    const handleClear = () => {
+        filterForm.reset({ keyword: '' });
+        setAppliedKeyword('');
+    };
+
     const filteredCurrencies = currencies.filter((c: ICurrency) =>
-        !searchTerm ||
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+        !appliedKeyword ||
+        c.name.toLowerCase().includes(appliedKeyword.toLowerCase()) ||
+        c.symbol.toLowerCase().includes(appliedKeyword.toLowerCase())
     );
 
     return (
@@ -173,11 +188,11 @@ export default function AdminCurrencyPage() {
             <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
                 <AdminFilterBar
                     searchPlaceholder={t('search_currency_placeholder')}
-                    searchTerm={searchTerm}
-                    onSearchChange={setSearchTerm}
-                    onSearch={() => { }} // Live search
-                    onClear={() => setSearchTerm('')}
-                    isFiltered={searchTerm !== ''}
+                    searchTerm={filterForm.watch('keyword')}
+                    onSearchChange={(val) => filterForm.setValue('keyword', val)}
+                    onSearch={handleSearch}
+                    onClear={handleClear}
+                    isFiltered={appliedKeyword !== ''}
                 />
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">

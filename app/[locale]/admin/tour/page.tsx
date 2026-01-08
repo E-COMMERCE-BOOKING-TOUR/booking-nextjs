@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminTourApi } from '@/apis/admin/tour';
 import { useSession } from 'next-auth/react';
@@ -64,12 +65,31 @@ export default function AdminTourListPage() {
   const { data: session, status: sessionStatus } = useSession();
   const token = session?.user?.accessToken;
   const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [keyword, setKeyword] = useState('');
+  // Filter form for staged inputs
+  interface TourFilterForm {
+    keyword: string;
+    status: string;
+    sortBy: string;
+    sortOrder: 'ASC' | 'DESC';
+  }
+
+  const filterForm = useForm<TourFilterForm>({
+    defaultValues: {
+      keyword: '',
+      status: '',
+      sortBy: 'created_at',
+      sortOrder: 'DESC'
+    }
+  });
+
   const [currentPage, setCurrentPage] = useState(1);
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [sortBy, setSortBy] = useState('created_at');
-  const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
+  // Applied filter values (what is used in API query)
+  const [appliedFilters, setAppliedFilters] = useState<TourFilterForm>({
+    keyword: '',
+    status: '',
+    sortBy: 'created_at',
+    sortOrder: 'DESC'
+  });
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const [report, setReport] = useState<{
@@ -81,20 +101,32 @@ export default function AdminTourListPage() {
 
 
   const { data: tourResponse, isLoading } = useQuery({
-    queryKey: ['admin-tours', keyword, statusFilter, currentPage, sortBy, sortOrder],
+    queryKey: ['admin-tours', appliedFilters.keyword, appliedFilters.status, currentPage, appliedFilters.sortBy, appliedFilters.sortOrder],
     queryFn: () => adminTourApi.getAll({
-      keyword: keyword,
-      status: statusFilter,
+      keyword: appliedFilters.keyword,
+      status: appliedFilters.status,
       page: currentPage,
       limit: 10,
-      sortBy,
-      sortOrder
+      sortBy: appliedFilters.sortBy,
+      sortOrder: appliedFilters.sortOrder
     }, token),
     enabled: !!token,
   });
 
-  const handleSearch = () => {
-    setKeyword(searchTerm);
+  const handleSearch = filterForm.handleSubmit((data) => {
+    setAppliedFilters(data);
+    setCurrentPage(1);
+  });
+
+  const handleClear = () => {
+    const defaultValues = {
+      keyword: '',
+      status: '',
+      sortBy: 'created_at',
+      sortOrder: 'DESC' as const
+    };
+    filterForm.reset(defaultValues);
+    setAppliedFilters(defaultValues);
     setCurrentPage(1);
   };
 
@@ -179,34 +211,27 @@ export default function AdminTourListPage() {
       <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
         <AdminFilterBar
           searchPlaceholder={t('search_tour_placeholder')}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
+          searchTerm={filterForm.watch('keyword')}
+          onSearchChange={(val) => filterForm.setValue('keyword', val)}
           onSearch={handleSearch}
-          onClear={() => {
-            setSearchTerm('');
-            setKeyword('');
-            setStatusFilter('');
-            setCurrentPage(1);
-          }}
-          isFiltered={searchTerm !== '' || statusFilter !== ''}
+          onClear={handleClear}
+          isFiltered={filterForm.watch('keyword') !== '' || filterForm.watch('status') !== ''}
         >
           <AdminSelect
-            value={statusFilter || 'all'}
+            value={filterForm.watch('status') || 'all'}
             onValueChange={(val: string) => {
-              setStatusFilter(val === 'all' ? '' : val);
-              setCurrentPage(1);
+              filterForm.setValue('status', val === 'all' ? '' : val);
             }}
             placeholder={t('status_filter_label')}
             options={statusOptions}
           />
 
           <AdminSelect
-            value={`${sortBy}-${sortOrder}`}
+            value={`${filterForm.watch('sortBy')}-${filterForm.watch('sortOrder')}`}
             onValueChange={(val: string) => {
               const [field, order] = val.split('-');
-              setSortBy(field);
-              setSortOrder(order as 'ASC' | 'DESC');
-              setCurrentPage(1);
+              filterForm.setValue('sortBy', field);
+              filterForm.setValue('sortOrder', order as 'ASC' | 'DESC');
             }}
             placeholder={t('sort_by_label')}
             options={sortOptions}

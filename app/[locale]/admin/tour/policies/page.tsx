@@ -203,10 +203,10 @@ export default function AdminTourPoliciesPage() {
             </div>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="max-w-md bg-slate-900 border-white/10 text-white">
+                <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
                         <DialogTitle>{editingPolicy ? t('edit_policy_title') : t('create_new_policy_title')}</DialogTitle>
-                        <DialogDescription className="text-slate-400">
+                        <DialogDescription>
                             {t('policy_dialog_desc')}
                         </DialogDescription>
                     </DialogHeader>
@@ -219,46 +219,45 @@ export default function AdminTourPoliciesPage() {
                                 value={policyForm.name}
                                 onChange={e => setPolicyForm({ ...policyForm, name: e.target.value })}
                                 placeholder={t('policy_name_placeholder')}
-                                className="bg-white/5 border-white/10 focus:ring-primary/50 text-white"
                             />
                         </div>
 
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
                                 <Label>{t('cancellation_rules_label')}</Label>
-                                <Button type="button" variant="outline" size="sm" className="h-7 text-xs border-primary/30 text-primary hover:bg-primary/10" onClick={addRule}>
+                                <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={addRule}>
                                     <Plus className="size-3 mr-1" /> {t('add_rule_button')}
                                 </Button>
                             </div>
 
-                            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10">
+                            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
                                 {([...(policyForm.rules || [])]).sort((a, b) => b.before_hours - a.before_hours).map((rule, idx) => (
-                                    <div key={idx} className="flex items-end gap-2 p-3 rounded-lg bg-white/5 border border-white/5">
+                                    <div key={idx} className="flex items-end gap-2 p-3 rounded-lg bg-muted/50 border">
                                         <div className="space-y-1.5 flex-1">
-                                            <Label className="text-[10px] text-slate-400 uppercase">{t('hours_before_label')} {rule.before_hours > 0 && `(${formatTime(rule.before_hours)})`}</Label>
+                                            <Label className="text-[10px] text-muted-foreground uppercase">{t('hours_before_label')} {rule.before_hours > 0 && `(${formatTime(rule.before_hours)})`}</Label>
                                             <div className="relative">
-                                                <Clock className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-slate-400" />
+                                                <Clock className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" />
                                                 <Input
                                                     type="number"
                                                     value={rule.before_hours}
                                                     onChange={e => updateRule(idx, 'before_hours', parseInt(e.target.value))}
-                                                    className="h-8 pl-7 bg-transparent border-white/10 text-xs text-white"
+                                                    className="h-8 pl-7 text-xs"
                                                 />
                                             </div>
                                         </div>
                                         <div className="space-y-1.5 flex-1">
-                                            <Label className="text-[10px] text-slate-400 uppercase">{t('fee_pct_label')}</Label>
+                                            <Label className="text-[10px] text-muted-foreground uppercase">{t('fee_pct_label')}</Label>
                                             <div className="relative">
-                                                <Percent className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-slate-400" />
+                                                <Percent className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" />
                                                 <Input
                                                     type="number"
                                                     value={rule.fee_pct}
                                                     onChange={e => updateRule(idx, 'fee_pct', parseInt(e.target.value))}
-                                                    className="h-8 pl-7 bg-transparent border-white/10 text-xs text-white"
+                                                    className="h-8 pl-7 text-xs"
                                                 />
                                             </div>
                                         </div>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-destructive" onClick={() => removeRule(idx)}>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeRule(idx)}>
                                             <Trash2 className="size-3" />
                                         </Button>
                                     </div>
@@ -268,8 +267,8 @@ export default function AdminTourPoliciesPage() {
                     </div>
 
                     <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-slate-400 hover:bg-white/5">{t('cancel_button')}</Button>
-                        <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
+                        <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>{t('cancel_button')}</Button>
+                        <Button onClick={handleSave}>
                             <Save className="size-4 mr-2" /> {editingPolicy ? t('update_policy_button') : t('create_policy_button')}
                         </Button>
                     </DialogFooter>

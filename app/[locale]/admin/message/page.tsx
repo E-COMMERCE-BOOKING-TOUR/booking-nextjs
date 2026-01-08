@@ -218,8 +218,8 @@ export default function AdminMessagePage() {
     // Show loading while session is loading
     if (sessionStatus === 'loading') {
         return (
-            <div className="flex items-center justify-center h-[60vh]">
-                <Loader2 className="size-8 animate-spin text-primary" />
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
             </div>
         );
     }
@@ -421,7 +421,7 @@ export default function AdminMessagePage() {
                                 <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background/50">
                                     {isLoadingMessages ? (
                                         <div className="flex items-center justify-center h-full">
-                                            <Loader2 className="size-8 animate-spin text-primary" />
+                                            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
                                         </div>
                                     ) : (
                                         <>

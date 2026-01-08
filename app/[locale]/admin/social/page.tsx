@@ -15,6 +15,7 @@ import {
     MoreHorizontal
 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useForm } from 'react-hook-form';
 import { adminArticleApi } from "@/apis/admin/article";
 import type { IArticlePopular } from "@/types/response/article";
 import { toast } from "sonner";
@@ -64,7 +65,14 @@ const AdminSocialPage = () => {
     const token = session?.user?.accessToken;
     const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
-    const [search, setSearch] = useState("");
+
+    // Filter form for staged inputs
+    const filterForm = useForm<{ keyword: string }>({
+        defaultValues: { keyword: '' }
+    });
+
+    // Applied filter value (what is used in API query)
+    const [appliedSearch, setAppliedSearch] = useState('');
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const limit = 10;
 
@@ -75,8 +83,8 @@ const AdminSocialPage = () => {
     });
 
     const { data: articlesData, isLoading: isLoadingArticles } = useQuery({
-        queryKey: ['admin-social-articles', page, search, token],
-        queryFn: () => adminArticleApi.getArticles({ limit, page, search }, token),
+        queryKey: ['admin-social-articles', page, appliedSearch, token],
+        queryFn: () => adminArticleApi.getArticles({ limit, page, search: appliedSearch }, token),
         enabled: !!token
     });
 
@@ -98,6 +106,17 @@ const AdminSocialPage = () => {
             toast.success(t('toast_visibility_updated'));
         }
     });
+
+    const handleSearch = filterForm.handleSubmit((data) => {
+        setAppliedSearch(data.keyword);
+        setPage(1);
+    });
+
+    const handleClear = () => {
+        filterForm.reset({ keyword: '' });
+        setAppliedSearch('');
+        setPage(1);
+    };
 
     const isLoading = sessionStatus === 'loading' || isLoadingArticles;
     const articles = articlesData?.items || [];
@@ -153,14 +172,11 @@ const AdminSocialPage = () => {
             <Card className="border-white/5 bg-card/20 backdrop-blur-xl">
                 <AdminFilterBar
                     searchPlaceholder={t('search_articles_placeholder')}
-                    searchTerm={search}
-                    onSearchChange={setSearch}
-                    onSearch={() => setPage(1)}
-                    onClear={() => {
-                        setSearch('');
-                        setPage(1);
-                    }}
-                    isFiltered={search !== ''}
+                    searchTerm={filterForm.watch('keyword')}
+                    onSearchChange={(val) => filterForm.setValue('keyword', val)}
+                    onSearch={handleSearch}
+                    onClear={handleClear}
+                    isFiltered={appliedSearch !== ''}
                 />
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">

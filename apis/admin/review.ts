@@ -6,7 +6,13 @@ export const adminReviewApi = {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
 
-        const queryString = params ? new URLSearchParams(params).toString() : "";
+        // Filter out undefined/null values before creating query string
+        const filteredParams = params ? Object.fromEntries(
+            Object.entries(params).filter(([_, v]) => v !== undefined && v !== null)
+        ) : {};
+        const queryString = Object.keys(filteredParams).length > 0
+            ? new URLSearchParams(filteredParams as Record<string, string>).toString()
+            : "";
         const url = `/admin/review/getAll${queryString ? `?${queryString}` : ""}`;
 
         return fetchC.get(url, { headers: authHeaders.headers });
