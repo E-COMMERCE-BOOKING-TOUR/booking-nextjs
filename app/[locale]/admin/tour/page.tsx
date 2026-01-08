@@ -394,17 +394,17 @@ export default function AdminTourListPage() {
                         </span>
                       </div>
                     </td>
+                    <td className="px-6 py-4 hidden sm:table-cell">
+                      <div className="text-xs text-muted-foreground truncate max-w-[120px]">
+                        {tour.supplier?.name || 'N/A'}
+                      </div>
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5 text-muted-foreground whitespace-nowrap">
                         <Clock className="size-3.5" />
                         <span className="text-xs">
                           {tour.duration_days}D{tour.duration_hours}H
                         </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 hidden sm:table-cell">
-                      <div className="text-xs text-muted-foreground truncate max-w-[120px]">
-                        {tour.supplier?.name || 'N/A'}
                       </div>
                     </td>
                     <td className="px-6 py-4">
