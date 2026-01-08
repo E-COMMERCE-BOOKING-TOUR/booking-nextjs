@@ -36,6 +36,8 @@
     "dashboard_welcome": "Chào mừng trở lại! Đây là tóm tắt hoạt động kinh doanh của bạn.",
     "supplier_dashboard_desc": "Quản lý các tour và theo dõi hiệu quả kinh doanh của bạn tại đây.",
     "export_report": "Xuất báo cáo",
+    "export_report_success": "Xuất báo cáo thành công",
+    "export_report_error": "Không thể xuất báo cáo",
     "add_new_tour": "Thêm tour mới",
     "create_tour": "Tạo Tour",
     "action_logout": "Đăng xuất",

@@ -36,6 +36,8 @@
     "dashboard_welcome": "Welcome back! Here is your business summary.",
     "supplier_dashboard_desc": "Manage your tours and track your performance here.",
     "export_report": "Export Report",
+    "export_report_success": "Report exported successfully",
+    "export_report_error": "Failed to export report",
     "add_new_tour": "Add New Tour",
     "create_tour": "Create Tour",
     "action_logout": "Logout",

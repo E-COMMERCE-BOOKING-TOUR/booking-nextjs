@@ -2,7 +2,7 @@
 
 import { Card, CardTitle, CardHeader, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import {
     TrendingUp,
     Users as UsersIcon,
@@ -12,7 +12,8 @@ import {
     Download,
     History,
     Flame,
-    Navigation
+    Navigation,
+    Loader2
 } from "lucide-react";
 import { AppSelect } from "@/components/AppSelect";
 import { BarCharDashboard } from "./components/BarChart.dashboard";
@@ -21,8 +22,7 @@ import { IDashboardStats } from "@/types/admin/dashboard";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useTranslations, useFormatter } from "next-intl";
-
-const dataSelect = ['Last 6 Months', 'Last Year']
+import { toast } from "sonner";
 
 const AdminDashboard = () => {
     const t = useTranslations("admin");
@@ -34,6 +34,7 @@ const AdminDashboard = () => {
     const [valueSelect, setValueSelect] = useState(t('last_6_months'));
     const [stats, setStats] = useState<IDashboardStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isExporting, setIsExporting] = useState(false);
 
     useEffect(() => {
         if (!token) return;
@@ -54,6 +55,83 @@ const AdminDashboard = () => {
     }, [token]);
 
     const isSupplier = session?.user?.role?.name?.toLowerCase() === 'supplier';
+
+    // Export report as CSV
+    const exportReport = useCallback(() => {
+        if (!stats) return;
+
+        setIsExporting(true);
+        try {
+            const now = new Date();
+            const dateStr = format.dateTime(now, { year: 'numeric', month: '2-digit', day: '2-digit' });
+
+            // Build CSV content
+            const lines: string[] = [];
+
+            // Header
+            lines.push(`Dashboard Report - ${dateStr}`);
+            lines.push('');
+
+            // KPIs Section
+            lines.push('=== KPIs ===');
+            lines.push(`Today Revenue,${stats.kpis.todayRevenue}`);
+            lines.push(`Monthly Revenue,${stats.kpis.monthlyRevenue}`);
+            lines.push(`Total Revenue,${stats.kpis.totalRevenue}`);
+            lines.push(`Active Tours,${stats.kpis.activeToursCount}`);
+            lines.push(`Total Bookings,${stats.kpis.totalBookings}`);
+            if (stats.kpis.totalUsers) {
+                lines.push(`Total Users,${stats.kpis.totalUsers}`);
+            }
+            lines.push('');
+
+            // Chart Data Section
+            lines.push('=== Monthly Revenue (Last 6 Months) ===');
+            lines.push('Month,Revenue');
+            stats.chartData.forEach(item => {
+                lines.push(`${item.name},${item.value}`);
+            });
+            lines.push('');
+
+            // Trending Tours Section
+            lines.push('=== Trending Tours (Top 5) ===');
+            lines.push('Rank,Tour Title,Bookings,Revenue');
+            stats.trendingTours.forEach((tour, idx: number) => {
+                // Escape tour title if it contains comma
+                const safeTitle = tour.title.includes(',') ? `"${tour.title}"` : tour.title;
+                lines.push(`${idx + 1},${safeTitle},${tour.count},${tour.revenue}`);
+            });
+            lines.push('');
+
+            // Recent Bookings Section
+            lines.push('=== Recent Bookings ===');
+            lines.push('ID,Customer,Email,Status,Amount,Date');
+            stats.recentBookings.forEach(booking => {
+                const safeName = booking.contact_name?.includes(',') ? `"${booking.contact_name}"` : (booking.contact_name || '');
+                const safeEmail = booking.contact_email?.includes(',') ? `"${booking.contact_email}"` : (booking.contact_email || '');
+                const dateFormatted = booking.created_at ? format.dateTime(new Date(booking.created_at), { year: 'numeric', month: '2-digit', day: '2-digit' }) : '';
+                lines.push(`${booking.id},${safeName},${safeEmail},${booking.status},${booking.total_amount},${dateFormatted}`);
+            });
+
+            // Create and download file
+            const csvContent = lines.join('\n');
+            const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }); // BOM for Excel UTF-8
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `dashboard-report-${now.toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            toast.success(t('export_report_success', { defaultValue: 'Report exported successfully' }));
+        } catch (e) {
+            console.error('Export failed:', e);
+            toast.error(t('export_report_error', { defaultValue: 'Failed to export report' }));
+        } finally {
+            setIsExporting(false);
+        }
+    }, [stats, format, t]);
 
     const kpis = useMemo(() => {
         if (!stats) return [];
@@ -101,7 +179,7 @@ const AdminDashboard = () => {
             return allKpis.filter(kpi => kpi.label !== "Users");
         }
         return allKpis;
-    }, [stats, isSupplier]);
+    }, [stats, isSupplier, t, format]);
 
     const chartData = useMemo(() => {
         if (!stats) return [];
@@ -141,8 +219,17 @@ const AdminDashboard = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Button variant="outline" className="gap-2 border-white/10 bg-white/5 hover:bg-white/10 transition-all">
-                        <Download className="size-4" />
+                    <Button
+                        variant="outline"
+                        className="gap-2 border-white/10 bg-white/5 hover:bg-white/10 transition-all"
+                        onClick={exportReport}
+                        disabled={isExporting}
+                    >
+                        {isExporting ? (
+                            <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                            <Download className="size-4" />
+                        )}
                         {t('export_report')}
                     </Button>
                     <Button asChild className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/20">
@@ -153,6 +240,7 @@ const AdminDashboard = () => {
                     </Button>
                 </div>
             </div>
+
 
             {/* KPI Cards */}
             <div className={`grid grid-cols-1 md:grid-cols-2 ${isSupplier ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-6`}>

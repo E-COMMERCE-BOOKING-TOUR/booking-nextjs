@@ -2,6 +2,7 @@ export interface IDashboardStats {
     kpis: {
         todayRevenue: number;
         monthlyRevenue: number;
+        totalRevenue: number;
         activeToursCount: number;
         totalUsers: number;
         totalBookings: number;
