@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from "next-intl";
 import { usePathname, Link } from "@/i18n/navigation";
 
+const STORAGE_KEY = 'booking_expiry';
+
 export const ResumeBookingButton = ({ booking, ...props }: { booking: IBookingDetail | null } & ButtonProps) => {
     const pathname = usePathname();
     const t = useTranslations('common');
@@ -13,18 +15,29 @@ export const ResumeBookingButton = ({ booking, ...props }: { booking: IBookingDe
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
     useEffect(() => {
-        // Sync to localStorage if booking provided
-        if (booking?.hold_expires_at) {
-            localStorage.setItem('booking_expiry', booking.hold_expires_at);
+        // If booking exists but has no expiry (completed/confirmed), clear localStorage
+        if (booking && !booking.hold_expires_at) {
+            localStorage.removeItem(STORAGE_KEY);
+            setTimeLeft(null);
+            return;
         }
 
-        // Determine expiry source
-        const getExpiryTime = () => {
+        // If booking has valid expiry, sync to localStorage
+        if (booking?.hold_expires_at) {
+            localStorage.setItem(STORAGE_KEY, booking.hold_expires_at);
+        }
+
+        // Determine expiry source: prioritize booking prop, fallback to localStorage
+        const getExpiryTime = (): number | null => {
             if (booking?.hold_expires_at) {
                 return new Date(booking.hold_expires_at).getTime();
             }
-            const saved = localStorage.getItem('booking_expiry');
-            return saved ? new Date(saved).getTime() : null;
+            // Only use localStorage if no booking prop provided
+            if (!booking) {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                return saved ? new Date(saved).getTime() : null;
+            }
+            return null;
         };
 
         const updateTimer = () => {
@@ -34,13 +47,13 @@ export const ResumeBookingButton = ({ booking, ...props }: { booking: IBookingDe
                 return;
             }
 
-            const now = new Date().getTime();
+            const now = Date.now();
             const diff = expiryTime - now;
 
             if (diff <= 0) {
                 setTimeLeft(0);
-                // Clear expired if we are checking local storage fallback
-                if (!booking) localStorage.removeItem('booking_expiry');
+                // Clear expired data from localStorage
+                localStorage.removeItem(STORAGE_KEY);
             } else {
                 setTimeLeft(diff);
             }
