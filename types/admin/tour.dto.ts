@@ -70,11 +70,19 @@ export type CreateTourDTO = {
 export type AdminTourSearchParams = {
     keyword?: string;
     status?: string;
+    supplier_id?: number | string;
     page?: number;
     limit?: number;
     sortBy?: string;
     sortOrder?: string;
 };
+
+export interface ISupplier {
+    id: number;
+    name: string;
+    email?: string;
+    phone?: string;
+}
 
 export interface IAdminTour {
     id: number;
@@ -88,6 +96,7 @@ export interface IAdminTour {
     slug: string;
     is_visible?: boolean;
     tour_categories?: { name: string }[];
+    supplier?: { id: number; name: string };
 }
 
 export interface ICountry {

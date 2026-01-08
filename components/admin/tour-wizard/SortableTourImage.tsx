@@ -49,6 +49,7 @@ const SortableTourImage: React.FC<SortableTourImageProps> = ({ id, image, onRemo
                 alt="Tour"
                 fill
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
+                unoptimized
             />
 
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">

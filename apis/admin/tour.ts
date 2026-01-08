@@ -86,4 +86,23 @@ export const adminTourApi = {
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.delete(`/admin/tour/policy/${id}`, { headers: authHeaders.headers });
     },
+
+    // CSV Import
+    downloadCsvTemplate: async (token?: string): Promise<Blob> => {
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/tour/csv-template`, {
+            method: 'GET',
+            headers: authHeaders.headers,
+        });
+        if (!response.ok) throw new Error('Failed to download template');
+        return response.blob();
+    },
+    importCsv: async (file: File, token?: string): Promise<{ success: number; errors: { row: number; reason: string }[] }> => {
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+        const formData = new FormData();
+        formData.append('file', file);
+        return fetchC.postFormData('/admin/tour/import-csv', formData, { headers: authHeaders.headers });
+    },
 };

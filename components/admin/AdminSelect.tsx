@@ -32,8 +32,8 @@ export const AdminSelect = ({
                 <SelectValue placeholder={placeholder} />
             </SelectTrigger>
             <SelectContent>
-                {options.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
+                {options.map((opt, index) => (
+                    <SelectItem key={`${opt.value}-${index}`} value={opt.value}>
                         {opt.label}
                     </SelectItem>
                 ))}

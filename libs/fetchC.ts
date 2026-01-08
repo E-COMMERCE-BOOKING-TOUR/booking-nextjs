@@ -40,7 +40,10 @@ const fetchC = {
                 ...init?.headers
             },
         });
-        const res = await data.json();
+
+        const responseText = await data.text();
+        const res = responseText ? JSON.parse(responseText) : {};
+
         if (!data.ok) {
             throw new ApiError(res.message || res.data?.msg || "Đã xảy ra lỗi", data.status, res.errors);
         }
@@ -56,7 +59,10 @@ const fetchC = {
                 ...init?.headers
             },
         });
-        const res = await data.json();
+
+        const responseText = await data.text();
+        const res = responseText ? JSON.parse(responseText) : {};
+
         if (!data.ok) {
             throw new ApiError(res.message || res.data?.msg || "Đã xảy ra lỗi", data.status, res.errors);
         }
@@ -71,7 +77,10 @@ const fetchC = {
                 ...init?.headers
             },
         });
-        const res = await data.json();
+
+        const responseText = await data.text();
+        const res = responseText ? JSON.parse(responseText) : {};
+
         if (!data.ok) {
             throw new ApiError(res.message || res.data?.msg || "Đã xảy ra lỗi", data.status, res.errors);
         }
@@ -87,7 +96,10 @@ const fetchC = {
                 ...init?.headers
             },
         });
-        const res = await data.json();
+
+        const responseText = await data.text();
+        const res = responseText ? JSON.parse(responseText) : {};
+
         if (!data.ok) {
             throw new ApiError(res.message || res.data?.msg || "Đã xảy ra lỗi", data.status, res.errors);
         }
@@ -103,7 +115,10 @@ const fetchC = {
                 ...init?.headers
             },
         });
-        const res = await data.json();
+
+        const responseText = await data.text();
+        const res = responseText ? JSON.parse(responseText) : {};
+
         if (!data.ok) {
             throw new ApiError(res.message || res.data?.msg || "Đã xảy ra lỗi", data.status, res.errors);
         }
@@ -120,7 +135,10 @@ const fetchC = {
                 ...init?.headers
             },
         });
-        const res = await data.json();
+
+        const responseText = await data.text();
+        const res = responseText ? JSON.parse(responseText) : {};
+
         if (!data.ok) {
             throw new ApiError(res.message || res.data?.msg || "Đã xảy ra lỗi", data.status, res.errors);
         }

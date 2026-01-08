@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminTourApi } from '@/apis/admin/tour';
+import { adminSupplierApi } from '@/apis/admin/supplier';
+import { ApiError } from '@/libs/fetchC';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,11 +24,15 @@ import {
   ShieldAlert,
   Check,
   X,
-  AlertCircle
+  AlertCircle,
+  Upload,
+  Download,
+  FileSpreadsheet
 } from 'lucide-react';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminFilterBar } from '@/components/admin/AdminFilterBar';
 import { AdminSelect } from '@/components/admin/AdminSelect';
+import { AdminCombobox } from '@/components/admin/AdminCombobox';
 import { HasPermission } from '@/components/auth/HasPermission';
 import {
   DropdownMenu,
@@ -56,6 +62,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { useTranslations, useFormatter } from 'next-intl';
 
@@ -69,6 +76,7 @@ export default function AdminTourListPage() {
   interface TourFilterForm {
     keyword: string;
     status: string;
+    supplier_id: string;
     sortBy: string;
     sortOrder: 'ASC' | 'DESC';
   }
@@ -77,6 +85,7 @@ export default function AdminTourListPage() {
     defaultValues: {
       keyword: '',
       status: '',
+      supplier_id: 'all',
       sortBy: 'created_at',
       sortOrder: 'DESC'
     }
@@ -87,6 +96,7 @@ export default function AdminTourListPage() {
   const [appliedFilters, setAppliedFilters] = useState<TourFilterForm>({
     keyword: '',
     status: '',
+    supplier_id: 'all',
     sortBy: 'created_at',
     sortOrder: 'DESC'
   });
@@ -99,17 +109,38 @@ export default function AdminTourListPage() {
     issues: string[];
   } | null>(null);
 
+  // CSV Import state
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importResult, setImportResult] = useState<{ success: number; errors: { row: number; reason: string }[] } | null>(null);
+
+  const isAdmin = session?.user?.role?.name?.toLowerCase() === 'admin' || session?.user?.role?.name?.toLowerCase() === 'superadmin';
+
+  const { data: suppliersResponse } = useQuery<{ data: any[], total_items: number }>({
+    queryKey: ['admin-suppliers-list'],
+    queryFn: () => adminSupplierApi.getAll(token, 1, 100),
+    enabled: !!token && isAdmin,
+  });
+
+  const suppliers = suppliersResponse?.data || [];
+
 
   const { data: tourResponse, isLoading } = useQuery({
-    queryKey: ['admin-tours', appliedFilters.keyword, appliedFilters.status, currentPage, appliedFilters.sortBy, appliedFilters.sortOrder],
-    queryFn: () => adminTourApi.getAll({
-      keyword: appliedFilters.keyword,
-      status: appliedFilters.status,
-      page: currentPage,
-      limit: 10,
-      sortBy: appliedFilters.sortBy,
-      sortOrder: appliedFilters.sortOrder
-    }, token),
+    queryKey: ['admin-tours', appliedFilters.keyword, appliedFilters.status, appliedFilters.supplier_id, currentPage, appliedFilters.sortBy, appliedFilters.sortOrder],
+    queryFn: () => {
+      const params: any = {
+        keyword: appliedFilters.keyword,
+        status: appliedFilters.status,
+        page: currentPage,
+        limit: 10,
+        sortBy: appliedFilters.sortBy,
+        sortOrder: appliedFilters.sortOrder
+      };
+      if (appliedFilters.supplier_id && appliedFilters.supplier_id !== 'all') {
+        params.supplier_id = appliedFilters.supplier_id;
+      }
+      return adminTourApi.getAll(params, token);
+    },
     enabled: !!token,
   });
 
@@ -122,6 +153,7 @@ export default function AdminTourListPage() {
     const defaultValues = {
       keyword: '',
       status: '',
+      supplier_id: 'all',
       sortBy: 'created_at',
       sortOrder: 'DESC' as const
     };
@@ -147,8 +179,12 @@ export default function AdminTourListPage() {
       toast.success(t('toast_delete_tour_success'));
       setDeleteId(null);
     },
-    onError: (err: Error) => {
-      toast.error(t('toast_delete_tour_error', { error: err.message }));
+    onError: (err: unknown) => {
+      if (err instanceof ApiError && err.message.includes('existing bookings')) {
+        toast.error(t('toast_delete_tour_has_bookings'));
+      } else {
+        toast.error(t('toast_delete_tour_error', { error: err instanceof Error ? err.message : String(err) }));
+      }
     }
   });
 
@@ -167,6 +203,41 @@ export default function AdminTourListPage() {
       setReport(data);
     } catch (err: unknown) {
       toast.error(t('toast_delete_tour_error', { error: err instanceof Error ? err.message : String(err) }));
+    }
+  };
+
+  // CSV Import handlers
+  const handleDownloadTemplate = async () => {
+    try {
+      const blob = await adminTourApi.downloadCsvTemplate(token);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'tour_import_template.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error(t('toast_download_error'));
+    }
+  };
+
+  const importMutation = useMutation({
+    mutationFn: (file: File) => adminTourApi.importCsv(file, token),
+    onSuccess: (data) => {
+      setImportResult(data);
+      queryClient.invalidateQueries({ queryKey: ['admin-tours'] });
+      if (data.success > 0) {
+        toast.success(t('toast_import_success', { count: data.success }));
+      }
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
+    }
+  });
+
+  const handleImport = () => {
+    if (importFile) {
+      importMutation.mutate(importFile);
     }
   };
 
@@ -200,11 +271,16 @@ export default function AdminTourListPage() {
         description={t('tour_management_desc')}
       >
         <HasPermission permission="tour:create">
-          <Link href="/admin/tour/create">
-            <Button className="bg-primary hover:bg-primary/90 shadow-sm">
-              <Plus className="mr-2 size-4" /> {t('add_new_tour_button')}
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setImportModalOpen(true)}>
+              <Upload className="mr-2 size-4" /> {t('import_csv_button')}
             </Button>
-          </Link>
+            <Link href="/admin/tour/create">
+              <Button className="bg-primary hover:bg-primary/90 shadow-sm">
+                <Plus className="mr-2 size-4" /> {t('add_new_tour_button')}
+              </Button>
+            </Link>
+          </div>
         </HasPermission>
       </AdminPageHeader>
 
@@ -215,8 +291,24 @@ export default function AdminTourListPage() {
           onSearchChange={(val) => filterForm.setValue('keyword', val)}
           onSearch={handleSearch}
           onClear={handleClear}
-          isFiltered={filterForm.watch('keyword') !== '' || filterForm.watch('status') !== ''}
+          isFiltered={filterForm.watch('keyword') !== '' || filterForm.watch('status') !== '' || filterForm.watch('supplier_id') !== 'all'}
         >
+          {isAdmin && (
+            <AdminCombobox
+              value={filterForm.watch('supplier_id') || 'all'}
+              onValueChange={(val: string) => {
+                filterForm.setValue('supplier_id', val);
+              }}
+              placeholder={t('filter_supplier_placeholder')}
+              searchPlaceholder={t('filter_supplier_search_placeholder')}
+              options={[
+                { label: t('filter_all_suppliers'), value: 'all' },
+                ...suppliers.map((s: any) => ({ label: s.name, value: s.id.toString() }))
+              ]}
+              width="w-[220px]"
+            />
+          )}
+
           <AdminSelect
             value={filterForm.watch('status') || 'all'}
             onValueChange={(val: string) => {
@@ -244,6 +336,7 @@ export default function AdminTourListPage() {
                 <tr className="border-b bg-muted/30 text-muted-foreground font-medium uppercase text-[10px] tracking-wider">
                   <th className="px-6 py-4">{t('col_tour_info')}</th>
                   <th className="px-6 py-4 hidden md:table-cell">{t('col_location')}</th>
+                  <th className="px-6 py-4 hidden sm:table-cell">{t('col_supplier')}</th>
                   <th className="px-6 py-4">{t('col_duration')}</th>
                   <th className="px-6 py-4">{t('col_status')}</th>
                   <th className="px-6 py-4 text-right">{t('col_actions')}</th>
@@ -254,7 +347,8 @@ export default function AdminTourListPage() {
                   [...Array(5)].map((_, i) => (
                     <tr key={i} className="animate-pulse">
                       <td className="px-6 py-4"><div className="h-10 bg-muted rounded w-48" /></td>
-                      <td className="px-6 py-4"><div className="h-4 bg-muted rounded w-24" /></td>
+                      <td className="px-6 py-4 hidden md:table-cell"><div className="h-4 bg-muted rounded w-24" /></td>
+                      <td className="px-6 py-4 hidden sm:table-cell"><div className="h-4 bg-muted rounded w-24" /></td>
                       <td className="px-6 py-4"><div className="h-4 bg-muted rounded w-16" /></td>
                       <td className="px-6 py-4"><div className="h-6 bg-muted rounded w-20" /></td>
                       <td className="px-6 py-4"><div className="h-8 bg-muted rounded w-10 ml-auto" /></td>
@@ -262,7 +356,7 @@ export default function AdminTourListPage() {
                   ))
                 ) : tours.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
+                    <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
                       {t('no_matching_tours')}
                     </td>
                   </tr>
@@ -272,7 +366,7 @@ export default function AdminTourListPage() {
                       <div className="flex items-center gap-3">
                         <div className="size-10 rounded-md bg-muted overflow-hidden flex-shrink-0 border">
                           {tour.images?.[0] ? (
-                            <Image src={tour.images[0].image_url} alt="" width={40} height={40} className="w-full h-full object-cover" />
+                            <Image src={tour.images[0].image_url} alt="" width={40} height={40} className="w-full h-full object-cover" unoptimized />
                           ) : (
                             <Tag className="size-5 m-2.5 text-muted-foreground" />
                           )}
@@ -306,6 +400,11 @@ export default function AdminTourListPage() {
                         <span className="text-xs">
                           {tour.duration_days}D{tour.duration_hours}H
                         </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 hidden sm:table-cell">
+                      <div className="text-xs text-muted-foreground truncate max-w-[120px]">
+                        {tour.supplier?.name || 'N/A'}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -439,15 +538,15 @@ export default function AdminTourListPage() {
       </Card>
 
       <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-background border-white/10 text-white">
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('confirm_delete_title')}</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-xl font-bold">{t('confirm_delete_title')}</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
               {t('confirm_delete_tour_desc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('cancel_button')}</AlertDialogCancel>
+            <AlertDialogCancel className="bg-white/5 border-white/10 hover:bg-white/10 text-white">{t('action_cancel') || t('cancel_button')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && deleteMutation.mutate(deleteId)}
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-semibold"
@@ -459,7 +558,7 @@ export default function AdminTourListPage() {
       </AlertDialog>
 
       <Dialog open={report !== null} onOpenChange={(open) => !open && setReport(null)}>
-        <DialogContent className="max-w-md bg-slate-900 border-white/10 text-white">
+        <DialogContent className="max-w-md bg-background border-white/10 text-white">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">
               {report?.isVisiblePublic ? (
@@ -533,6 +632,85 @@ export default function AdminTourListPage() {
               {t('close_diagnostic_button')}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* CSV Import Modal */}
+      <Dialog open={importModalOpen} onOpenChange={setImportModalOpen}>
+        <DialogContent className="max-w-lg bg-background border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="size-5 text-primary" />
+              {t('import_csv_title')}
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">{t('import_csv_desc')}</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Download Template */}
+            <div className="p-4 bg-white/5 rounded-lg border border-white/5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-white">{t('download_template_label')}</p>
+                  <p className="text-xs text-slate-400">{t('download_template_desc')}</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={handleDownloadTemplate} className="bg-white/5 border-white/10 hover:bg-white/10 text-white">
+                  <Download className="mr-2 size-4" /> {t('download_button')}
+                </Button>
+              </div>
+            </div>
+
+            {/* Upload CSV */}
+            <div className="p-4 bg-white/5 rounded-lg border border-white/5">
+              <p className="text-sm font-medium text-white mb-2">{t('upload_csv_label')}</p>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={(e) => {
+                  setImportFile(e.target.files?.[0] || null);
+                  setImportResult(null);
+                }}
+                className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+              />
+            </div>
+
+            {/* Import Results */}
+            {importResult && (
+              <div className="p-4 bg-white/5 rounded-lg border border-white/5">
+                <p className="text-sm font-medium text-emerald-400 mb-2">
+                  {t('import_result_success', { count: importResult.success })}
+                </p>
+                {importResult.errors.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-red-400 mb-1">
+                      {t('import_result_errors', { count: importResult.errors.length })}
+                    </p>
+                    <ul className="text-xs text-slate-400 max-h-32 overflow-auto space-y-1">
+                      {importResult.errors.map((err, i) => (
+                        <li key={i}>Row {err.row}: {err.reason}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setImportModalOpen(false);
+              setImportFile(null);
+              setImportResult(null);
+            }} className="bg-white/5 border-white/10 hover:bg-white/10 text-white">
+              {t('cancel_button')}
+            </Button>
+            <Button
+              onClick={handleImport}
+              disabled={!importFile || importMutation.isPending}
+            >
+              {importMutation.isPending ? t('importing_label') : t('import_button')}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
