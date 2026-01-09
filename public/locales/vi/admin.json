@@ -815,5 +815,10 @@
     "tour_wizard_tour_variants": "Biến thể Tour",
     "tour_wizard_tour_variants_desc": "Xác định các lựa chọn gói khác nhau (Tiêu chuẩn, Cao cấp, v.v.)",
     "new_message_from": "Tin nhắn mới từ {name}",
-    "view": "Xem"
+    "view": "Xem",
+    "tour_wizard_draft_found": "Phát hiện bản nháp chưa lưu",
+    "tour_wizard_draft_description": "Bạn có các thay đổi chưa lưu từ phiên làm việc trước. Bạn có muốn khôi phục không?",
+    "tour_wizard_discard_draft": "Bỏ qua",
+    "tour_wizard_restore_draft": "Khôi phục nháp",
+    "tour_wizard_draft_restored": "Đã khôi phục bản nháp thành công"
 }

@@ -814,5 +814,10 @@
     "tour_wizard_tour_variants": "Tour Variants",
     "tour_wizard_tour_variants_desc": "Define different package options (Standard, Deluxe, etc.)",
     "new_message_from": "New message from {name}",
-    "view": "View"
+    "view": "View",
+    "tour_wizard_draft_found": "Unsaved draft found",
+    "tour_wizard_draft_description": "You have unsaved changes from a previous session. Would you like to restore them?",
+    "tour_wizard_discard_draft": "Discard",
+    "tour_wizard_restore_draft": "Restore Draft",
+    "tour_wizard_draft_restored": "Draft restored successfully"
 }

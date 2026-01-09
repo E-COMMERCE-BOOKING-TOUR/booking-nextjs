@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -180,6 +180,41 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
     const [currentStep, setCurrentStep] = useState(1);
     const isEdit = !!tourId;
 
+    // Auto-save to localStorage
+    const DRAFT_KEY = isEdit ? `tour-wizard-edit-${tourId}` : 'tour-wizard-draft';
+    const [showDraftRecovery, setShowDraftRecovery] = useState(false);
+    const [hasDraft, setHasDraft] = useState(false);
+    const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Function to save draft to localStorage
+    const saveDraft = useCallback((data: TourFormValues) => {
+        try {
+            // Don't save file objects, they can't be serialized
+            const dataToSave = {
+                ...data,
+                images: data.images?.map(img => ({ ...img, file: undefined })),
+                map_preview_file: undefined,
+                _savedAt: Date.now(),
+                _step: currentStep,
+            };
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(dataToSave));
+        } catch (e) {
+            console.warn('Failed to save draft:', e);
+        }
+    }, [DRAFT_KEY, currentStep]);
+
+    // Function to clear draft
+    const clearDraft = useCallback(() => {
+        try {
+            localStorage.removeItem(DRAFT_KEY);
+            setHasDraft(false);
+        } catch (e) {
+            console.warn('Failed to clear draft:', e);
+        }
+    }, [DRAFT_KEY]);
+
+    // loadDraft is defined after form is declared
+
     // React Query for Metadata
     const { data: countries = [] } = useQuery({
         queryKey: ['countries'],
@@ -294,6 +329,27 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
             map_preview_file: null,
         }
     });
+
+    // Function to load draft (defined after form to avoid reference error)
+    const loadDraft = useCallback(() => {
+        try {
+            const saved = localStorage.getItem(DRAFT_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                // Remove internal fields before resetting form
+                delete parsed._savedAt;
+                const savedStep = parsed._step || 1;
+                delete parsed._step;
+                form.reset(parsed);
+                setCurrentStep(savedStep);
+                setShowDraftRecovery(false);
+                setHasDraft(false);
+                toast.success(t('tour_wizard_draft_restored'));
+            }
+        } catch (e) {
+            console.warn('Failed to load draft:', e);
+        }
+    }, [DRAFT_KEY, form, t]);
 
     const selectedSupplierId = useWatch({ control: form.control, name: 'supplier_id' });
 
@@ -454,6 +510,59 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
             form.reset(mappedData);
         }
     }, [initialData, form]);
+
+    // Check for saved draft on mount (only for create mode or if no initialData changes being made)
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        try {
+            const saved = localStorage.getItem(DRAFT_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                const savedAt = parsed._savedAt;
+
+                // For create mode, always show recovery prompt if draft exists
+                // For edit mode, only show if draft is newer than 1 minute ago (avoid stale drafts)
+                if (!isEdit || (savedAt && Date.now() - savedAt < 24 * 60 * 60 * 1000)) {
+                    setHasDraft(true);
+                    setShowDraftRecovery(true);
+                } else {
+                    // Clear stale drafts
+                    localStorage.removeItem(DRAFT_KEY);
+                }
+            }
+        } catch (e) {
+            console.warn('Failed to check for draft:', e);
+        }
+    }, [DRAFT_KEY, isEdit]);
+
+    // Auto-save form changes with debounce (save after 3 seconds of no changes)
+    const watchAllFields = useWatch({ control: form.control });
+
+    useEffect(() => {
+        // Don't auto-save if there's a recovery prompt showing
+        if (showDraftRecovery) return;
+
+        // Clear existing timer
+        if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current);
+        }
+
+        // Set new timer to save after 3 seconds
+        autoSaveTimerRef.current = setTimeout(() => {
+            const values = form.getValues();
+            // Only save if there's meaningful data
+            if (values.title || values.description || values.images?.length > 0) {
+                saveDraft(values);
+            }
+        }, 3000);
+
+        return () => {
+            if (autoSaveTimerRef.current) {
+                clearTimeout(autoSaveTimerRef.current);
+            }
+        };
+    }, [watchAllFields, form, saveDraft, showDraftRecovery]);
 
 
     const { data: divisions = [] } = useQuery({
@@ -678,6 +787,9 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                 toast.success('Tour created successfully!');
             }
 
+            // Clear draft after successful save
+            clearDraft();
+
             setTimeout(() => {
                 router.push('/admin/tour');
             }, 1500);
@@ -778,6 +890,40 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                     {isEdit ? t('tour_wizard_editing_desc', { id: tourId, title: initialData?.title ?? '' }) : t('tour_wizard_setup_desc')}
                 </p>
             </div>
+
+            {/* Draft Recovery Banner */}
+            {showDraftRecovery && hasDraft && (
+                <div className="flex items-center justify-between p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-amber-500/20 rounded-full">
+                            <Save className="h-4 w-4 text-amber-500" />
+                        </div>
+                        <div>
+                            <p className="font-medium text-sm">{t('tour_wizard_draft_found')}</p>
+                            <p className="text-xs text-muted-foreground">{t('tour_wizard_draft_description')}</p>
+                        </div>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                                clearDraft();
+                                setShowDraftRecovery(false);
+                            }}
+                        >
+                            {t('tour_wizard_discard_draft')}
+                        </Button>
+                        <Button
+                            size="sm"
+                            onClick={loadDraft}
+                            className="bg-amber-500 hover:bg-amber-600"
+                        >
+                            {t('tour_wizard_restore_draft')}
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {/* Stepper */}
             <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
