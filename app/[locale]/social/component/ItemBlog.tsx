@@ -4,15 +4,15 @@ import { Link } from "@/i18n/navigation";
 import { FiMessageCircle, FiEye, FiThumbsUp, FiMapPin, FiCalendar, FiCloud, FiBookmark, FiFlag } from "react-icons/fi";
 import { HiDotsHorizontal } from "react-icons/hi";
 import type { IArticlePopular } from "@/types/response/article";
-import { dateFormat } from "@/libs/function";
+import { dateFormat, relativeTimeFormat } from "@/libs/function";
 import { PopUpComment, CommentParams } from "./comments";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useSession } from "next-auth/react";
 import { useMutation } from "@tanstack/react-query";
 import { userApi } from "@/apis/user";
 import { toaster } from "@/components/chakra/toaster";
 import article from "@/apis/article";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type ItemBlogProps = IArticlePopular & {
     href?: string;
@@ -111,14 +111,18 @@ const ImagesGrid = ({ data, title }: { data: string[]; title: string }) => {
 };
 
 export default function ItemBlog(props: ItemBlogProps) {
-    const { images, title, tags, created_at, count_likes, count_comments, comments, user, user_id, tour, followingIds, onFollowChange } = props;
+    const { images, title, tags, created_at, count_likes, count_comments, comments, user, user_id, tour, followingIds, onFollowChange, weather: storedWeather } = props;
     const t = useTranslations('common');
+    const locale = useLocale();
     const { data: session } = useSession();
     const { open, onOpen, onClose } = useDisclosure();
     const imageUrls = images?.map(img => img.image_url) || [];
 
     const isFollowing = followingIds?.includes(user_id);
-    const isMe = session?.user && ((session.user as { uuid?: string }).uuid === user_id || (session.user as { id: number }).id.toString() === user_id);
+    const isMe = session?.user && (
+        (session.user as { uuid?: string }).uuid === user_id ||
+        ((session.user as { id?: number }).id?.toString() === user_id)
+    );
     // Note: uuid or id comparison depends on how user_id is stored. In backend-booking-tour it's 'id'.
 
     const followMutation = useMutation({
@@ -200,18 +204,18 @@ export default function ItemBlog(props: ItemBlogProps) {
     const bookmarkMutation = useMutation({
         mutationFn: () => article.bookmark(props.id?.toString() || '', session?.user?.accessToken),
         onSuccess: () => setLocalBookmarked(true),
-        onError: () => toaster.create({ title: "Failed to bookmark", type: "error" })
+        onError: () => toaster.create({ title: t('bookmark_failed', { defaultValue: 'Failed to bookmark' }), type: "error" })
     });
 
     const unbookmarkMutation = useMutation({
         mutationFn: () => article.unbookmark(props.id?.toString() || '', session?.user?.accessToken),
         onSuccess: () => setLocalBookmarked(false),
-        onError: () => toaster.create({ title: "Failed to unbookmark", type: "error" })
+        onError: () => toaster.create({ title: t('unbookmark_failed', { defaultValue: 'Failed to unbookmark' }), type: "error" })
     });
 
     const handleBookmark = () => {
         if (!session?.user?.accessToken) {
-            toaster.create({ title: "Please login to bookmark", type: "warning" });
+            toaster.create({ title: t('login_to_bookmark', { defaultValue: 'Please login to bookmark' }), type: "warning" });
             return;
         }
         if (isBookmarked) {
@@ -220,6 +224,36 @@ export default function ItemBlog(props: ItemBlogProps) {
             bookmarkMutation.mutate();
         }
     };
+
+    // Weather fetching logic
+    const [weather, setWeather] = useState<{ temp: string; icon: string } | null>(null);
+
+    useEffect(() => {
+        if (storedWeather) return; // Prioritize stored weather
+
+        const fetchWeather = async () => {
+            const cityName = tour?.division?.name || tour?.address;
+            if (!cityName) return;
+
+            try {
+                // Use wttr.in for simple weather info without API key
+                const response = await fetch(`https://wttr.in/${encodeURIComponent(cityName)}?format=j1`);
+                if (!response.ok) return;
+                const data = await response.json();
+                const current = data.current_condition[0];
+                setWeather({
+                    temp: `${current.temp_C}°C`,
+                    icon: current.weatherDesc[0].value,
+                });
+            } catch (error) {
+                console.error('Weather fetch error:', error);
+            }
+        };
+
+        fetchWeather();
+    }, [tour?.division?.name, tour?.address, storedWeather]);
+
+    const displayWeather = storedWeather || (weather ? `${weather.icon}, ${weather.temp}` : t('weather_experience', { defaultValue: 'Great trip!' }));
 
     const content = (
         <Box
@@ -240,21 +274,27 @@ export default function ItemBlog(props: ItemBlogProps) {
                 {/* Author Info */}
                 <HStack justify="space-between" align="center">
                     <HStack gap={3}>
-                        <Avatar.Root
-                            size="md"
-                            ring="2px"
-                            ringOffset="2px"
-                            ringColor="blue.50"
-                        >
-                            <Avatar.Fallback name={user?.name || "U"} />
-                            <Avatar.Image src={user?.avatar || "https://picsum.photos/50/50"} />
-                        </Avatar.Root>
+                        <Link href={`/social/profile/${user_id}`}>
+                            <Avatar.Root size="md" flexShrink={0} cursor="pointer" _hover={{ opacity: 0.8 }} ring="2px" ringColor="main" ringOffset="2px">
+                                <Avatar.Fallback name={user?.name || "U"} />
+                                {user?.avatar && <Avatar.Image src={user.avatar} />}
+                            </Avatar.Root>
+                        </Link>
                         <VStack align="start" gap={0}>
                             <HStack gap={2}>
-                                <Text fontWeight="800" fontSize="md" color="gray.900" letterSpacing="tight">
-                                    {user?.name || "Traveler"}
-                                </Text>
-                                {!isMe && session?.user && (
+                                <Link href={`/social/profile/${user_id}`}>
+                                    <Text
+                                        fontWeight="800"
+                                        fontSize="md"
+                                        color="gray.900"
+                                        letterSpacing="tight"
+                                        cursor="pointer"
+                                        _hover={{ color: "main", textDecoration: "underline" }}
+                                    >
+                                        {user?.name || t('default_username', { defaultValue: 'Traveler' })}
+                                    </Text>
+                                </Link>
+                                {!isMe && session?.user?.accessToken && (
                                     <Button
                                         size="2xs"
                                         variant={isFollowing ? "outline" : "solid"}
@@ -290,7 +330,7 @@ export default function ItemBlog(props: ItemBlogProps) {
                                     <Menu.Item value="report" _hover={{ bg: "red.50", color: "red.500" }} onClick={handleReport}>
                                         <HStack gap={2}>
                                             <Icon as={FiFlag} />
-                                            <Text>Report</Text>
+                                            <Text>{t('report', { defaultValue: 'Report' })}</Text>
                                         </HStack>
                                     </Menu.Item>
                                 </Menu.Content>
@@ -371,8 +411,18 @@ export default function ItemBlog(props: ItemBlogProps) {
                             icon: FiMapPin,
                             link: tour ? `/tour/${tour.slug}` : undefined
                         },
-                        { key: 'date', label: t('date_label', { defaultValue: 'DATE' }), value: dateFormat(created_at), icon: FiCalendar },
-                        { key: 'weather', label: t('weather_label', { defaultValue: 'WEATHER' }), value: 'Sunny', icon: FiCloud },
+                        {
+                            key: 'date',
+                            label: t('traveled_label', { defaultValue: 'TRAVELED' }),
+                            value: relativeTimeFormat(created_at, locale),
+                            icon: FiCalendar
+                        },
+                        {
+                            key: 'weather',
+                            label: t('weather_label', { defaultValue: 'WEATHER' }),
+                            value: displayWeather,
+                            icon: FiCloud
+                        },
                     ]?.map((it) => (
                         <VStack
                             key={it.key}
@@ -397,20 +447,27 @@ export default function ItemBlog(props: ItemBlogProps) {
                 {/* Actions */}
                 <HStack justify="space-between" pt={2} borderTop="1px solid" borderColor="gray.100">
                     <HStack gap={1}>
-                        <Button
-                            variant="ghost"
-                            size="md"
-                            color={isLiked ? "main" : "gray.600"}
-                            _hover={{ bg: "blue.50", color: "main" }}
-                            borderRadius="xl"
-                            gap={2}
-                            px={4}
-                            onClick={handleLike}
-                            loading={likeMutation.isPending || unlikeMutation.isPending}
-                        >
-                            <Icon as={FiThumbsUp} />
-                            <Text fontWeight="800" fontSize="sm">{likeCount} {t('likes', { defaultValue: 'Likes' })}</Text>
-                        </Button>
+                        {session?.user?.accessToken ? (
+                            <Button
+                                variant="ghost"
+                                size="md"
+                                color={isLiked ? "main" : "gray.600"}
+                                _hover={{ bg: "blue.50", color: "main" }}
+                                borderRadius="xl"
+                                gap={2}
+                                px={4}
+                                onClick={handleLike}
+                                loading={likeMutation.isPending || unlikeMutation.isPending}
+                            >
+                                <Icon as={FiThumbsUp} />
+                                <Text fontWeight="800" fontSize="sm">{likeCount} {t('likes', { defaultValue: 'Likes' })}</Text>
+                            </Button>
+                        ) : (
+                            <HStack gap={2} color="gray.500" px={4}>
+                                <Icon as={FiThumbsUp} />
+                                <Text fontWeight="800" fontSize="sm">{likeCount} {t('likes', { defaultValue: 'Likes' })}</Text>
+                            </HStack>
+                        )}
                         <Button
                             variant="ghost"
                             size="md"
@@ -425,28 +482,31 @@ export default function ItemBlog(props: ItemBlogProps) {
                             <Text fontWeight="800" fontSize="sm">{count_comments ?? 0} {t('comments', { defaultValue: 'Comments' })}</Text>
                         </Button>
                     </HStack>
-                    <Button
-                        variant="ghost"
-                        size="md"
-                        color={isBookmarked ? "main" : "gray.600"}
-                        _hover={{ bg: "blue.50", color: "main" }}
-                        borderRadius="xl"
-                        px={4}
-                        onClick={handleBookmark}
-                        loading={bookmarkMutation.isPending || unbookmarkMutation.isPending}
-                    >
-                        <Icon as={FiBookmark} boxSize={5} />
-                    </Button>
+                    {session?.user?.accessToken ? (
+                        <Button
+                            variant="ghost"
+                            size="md"
+                            color={isBookmarked ? "main" : "gray.600"}
+                            _hover={{ bg: "blue.50", color: "main" }}
+                            borderRadius="xl"
+                            px={4}
+                            onClick={handleBookmark}
+                            loading={bookmarkMutation.isPending || unbookmarkMutation.isPending}
+                        >
+                            <Icon as={FiBookmark} boxSize={5} />
+                        </Button>
+                    ) : null}
                 </HStack>
 
                 <PopUpComment
                     isOpen={open}
                     onClose={onClose}
-                    articleId={props.id ? props.id.toString() : undefined}
+                    articleId={(props._id || props.id)?.toString()}
                     images={imageUrls}
                     comments={comments as CommentParams[] || []}
-                    author={user ? { name: user.name, avatar: user.avatar } : undefined}
+                    author={user ? { name: user.name || 'Anonymous', avatar: user.avatar } : { name: 'Anonymous' }}
                     caption={title}
+                    content={props.content}
                     createdAt={created_at}
                     likeCount={count_likes}
                 />

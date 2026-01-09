@@ -1,6 +1,6 @@
 "use client";
 import { Box, VStack, HStack, Button, Icon, Textarea, Image, Input, List, Spinner, Center, Avatar, Text as ChakraText } from "@chakra-ui/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiEdit, FiX, FiImage, FiMapPin } from "react-icons/fi";
 import ItemBlog from "./ItemBlog";
 import { useMutation, useQueryClient, useInfiniteQuery, useQuery } from "@tanstack/react-query";
@@ -27,7 +27,9 @@ type PostFormValues = z.infer<typeof postSchema>;
 
 const CreatePost = ({ session, bookedTours, onSuccess, onPostCreated }: { session: Session | null, bookedTours: IBookingDetail[] | undefined, onSuccess: () => void, onPostCreated?: (post: IArticlePopular) => void }) => {
     const t = useTranslations('common');
-    const [images, setImages] = useState<string[]>([]);
+    const [images, setImages] = useState<string[]>([]); // Preview URLs
+    const [imageFiles, setImageFiles] = useState<File[]>([]); // Actual files for upload
+    const [isUploading, setIsUploading] = useState(false);
     const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<PostFormValues>({
         resolver: zodResolver(postSchema),
         defaultValues: {
@@ -37,6 +39,35 @@ const CreatePost = ({ session, bookedTours, onSuccess, onPostCreated }: { sessio
     });
 
     const content = useWatch({ control, name: "content" });
+    const selectedTourId = useWatch({ control, name: "tour_id" });
+    const [weather, setWeather] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchWeather = async () => {
+            if (!selectedTourId?.length) {
+                setWeather(null);
+                return;
+            }
+
+            const tourIdStr = selectedTourId[0];
+            const tour = bookedTours?.find(t => t.tour_id?.toString() === tourIdStr);
+            const cityName = tour?.tour_title || ""; // In ForYou, tour_title is available
+
+            if (!cityName) return;
+
+            try {
+                const response = await fetch(`https://wttr.in/${encodeURIComponent(cityName)}?format=j1`);
+                if (!response.ok) return;
+                const data = await response.json();
+                const current = data.current_condition[0];
+                setWeather(`${current.weatherDesc[0].value}, ${current.temp_C}°C`);
+            } catch (error) {
+                console.error('Weather fetch error:', error);
+            }
+        };
+
+        fetchWeather();
+    }, [selectedTourId, bookedTours]);
 
     const tourList = createListCollection({
         items: Array.from(new Map(
@@ -56,37 +87,24 @@ const CreatePost = ({ session, bookedTours, onSuccess, onPostCreated }: { sessio
             });
             reset();
             setImages([]);
+            setImageFiles([]);
             onSuccess();
-            // Handle both direct response and wrapped response.data
-            const postData = (response as { data?: IArticlePopular }).data || (response as IArticlePopular);
-            if (postData && onPostCreated) {
-                // Add optimistic user data for immediate display
-                const enrichedPost = {
-                    ...postData,
-                    user: postData.user || {
-                        name: session?.user?.name,
-                        avatar: null,
-                    },
-                    user_id: postData.user_id || session?.user?.id?.toString() || "",
-                    created_at: postData.created_at || new Date().toISOString(),
-                    count_likes: postData.count_likes || 0,
-                    count_comments: postData.count_comments || 0,
-                    count_views: postData.count_views || 0,
-                };
-                onPostCreated(enrichedPost as IArticlePopular);
+            // Extract the article from response
+            const articleData = 'data' in response && response.data ? response.data : response as IArticlePopular;
+            if (onPostCreated && articleData && articleData._id) {
+                onPostCreated(articleData);
             }
         },
         onError: (error: unknown) => {
-            console.error("Post create error:", error);
-            const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || (error as Error)?.message || "Failed to create post";
+            const message = error instanceof Error ? error.message : 'Failed to create post';
             toaster.create({
-                title: typeof msg === 'string' ? msg : JSON.stringify(msg),
+                title: message,
                 type: "error",
             });
         }
     });
 
-    const handlePost = (values: PostFormValues) => {
+    const handlePost = async (values: PostFormValues) => {
         if (!session?.user?.uuid) {
             toaster.create({
                 title: "Please login to post (Session invalid)",
@@ -98,13 +116,38 @@ const CreatePost = ({ session, bookedTours, onSuccess, onPostCreated }: { sessio
         const title = values.content.split('\n')[0].substring(0, 50) || "New Post";
         const hashtags = values.content.match(/#\p{L}[\p{L}\d_]*/gu) || [];
         const tags = hashtags.map(tag => tag.slice(1));
+
+        // Upload images first if any
+        let uploadedImageUrls: string[] = [];
+        if (imageFiles.length > 0) {
+            setIsUploading(true);
+            try {
+                const { adminSettingsApi } = await import('@/apis/admin/settings');
+                const uploadPromises = imageFiles.map(file =>
+                    adminSettingsApi.uploadMedia(file, session?.user?.accessToken as string)
+                );
+                const results = await Promise.all(uploadPromises);
+                uploadedImageUrls = results.map(r => r.url);
+            } catch (error) {
+                console.error('Failed to upload images:', error);
+                toaster.create({
+                    title: "Failed to upload images",
+                    type: "error",
+                });
+                setIsUploading(false);
+                return;
+            }
+            setIsUploading(false);
+        }
+
         createMutation.mutate({
             data: {
                 title,
                 content: values.content,
-                images: images.map(url => ({ image_url: url })),
+                images: uploadedImageUrls.map(url => ({ image_url: url })),
                 tags,
-                tour_id: parseInt(values.tour_id[0])
+                tour_id: parseInt(values.tour_id[0]),
+                weather: weather || undefined
             },
             token: session?.user?.accessToken as string | undefined
         });
@@ -114,10 +157,12 @@ const CreatePost = ({ session, bookedTours, onSuccess, onPostCreated }: { sessio
         const arr = Array.from(files || []);
         const urls = arr.map((f) => URL.createObjectURL(f));
         setImages(urls);
+        setImageFiles(arr); // Store files for upload
     };
 
     const removeImage = (idx: number) => {
         setImages((prev) => prev.filter((_, i) => i !== idx));
+        setImageFiles((prev) => prev.filter((_, i) => i !== idx));
     };
 
     return (
@@ -135,7 +180,8 @@ const CreatePost = ({ session, bookedTours, onSuccess, onPostCreated }: { sessio
         >
             <HStack align="flex-start" gap={4}>
                 <Avatar.Root size="lg" border="2px solid" borderColor="main" p="2px" boxShadow="0 0 15px rgba(0, 59, 149, 0.2)">
-                    <Avatar.Image src={"https://picsum.photos/100/100"} />
+                    <Avatar.Fallback name={session?.user?.name || "U"} />
+                    {(session?.user as any)?.avatar_url && <Avatar.Image src={(session?.user as any).avatar_url} />}
                 </Avatar.Root>
                 <VStack align="stretch" gap={4} flex={1}>
                     <Controller
@@ -255,7 +301,7 @@ const CreatePost = ({ session, bookedTours, onSuccess, onPostCreated }: { sessio
                             _hover={{ bg: "blue.700", transform: "scale(1.05)", shadow: "lg" }}
                             transition="all 0.2s"
                             onClick={handleSubmit(handlePost)}
-                            loading={createMutation.isPending || isSubmitting}
+                            loading={createMutation.isPending || isSubmitting || isUploading}
                             disabled={!content?.trim()}
                         >
                             {t('post_button', { defaultValue: 'Post' })}
@@ -327,19 +373,52 @@ const ForYou = ({ mode = 'foryou' }: { mode?: 'foryou' | 'following' }) => {
 
 
 
+    const t = useTranslations('common');
+
     return (
         <VStack align="stretch" gap={3} >
-            <CreatePost
-                session={session}
-                bookedTours={bookedTours}
-                onSuccess={() => {
-                    queryClient.invalidateQueries({ queryKey: ['articles-infinite'] });
-                }}
-                onPostCreated={handleNewPost}
-            />
-            {/* ) */}
-            {/* : null
-            } */}
+            {session?.user ? (
+                <CreatePost
+                    session={session}
+                    bookedTours={bookedTours}
+                    onSuccess={() => {
+                        queryClient.invalidateQueries({ queryKey: ['articles-infinite'] });
+                    }}
+                    onPostCreated={handleNewPost}
+                />
+            ) : (
+                <Box
+                    bg="white/60"
+                    backdropFilter="blur(20px)"
+                    color="black"
+                    p={6}
+                    borderRadius="xl"
+                    shadow="xl"
+                    border="1px solid"
+                    borderColor="whiteAlpha.400"
+                    textAlign="center"
+                >
+                    <VStack gap={3}>
+                        <ChakraText fontSize="lg" fontWeight="medium" color="gray.600">
+                            {t('login_to_share', { defaultValue: 'Login to share your travel stories' })}
+                        </ChakraText>
+                        <a href={`/${locale}/auth/login`}>
+                            <Button
+                                bg="main"
+                                color="white"
+                                px={8}
+                                h={10}
+                                borderRadius="full"
+                                fontWeight="bold"
+                                _hover={{ bg: "blue.700", transform: "scale(1.05)", shadow: "lg" }}
+                                transition="all 0.2s"
+                            >
+                                {t('login', { defaultValue: 'Login' })}
+                            </Button>
+                        </a>
+                    </VStack>
+                </Box>
+            )}
 
             {isLoading ? (
                 <Center py={10}>
@@ -360,20 +439,8 @@ const ForYou = ({ mode = 'foryou' }: { mode?: 'foryou' | 'following' }) => {
                                 justifyContent={'center'}
                             >
                                 <ItemBlog
-                                    id={item.id}
-                                    title={item.title}
-                                    content={item.content}
-                                    images={item.images}
-                                    tags={item.tags}
-                                    created_at={item.created_at}
-                                    count_views={item.count_views}
-                                    count_likes={item.count_likes}
-                                    count_comments={item.count_comments}
-                                    user={item.user}
-                                    user_id={item.user_id}
-                                    comments={item.comments}
-                                    users_like={item.users_like}
-                                    users_bookmark={item.users_bookmark}
+                                    {...item}
+                                    _id={item._id}
                                     followingIds={followingIds}
                                     onFollowChange={() => refetchFollowing()}
                                 />

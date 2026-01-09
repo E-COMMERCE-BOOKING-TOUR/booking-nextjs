@@ -14,30 +14,71 @@ import {
     Portal,
     CloseButton,
     Button,
+    Spinner,
+    Image as ChakraImage,
 } from "@chakra-ui/react";
 import {
     FiShoppingBag,
     FiBell,
     FiSettings,
     FiLogOut,
+    FiCamera,
 } from "react-icons/fi";
 import { useTranslations, useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { userApi } from "@/apis/user";
+import { adminSettingsApi } from "@/apis/admin/settings";
+import { toaster } from "@/components/chakra/toaster";
 
 export default function MyPageLayoutClient({ children }: { children: React.ReactNode }) {
-    const { data: session } = useSession();
+    const { data: session, update: updateSession } = useSession();
+    const queryClient = useQueryClient();
     const pathname = usePathname();
     const t = useTranslations('common');
     const locale = useLocale();
 
-    const user = session?.user as { accessToken?: string; name?: string; username?: string; email?: string } | undefined;
+    const user = session?.user as { accessToken?: string; name?: string; username?: string; email?: string; avatar_url?: string } | undefined;
     const token = user?.accessToken;
 
     const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !token) return;
+
+        try {
+            setIsUploadingAvatar(true);
+            const uploadRes = await adminSettingsApi.uploadMedia(file, token);
+            if (uploadRes.url) {
+                await userApi.updateProfile(token as string, { avatar_url: uploadRes.url, oldPassword: "" });
+                // We need to trigger a session update to refresh the avatar in the UI
+                await updateSession({ avatar_url: uploadRes.url });
+
+                // Invalidate profile user query to refresh it across the app
+                queryClient.invalidateQueries({ queryKey: ['profile-user'] });
+
+                toaster.create({
+                    title: t('profile_updated_success', { defaultValue: 'Profile updated' }),
+                    type: "success",
+                });
+            }
+        } catch (error) {
+            console.error("Avatar upload failed", error);
+            toaster.create({
+                title: t('update_failed', { defaultValue: 'Update failed' }),
+                description: (error as Error).message,
+                type: "error",
+            });
+        } finally {
+            setIsUploadingAvatar(false);
+        }
+    };
 
     const handleLogout = () => {
         setIsLogoutDialogOpen(true);
@@ -79,8 +120,8 @@ export default function MyPageLayoutClient({ children }: { children: React.React
                                 textAlign="center"
                             >
                                 <Box
-                                    w="80px"
-                                    h="80px"
+                                    w="100px"
+                                    h="100px"
                                     mx="auto"
                                     mb={4}
                                     bg="blue.500"
@@ -89,20 +130,65 @@ export default function MyPageLayoutClient({ children }: { children: React.React
                                     alignItems="center"
                                     justifyContent="center"
                                     color="white"
-                                    fontSize="2xl"
+                                    fontSize="3xl"
                                     fontWeight="bold"
-                                    shadow="lg"
+                                    shadow="xl"
+                                    position="relative"
+                                    overflow="hidden"
+                                    cursor="pointer"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    _hover={{
+                                        "& > .camera-overlay": { opacity: 1 },
+                                        transform: "scale(1.02)"
+                                    }}
+                                    transition="all 0.3s"
                                 >
-                                    {user?.name?.charAt(0) || user?.username?.charAt(0) || "U"}
+                                    {isUploadingAvatar ? (
+                                        <Spinner size="lg" color="white" />
+                                    ) : (
+                                        <>
+                                            {user?.avatar_url ? (
+                                                <ChakraImage
+                                                    src={user.avatar_url}
+                                                    alt="Avatar"
+                                                    objectFit="cover"
+                                                    w="100%"
+                                                    h="100%"
+                                                />
+                                            ) : (
+                                                user?.name?.charAt(0) || user?.username?.charAt(0) || "U"
+                                            )}
+                                            <Box
+                                                className="camera-overlay"
+                                                position="absolute"
+                                                inset={0}
+                                                bg="blackAlpha.600"
+                                                display="flex"
+                                                alignItems="center"
+                                                justifyContent="center"
+                                                opacity={0}
+                                                transition="opacity 0.3s"
+                                            >
+                                                <Icon as={FiCamera} color="white" fontSize="24px" />
+                                            </Box>
+                                        </>
+                                    )}
                                 </Box>
-                                <Heading size="sm" mb={1}>{user?.name || user?.username || t('default_username', { defaultValue: 'Traveler' })}</Heading>
-                                <Text fontSize="xs" color="gray.500">{user?.email || ""}</Text>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    style={{ display: 'none' }}
+                                    accept="image/*"
+                                    onChange={handleAvatarUpload}
+                                />
+                                <Heading size="md" mb={1} color="gray.800" fontWeight="black">{user?.name || user?.username || t('default_username', { defaultValue: 'Traveler' })}</Heading>
+                                <Text fontSize="xs" color="gray.500" fontWeight="medium">{user?.email || ""}</Text>
                             </Box>
 
                             {/* Navigation Card */}
                             <Box bg="white" rounded="2xl" p={6} border="1px" borderColor="gray.100" shadow="sm">
                                 <VStack align="stretch" gap={2}>
-                                    <Text px={3} mb={2} fontSize="10px" fontWeight="black" color="gray.400" textTransform="uppercase" letterSpacing="widest">
+                                    <Text px={3} mb={2} fontSize="11px" fontWeight="black" color="gray.400" textTransform="uppercase" letterSpacing="widest">
                                         {t('personal_menu', { defaultValue: 'Personal Menu' })}
                                     </Text>
                                     {menuItems.map((item) => (

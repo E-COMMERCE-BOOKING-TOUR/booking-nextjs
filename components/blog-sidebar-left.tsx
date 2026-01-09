@@ -38,14 +38,19 @@ export default function BlogSidebarLeft({
     // Generate items with dynamic profile link
     const menuItems = useMemo(() => {
         const userUuid = (session?.user as { uuid?: string })?.uuid;
-        return [
-            { key: "home", label: t('home', { defaultValue: 'Home' }), href: "/social", icon: Home },
-            { key: "explore", label: t('explore', { defaultValue: 'Explore' }), href: "/social/explore", icon: Search },
-            { key: "notifications", label: t('notifications', { defaultValue: 'Notifications' }), href: "/social/notification", icon: Bell },
-            { key: "bookmarks", label: t('bookmarks', { defaultValue: 'Bookmarks' }), href: "/social/bookmark", icon: Bookmark },
-            { key: "profile", label: t('profile', { defaultValue: 'Profile' }), href: userUuid ? `/social/profile/${userUuid}` : "/social", icon: User },
+        const isLoggedIn = !!session?.user?.email;
+
+        const allItems = [
+            { key: "home", label: t('home', { defaultValue: 'Home' }), href: "/social", icon: Home, requiresAuth: false },
+            { key: "explore", label: t('explore', { defaultValue: 'Explore' }), href: "/social/explore", icon: Search, requiresAuth: false },
+            { key: "notifications", label: t('notifications', { defaultValue: 'Notifications' }), href: "/social/notification", icon: Bell, requiresAuth: true },
+            { key: "bookmarks", label: t('bookmarks', { defaultValue: 'Bookmarks' }), href: "/social/bookmark", icon: Bookmark, requiresAuth: true },
+            { key: "profile", label: t('profile', { defaultValue: 'Profile' }), href: userUuid ? `/social/profile/${userUuid}` : "/social", icon: User, requiresAuth: true },
         ];
-    }, [session?.user]);
+
+        // Filter items based on authentication status
+        return allItems.filter(item => !item.requiresAuth || isLoggedIn);
+    }, [session?.user, t]);
 
     const finalItems = items || menuItems;
 
@@ -81,7 +86,7 @@ export default function BlogSidebarLeft({
 
                         <HStack w="full">
                             <Avatar.Root size="md">
-                                <Avatar.Image src="https://picsum.photos/100/100" />
+                                {(session?.user as any)?.avatar_url && <Avatar.Image src={(session?.user as any).avatar_url} />}
                                 <Avatar.Fallback name={session?.user?.name || "User"} />
                             </Avatar.Root>
                             <Text fontSize={"md"} lineClamp={1}>{session?.user?.name}</Text>

@@ -137,7 +137,7 @@ const BookmarkContent = () => {
                                     <HStack gap={4} color="gray.500" fontSize="sm">
                                         <HStack gap={1}>
                                             <Avatar.Root size="xs">
-                                                <Avatar.Image src={item.user?.avatar} />
+                                                {item.user?.avatar && <Avatar.Image src={item.user.avatar} />}
                                                 <Avatar.Fallback>{item.user?.name?.[0]}</Avatar.Fallback>
                                             </Avatar.Root>
                                             <Text>{item.user?.name || 'Unknown'}</Text>

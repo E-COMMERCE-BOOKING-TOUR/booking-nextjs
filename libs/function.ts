@@ -47,3 +47,49 @@ export function dateFormat(timestamp?: string) {
     year: 'numeric',
   }) : ''
 }
+
+export function relativeTimeFormat(timestamp?: string, locale: string = 'vi'): string {
+  if (!timestamp) return '';
+
+  const now = new Date();
+  const date = new Date(timestamp);
+  const diffMs = now.getTime() - date.getTime();
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
+  const diffYears = Math.floor(diffDays / 365);
+
+  const translations = {
+    vi: {
+      justNow: 'Vừa xong',
+      minutesAgo: (n: number) => `${n} phút trước`,
+      hoursAgo: (n: number) => `${n} giờ trước`,
+      daysAgo: (n: number) => `${n} ngày trước`,
+      weeksAgo: (n: number) => `${n} tuần trước`,
+      monthsAgo: (n: number) => `${n} tháng trước`,
+      yearsAgo: (n: number) => `${n} năm trước`,
+    },
+    en: {
+      justNow: 'Just now',
+      minutesAgo: (n: number) => `${n} minute${n > 1 ? 's' : ''} ago`,
+      hoursAgo: (n: number) => `${n} hour${n > 1 ? 's' : ''} ago`,
+      daysAgo: (n: number) => `${n} day${n > 1 ? 's' : ''} ago`,
+      weeksAgo: (n: number) => `${n} week${n > 1 ? 's' : ''} ago`,
+      monthsAgo: (n: number) => `${n} month${n > 1 ? 's' : ''} ago`,
+      yearsAgo: (n: number) => `${n} year${n > 1 ? 's' : ''} ago`,
+    }
+  };
+
+  const t = translations[locale as keyof typeof translations] || translations.en;
+
+  if (diffMinutes < 1) return t.justNow;
+  if (diffMinutes < 60) return t.minutesAgo(diffMinutes);
+  if (diffHours < 24) return t.hoursAgo(diffHours);
+  if (diffDays < 7) return t.daysAgo(diffDays);
+  if (diffWeeks < 4) return t.weeksAgo(diffWeeks);
+  if (diffMonths < 12) return t.monthsAgo(diffMonths);
+  return t.yearsAgo(diffYears);
+}

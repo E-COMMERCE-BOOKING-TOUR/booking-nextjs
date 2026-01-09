@@ -36,6 +36,18 @@ const ListNotification = () => {
         enabled: !!session?.user?.accessToken,
     });
 
+    // Show login prompt for unauthenticated users
+    if (!session?.user) {
+        return (
+            <Center py={10}>
+                <VStack gap={4}>
+                    <Text fontSize="lg" fontWeight="600" color="gray.500">Sign in to see your notifications</Text>
+                    <Text color="gray.400">Stay updated with your activity</Text>
+                </VStack>
+            </Center>
+        );
+    }
+
     if (status === 'pending') {
         return (
             <Center py={10}>

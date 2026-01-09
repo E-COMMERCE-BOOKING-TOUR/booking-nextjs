@@ -91,13 +91,16 @@ export default {
         })
     ],
     callbacks: {
-        jwt: async ({ token, user, trigger }) => {
-            if (trigger === "update" && token.accessToken) {
+        jwt: async ({ token, user, trigger, session }) => {
+            if (trigger === "update" && session?.avatar_url) {
+                token.avatar_url = session.avatar_url;
+            } else if (trigger === "update" && token.accessToken) {
                 const newInfo = await userApi.info(token.accessToken);
                 if (typeof newInfo.full_name !== "undefined") {
                     token.name = newInfo.full_name;
                     token.email = newInfo.email;
                     token.role = newInfo.role;
+                    token.avatar_url = newInfo.avatar_url;
                 }
             }
 
@@ -112,6 +115,7 @@ export default {
                     refreshToken: user.refreshToken,
                     accessTokenExpires: user.accessTokenExpires,
                     role: user.role,
+                    avatar_url: user.avatar_url,
                     error: undefined,
                 }
             }
@@ -140,6 +144,7 @@ export default {
                     refreshToken: token.refreshToken,
                     accessTokenExpires: token.accessTokenExpires,
                     role: token.role,
+                    avatar_url: (token as any).avatar_url,
                     error: token.error,
                 }
             }

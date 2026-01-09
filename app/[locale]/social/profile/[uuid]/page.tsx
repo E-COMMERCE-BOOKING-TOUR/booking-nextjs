@@ -15,7 +15,7 @@ import {
     Icon,
     List
 } from "@chakra-ui/react";
-import { FiUserPlus, FiUserMinus, FiEdit } from "react-icons/fi";
+import { FiUserPlus, FiUserMinus, FiEdit, FiCamera } from "react-icons/fi";
 import { useRouter, useParams } from "next/navigation";
 import { Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -151,8 +151,40 @@ const ProfileContent = () => {
                 >
                     <HStack gap={4} align="end" w="full" justify="space-between" flexWrap="wrap">
                         <HStack gap={4}>
-                            <Avatar.Root size="2xl" border="4px solid white" shadow="xl">
-                                <Avatar.Fallback name={profileUser?.full_name || "User"} bg="purple.500" color="white" />
+                            <Avatar.Root
+                                size="2xl"
+                                border="4px solid white"
+                                shadow="xl"
+                                position="relative"
+                                cursor={isOwnProfile ? "pointer" : "default"}
+                                onClick={() => isOwnProfile && router.push('/mypage')}
+                                overflow="hidden"
+                                _hover={isOwnProfile ? {
+                                    "& .avatar-overlay": { opacity: 1 },
+                                    "& img": { filter: "brightness(0.7)" }
+                                } : {}}
+                            >
+                                <Avatar.Fallback name={profileUser?.full_name || "User"} color="black" />
+                                {profileUser?.avatar_url && <Avatar.Image src={profileUser.avatar_url} border="none" />}
+
+                                {isOwnProfile && (
+                                    <Box
+                                        className="avatar-overlay"
+                                        position="absolute"
+                                        inset={0}
+                                        bg="blackAlpha.600"
+                                        display="flex"
+                                        alignItems="center"
+                                        justifyContent="center"
+                                        opacity={0}
+                                        transition="all 0.3s"
+                                        zIndex={2}
+                                    >
+                                        <Icon color="white" fontSize="2xl">
+                                            <FiCamera />
+                                        </Icon>
+                                    </Box>
+                                )}
                             </Avatar.Root>
                             <VStack align="start" gap={0}>
                                 <Heading size={{ base: "lg", md: "xl" }} color="white" fontWeight="900">

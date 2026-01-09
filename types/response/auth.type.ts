@@ -28,5 +28,6 @@ export interface IUserAuth {
             permission_name: string,
             description: string
         }[]
-    }
+    },
+    avatar_url?: string
 }

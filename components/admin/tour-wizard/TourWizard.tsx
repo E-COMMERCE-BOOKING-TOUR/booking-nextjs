@@ -648,6 +648,8 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
 
             const finalPayload: CreateTourDTO = {
                 ...data,
+                // Convert published_at to ISO 8601 format if it's a date-only string
+                published_at: data.published_at ? new Date(data.published_at).toISOString() : undefined,
                 images: uploadedImages.map(({ file, ...rest }) => rest),
                 map_preview: finalMapPreview,
                 variants: nestedVariants,
@@ -657,9 +659,9 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
             delete (finalPayload as any).map_preview_file;
             delete (finalPayload as any).slug;
 
-            // Clean up empty optional objects
+            // Clean up empty optional objects - testimonial fields are all required in backend
             const testimonial = finalPayload.testimonial;
-            if (testimonial && (!testimonial.name && !testimonial.country && !testimonial.text)) {
+            if (!testimonial || !testimonial.name?.trim() || !testimonial.country?.trim() || !testimonial.text?.trim()) {
                 delete finalPayload.testimonial;
             }
             const highlights = finalPayload.highlights;

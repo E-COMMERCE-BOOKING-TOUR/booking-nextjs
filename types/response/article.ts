@@ -16,10 +16,20 @@ export interface IArticlePopular {
     user: { name: string; avatar: string };
     user_id: string;
     tour_id?: number | string;
-    tour?: { id: number; title: string; slug: string };
+    tour?: {
+        id: number;
+        title: string;
+        slug: string;
+        address?: string;
+        division?: {
+            id: number;
+            name: string;
+        }
+    };
     is_visible?: boolean;
     comments?: unknown[];
     users_like?: string[];
     users_bookmark?: string[];
+    weather?: string;
 }
 

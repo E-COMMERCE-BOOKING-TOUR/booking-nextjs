@@ -8,7 +8,7 @@ const article = {
         const res = await fetchC.get(url, { next: { revalidate: 1800 } }); // 30min
         return Array.isArray(res) ? res : (res?.data || []);
     },
-    create: async (data: { title: string; content: string; images?: { image_url: string }[]; tags?: string[]; tour_id?: number }, token?: string) => {
+    create: async (data: { title: string; content: string; images?: { image_url: string }[]; tags?: string[]; tour_id?: number; weather?: string }, token?: string) => {
         const url = `/user/article/create`;
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);

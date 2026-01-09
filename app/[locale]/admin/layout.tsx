@@ -6,11 +6,17 @@ import { AdminLanguageSwitcher } from "@/components/admin/AdminLanguageSwitcher"
 import { AdminNotificationDropdown } from "@/components/admin/AdminNotificationDropdown"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-export default function AdminDashboardLayout({
+import { getServerAuth } from "@/libs/auth/getServerAuth"
+
+export default async function AdminDashboardLayout({
     children,
 }: Readonly<{
     children: React.ReactNode;
 }>) {
+    const authData = await getServerAuth();
+    const user = authData?.user;
+    const initials = user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'AD';
+
     return (
         <SidebarProvider>
             <AppSidebar />
@@ -22,8 +28,8 @@ export default function AdminDashboardLayout({
                         <AdminLanguageSwitcher />
                         <div className="pl-2 border-l border-white/10 ml-1">
                             <Avatar className="size-9 border border-white/10 cursor-pointer hover:border-primary/50 transition-colors">
-                                <AvatarImage src="https://github.com/shadcn.png" />
-                                <AvatarFallback>AD</AvatarFallback>
+                                {(user as any)?.avatar_url && <AvatarImage src={(user as any).avatar_url} />}
+                                <AvatarFallback>{initials}</AvatarFallback>
                             </Avatar>
                         </div>
                     </div>

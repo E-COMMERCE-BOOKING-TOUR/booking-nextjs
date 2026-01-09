@@ -51,8 +51,8 @@ export const ItemNotification = ({ type, data }: { type: string, data: { user: s
             <Flex gap={4} align="flex-start">
                 <Box position="relative">
                     <Avatar.Root size="md">
-                        <Avatar.Fallback name={data.user} />
-                        {/* <Avatar.Image src={data.avatar} /> */}
+                        <Avatar.Fallback name={String(data.user)} />
+                        {data.avatar ? <Avatar.Image src={String(data.avatar)} /> : null}
                     </Avatar.Root>
                     <Box
                         position="absolute"
