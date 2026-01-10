@@ -75,10 +75,19 @@ export default function AdminTourPoliciesPage() {
         onError: (err: unknown) => toast.error(err instanceof Error ? err.message : t('toast_policy_delete_error'))
     });
 
-    const handleOpenDialog = (policy?: ITourPolicy) => {
+    const handleOpenDialog = (policy?: ITourPolicy | any) => {
         if (policy) {
             setEditingPolicy(policy);
-            setPolicyForm({ ...policy });
+            // Map tour_policy_rules from API to rules for form
+            const rules = policy.rules || policy.tour_policy_rules || [];
+            setPolicyForm({
+                ...policy,
+                rules: rules.map((r: any) => ({
+                    before_hours: r.before_hours,
+                    fee_pct: r.fee_pct,
+                    sort_no: r.sort_no || 0
+                }))
+            });
         } else {
             setEditingPolicy(null);
             setPolicyForm({

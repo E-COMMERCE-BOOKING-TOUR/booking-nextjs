@@ -348,7 +348,7 @@ export default function AdminRolePage() {
 
                         <div className="w-1/2 flex flex-col gap-2">
                             <Label className="mb-1">{t('permissions_label')}</Label>
-                            <ScrollArea className="h-[250px] w-full rounded-md border border-white/10 bg-white/5 p-4">
+                            <ScrollArea className="h-[250px] w-full border border-white/10 bg-white/5 p-4">
                                 <div className="space-y-3">
                                     {permissions.map((p: IAdminPermission) => (
                                         <div key={p.id} className="flex items-start gap-2">

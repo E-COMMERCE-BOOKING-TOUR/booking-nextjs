@@ -1,6 +1,6 @@
 import fetchC from "@/libs/fetchC";
 import { getAuthHeaders } from "@/libs/auth/authHeaders";
-import { CreateTourDTO, AdminTourSearchParams, IAdminTour, ICountry, IDivision, ICurrency, IAdminTourDetail, ITourPolicy, IVisibilityReport } from "@/types/admin/tour.dto";
+import { CreateTourDTO, AdminTourSearchParams, IAdminTour, ICountry, IDivision, ICurrency, IPaxType, IAdminTourDetail, ITourPolicy, IVisibilityReport } from "@/types/admin/tour.dto";
 
 export const adminTourApi = {
     // Metadata
@@ -18,6 +18,11 @@ export const adminTourApi = {
         const authHeaders = await getAuthHeaders(token);
         if (!authHeaders.ok) throw new Error(authHeaders.message);
         return fetchC.get(`/admin/tour/metadata/divisions/${countryId}`, { headers: authHeaders.headers });
+    },
+    getPaxTypes: async (token?: string): Promise<IPaxType[]> => {
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+        return fetchC.get("/admin/tour/metadata/pax-types", { headers: authHeaders.headers });
     },
 
     // Tour Management

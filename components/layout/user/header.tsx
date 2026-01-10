@@ -7,11 +7,24 @@ export const Header = ({ children, ...props }: FlexProps) => {
     const [isScrolled, setIsScrolled] = useState(false);
 
     useEffect(() => {
+        const SCROLL_DOWN_THRESHOLD = 20;
+        const SCROLL_UP_THRESHOLD = 5;
+
         const handleScroll = () => {
-            setIsScrolled(window.scrollY > 10);
+            const scrollY = window.scrollY;
+
+            setIsScrolled(prev => {
+                if (prev && scrollY < SCROLL_UP_THRESHOLD) {
+                    return false;
+                }
+                if (!prev && scrollY > SCROLL_DOWN_THRESHOLD) {
+                    return true;
+                }
+                return prev;
+            });
         };
 
-        window.addEventListener("scroll", handleScroll);
+        window.addEventListener("scroll", handleScroll, { passive: true });
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 

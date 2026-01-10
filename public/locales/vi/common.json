@@ -463,5 +463,16 @@
     "weather_experience": "Chuyến đi tuyệt vời!",
     "bookmark_failed": "Lưu bài viết thất bại",
     "unbookmark_failed": "Bỏ lưu bài viết thất bại",
-    "login_to_bookmark": "Vui lòng đăng nhập để lưu bài viết"
+    "login_to_bookmark": "Vui lòng đăng nhập để lưu bài viết",
+    "passenger_list_title": "Danh sách hành khách",
+    "booking_created_at": "Đặt lúc",
+    "cancel_booking_btn": "Hủy đặt chỗ",
+    "cancel_booking_title": "Hủy đặt chỗ",
+    "cancel_confirm_message": "Bạn có chắc chắn muốn hủy đặt chỗ này không?",
+    "cancellation_fee_label": "Phí hủy",
+    "refund_amount_label": "Số tiền hoàn trả",
+    "cancel_btn": "Hủy",
+    "confirm_cancel_btn": "Xác nhận hủy",
+    "selected_range_includes_off_days": "Khoảng thời gian đã chọn bao gồm ngày nghỉ",
+    "tour_cannot_run_on_date": "Tour không thể khởi hành vào ngày này"
 }

@@ -183,7 +183,8 @@ export default async function TourDetailPage({ params }: { params: Promise<{ slu
                             currencySymbol={tour.currencySymbol}
                             slug={slug}
                             variants={tour.variants}
-                            durationDays={tour.details.duration ? parseInt(tour.details.duration) : 1}
+                            durationDays={tour.durationDays}
+                            durationText={tour.details.duration}
                         />
 
                         <Grid templateColumns={{ base: "1fr", md: "repeat(8, 1fr)" }} gap={5} mt={8}>

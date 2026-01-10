@@ -115,6 +115,13 @@ export interface ICurrency {
     symbol: string;
 }
 
+export interface IPaxType {
+    id: number;
+    name: string;
+    min_age: number;
+    max_age: number;
+}
+
 export interface IAdminTourVariant {
     id: number;
     name: string;

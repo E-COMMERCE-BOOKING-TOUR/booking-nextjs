@@ -15,8 +15,16 @@ export const ResumeBookingButton = ({ booking, ...props }: { booking: IBookingDe
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
     useEffect(() => {
-        // If booking exists but has no expiry (completed/confirmed), clear localStorage
+        // If booking exists but has no expiry (completed/confirmed), clear localStorage and hide button
         if (booking && !booking.hold_expires_at) {
+            localStorage.removeItem(STORAGE_KEY);
+            setTimeLeft(null);
+            return;
+        }
+
+        // No booking data from server - only check localStorage if truly no booking
+        // Server is source of truth, clear localStorage when no booking
+        if (!booking) {
             localStorage.removeItem(STORAGE_KEY);
             setTimeLeft(null);
             return;

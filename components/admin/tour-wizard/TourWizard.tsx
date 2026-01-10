@@ -136,37 +136,95 @@ interface TourWizardProps {
     initialData?: IAdminTourDetail;
 }
 
-const VariantPricing = ({ control, index }: { control: Control<TourFormValues>, index: number }) => {
+import { IPaxType } from "@/types/admin/tour.dto";
+
+const VariantPricing = ({ control, index, paxTypes, setValue, t }: {
+    control: Control<TourFormValues>,
+    index: number,
+    paxTypes: IPaxType[],
+    setValue: (name: any, value: any) => void,
+    t: (key: string, values?: Record<string, any>) => string
+}) => {
     const prices = useWatch({
         control,
         name: `variants.${index}.prices`
     }) || [];
 
+    const existingPaxTypeIds = prices.map((p: { pax_type_id: number }) => p.pax_type_id);
+    const availablePaxTypes = paxTypes.filter(pt => !existingPaxTypeIds.includes(pt.id));
+
+    const addPaxType = (paxTypeId: number) => {
+        const paxType = paxTypes.find(pt => pt.id === paxTypeId);
+        if (!paxType) return;
+
+        const newPrices = [...prices, { pax_type_id: paxType.id, pax_type_name: paxType.name, price: 0 }];
+        setValue(`variants.${index}.prices`, newPrices);
+    };
+
+    const removePaxType = (pIdx: number) => {
+        const newPrices = prices.filter((_: any, i: number) => i !== pIdx);
+        setValue(`variants.${index}.prices`, newPrices);
+    };
+
     return (
-        <div className="flex gap-4">
-            {prices.map((price: { pax_type_name: string }, pIdx: number) => (
-                <FormField
-                    key={pIdx}
-                    control={control}
-                    name={`variants.${index}.prices.${pIdx}.price`}
-                    render={({ field }) => (
-                        <FormItem className="flex-1">
-                            <FormLabel className="text-xs">{price.pax_type_name}</FormLabel>
-                            <FormControl>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-                                    <Input
-                                        type="number"
-                                        {...field}
-                                        onChange={e => field.onChange(parseFloat(e.target.value))}
-                                        className="pl-8 bg-background/50"
-                                    />
-                                </div>
-                            </FormControl>
-                        </FormItem>
-                    )}
-                />
-            ))}
+        <div className="space-y-3">
+            <div className="flex flex-wrap gap-3">
+                {prices.map((price: { pax_type_id: number, pax_type_name: string }, pIdx: number) => (
+                    <div key={pIdx} className="flex items-end gap-2 bg-background/30 p-3 rounded-lg border border-white/10">
+                        <FormField
+                            control={control}
+                            name={`variants.${index}.prices.${pIdx}.price`}
+                            render={({ field }) => (
+                                <FormItem className="w-32">
+                                    <FormLabel className="text-xs">{price.pax_type_name}</FormLabel>
+                                    <FormControl>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                                            <Input
+                                                type="number"
+                                                {...field}
+                                                value={field.value ?? ''}
+                                                onChange={e => {
+                                                    const val = e.target.value;
+                                                    field.onChange(val === '' ? 0 : parseFloat(val) || 0);
+                                                }}
+                                                className="pl-8 bg-background/50"
+                                            />
+                                        </div>
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                        {prices.length > 1 && (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-9 w-9 text-muted-foreground hover:text-destructive"
+                                onClick={() => removePaxType(pIdx)}
+                            >
+                                <X className="size-4" />
+                            </Button>
+                        )}
+                    </div>
+                ))}
+            </div>
+
+            {availablePaxTypes.length > 0 && (
+                <Select onValueChange={(val) => addPaxType(parseInt(val))}>
+                    <SelectTrigger className="w-48 bg-background/30 border-dashed border-primary/50 text-primary hover:bg-primary/5">
+                        <Plus className="size-4 mr-2" />
+                        <SelectValue placeholder={t('tour_wizard_add_pax_type')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {availablePaxTypes.map((pt) => (
+                            <SelectItem key={pt.id} value={pt.id.toString()}>
+                                {t('tour_wizard_pax_type_age_range', { name: pt.name, min: pt.min_age, max: pt.max_age })}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            )}
         </div>
     );
 };
@@ -226,6 +284,13 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
     const { data: currencies = [] } = useQuery({
         queryKey: ['currencies'],
         queryFn: () => adminTourApi.getCurrencies(token),
+        enabled: !!token,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const { data: paxTypes = [] } = useQuery({
+        queryKey: ['pax-types'],
+        queryFn: () => adminTourApi.getPaxTypes(token),
         enabled: !!token,
         staleTime: 5 * 60 * 1000,
     });
@@ -1577,7 +1642,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-6">
+                                    <div className="grid grid-cols-3 gap-6">
                                         <FormField
                                             control={form.control}
                                             name="testimonial.name"
@@ -1586,6 +1651,18 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                     <FormLabel>{t('tour_wizard_testimonial_name')}</FormLabel>
                                                     <FormControl>
                                                         <Input placeholder={t('tour_wizard_testimonial_name_placeholder')} {...field} className="bg-background/50 border-white/10" />
+                                                    </FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="testimonial.country"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>{t('tour_wizard_testimonial_country')}</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder={t('tour_wizard_testimonial_country_placeholder')} {...field} className="bg-background/50 border-white/10" />
                                                     </FormControl>
                                                 </FormItem>
                                             )}
@@ -1674,19 +1751,24 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                     <p className="text-sm text-muted-foreground">{t('tour_wizard_tour_variants_desc')}</p>
                                 </div>
 
-                                <Button type="button" onClick={() => appendVariant({
-                                    name: 'Standard',
-                                    min_pax_per_booking: 1,
-                                    capacity_per_slot: 20,
-                                    tax_included: true,
-                                    cutoff_hours: 24,
-                                    status: 'active',
-                                    prices: [
-                                        { pax_type_id: 1, pax_type_name: 'Adult', price: 0 },
-                                        { pax_type_id: 2, pax_type_name: 'Child', price: 0 }
-                                    ],
-                                    tour_policy_id: 0
-                                })} className="bg-primary hover:bg-primary/90 text-white shadow-sm flex items-center gap-2">
+                                <Button type="button" onClick={() => {
+                                    // Default to Adult (pax_type_id=1) or first available pax type
+                                    const adultPaxType = paxTypes.find(p => p.id === 1) || paxTypes[0];
+                                    const defaultPrice = adultPaxType
+                                        ? [{ pax_type_id: adultPaxType.id, pax_type_name: adultPaxType.name, price: 0 }]
+                                        : [{ pax_type_id: 1, pax_type_name: 'Adult', price: 0 }];
+
+                                    appendVariant({
+                                        name: 'Standard',
+                                        min_pax_per_booking: 1,
+                                        capacity_per_slot: 20,
+                                        tax_included: true,
+                                        cutoff_hours: 24,
+                                        status: 'active',
+                                        prices: defaultPrice,
+                                        tour_policy_id: 0
+                                    });
+                                }} className="bg-primary hover:bg-primary/90 text-white shadow-sm flex items-center gap-2">
                                     <Plus className="size-4 mr-2" /> {t('tour_wizard_add_variant')}
                                 </Button>
                             </div>
@@ -1732,7 +1814,7 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                             </div>
                                             <div>
                                                 <Label className="mb-2 block">{t('tour_wizard_pricing')}</Label>
-                                                <VariantPricing control={form.control} index={index} />
+                                                <VariantPricing control={form.control} index={index} paxTypes={paxTypes} setValue={form.setValue} t={t} />
                                             </div>
 
 
@@ -1742,45 +1824,84 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                 <FormField
                                                     control={form.control}
                                                     name={`variants.${index}.tour_policy_id`}
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <div className="flex items-center justify-between">
-                                                                <FormLabel className="text-base font-semibold text-primary">{t('tour_wizard_refund_policy')}</FormLabel>
-                                                                <Button
-                                                                    type="button"
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-8 text-xs text-primary hover:text-primary/80"
-                                                                    onClick={() => router.push('/admin/tour/policies')}
-                                                                >
-                                                                    {t('tour_wizard_manage_policies')}
-                                                                </Button>
-                                                            </div>
-                                                            <Select onValueChange={field.onChange} value={field.value?.toString()}>
-                                                                <FormControl>
-                                                                    <SelectTrigger className="bg-background/40 h-10 border-white/10">
-                                                                        <SelectValue placeholder={t('tour_wizard_select_policy_placeholder')} />
-                                                                    </SelectTrigger>
-                                                                </FormControl>
-                                                                <SelectContent className="bg-slate-900 border-white/10 text-white">
-                                                                    {policies.map((p) => (
-                                                                        <SelectItem key={p.id} value={p.id!.toString()} className="hover:bg-white/10 focus:bg-white/10">
-                                                                            {p.name}
-                                                                        </SelectItem>
-                                                                    ))}
-                                                                    {policies.length === 0 && (
-                                                                        <div className="p-2 text-xs text-muted-foreground italic">
-                                                                            {t('tour_wizard_no_policies_found')}
+                                                    render={({ field }) => {
+                                                        const selectedPolicy = policies.find((p: any) => p.id?.toString() === field.value?.toString()) as any;
+                                                        const policyRules = selectedPolicy?.tour_policy_rules || selectedPolicy?.rules || [];
+
+                                                        const formatTime = (hours: number) => {
+                                                            if (hours === 0) return t('at_start_time_label');
+                                                            if (hours % 24 === 0) {
+                                                                const days = hours / 24;
+                                                                return t('days_count', { count: days });
+                                                            }
+                                                            return t('hours_count', { count: hours });
+                                                        };
+
+                                                        return (
+                                                            <FormItem>
+                                                                <div className="flex items-center justify-between">
+                                                                    <FormLabel className="text-base font-semibold text-primary">{t('tour_wizard_refund_policy')}</FormLabel>
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-8 text-xs text-primary hover:text-primary/80"
+                                                                        onClick={() => router.push('/admin/tour/policies')}
+                                                                    >
+                                                                        {t('tour_wizard_manage_policies')}
+                                                                    </Button>
+                                                                </div>
+                                                                <Select onValueChange={field.onChange} value={field.value?.toString()}>
+                                                                    <FormControl>
+                                                                        <SelectTrigger className="bg-background/40 h-10 border-white/10">
+                                                                            <SelectValue placeholder={t('tour_wizard_select_policy_placeholder')} />
+                                                                        </SelectTrigger>
+                                                                    </FormControl>
+                                                                    <SelectContent className="bg-slate-900 border-white/10 text-white">
+                                                                        {policies.map((p: any) => (
+                                                                            <SelectItem key={p.id} value={p.id!.toString()} className="hover:bg-white/10 focus:bg-white/10">
+                                                                                {p.name}
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                        {policies.length === 0 && (
+                                                                            <div className="p-2 text-xs text-muted-foreground italic">
+                                                                                {t('tour_wizard_no_policies_found')}
+                                                                            </div>
+                                                                        )}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                <FormDescription className="text-[10px] text-muted-foreground">
+                                                                    {t('tour_wizard_refund_policy_desc')}
+                                                                </FormDescription>
+
+                                                                {/* Policy Rules Preview */}
+                                                                {selectedPolicy && policyRules.length > 0 && (
+                                                                    <div className="mt-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                                                                        <div className="text-xs font-semibold text-primary mb-2">{t('tour_wizard_policy_rules_preview')}</div>
+                                                                        <div className="space-y-1.5">
+                                                                            {[...policyRules].sort((a: any, b: any) => b.before_hours - a.before_hours).map((rule: any, ruleIdx: number) => (
+                                                                                <div key={ruleIdx} className="flex items-center justify-between text-xs">
+                                                                                    <span className="text-muted-foreground">
+                                                                                        {rule.before_hours > 0
+                                                                                            ? `> ${formatTime(rule.before_hours)} ${t('tour_wizard_before_start')}`
+                                                                                            : formatTime(rule.before_hours)}
+                                                                                    </span>
+                                                                                    <span className={`font-semibold ${rule.fee_pct === 0 ? 'text-emerald-400' : rule.fee_pct === 100 ? 'text-rose-400' : 'text-amber-400'}`}>
+                                                                                        {rule.fee_pct === 0
+                                                                                            ? t('tour_wizard_full_refund')
+                                                                                            : rule.fee_pct === 100
+                                                                                                ? t('tour_wizard_no_refund')
+                                                                                                : t('tour_wizard_refund_pct', { pct: 100 - rule.fee_pct })}
+                                                                                    </span>
+                                                                                </div>
+                                                                            ))}
                                                                         </div>
-                                                                    )}
-                                                                </SelectContent>
-                                                            </Select>
-                                                            <FormDescription className="text-[10px] text-muted-foreground">
-                                                                {t('tour_wizard_refund_policy_desc')}
-                                                            </FormDescription>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
+                                                                    </div>
+                                                                )}
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )
+                                                    }}
                                                 />
                                             </div>
                                         </CardContent>

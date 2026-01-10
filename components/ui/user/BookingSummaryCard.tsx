@@ -39,16 +39,6 @@ export const BookingSummaryCard = ({ booking }: { booking: IBookingDetail }) => 
                                 <Text>{new Date(booking.start_date).toLocaleDateString(lng === 'vi' ? 'vi-VN' : 'en-US')} {booking.session_start_time ? `(${booking.session_start_time.substring(0, 5)})` : ''}</Text>
                             </DataList.ItemValue>
                         </DataList.Item>
-                        {booking.session_end_time && (
-                            <DataList.Item>
-                                <DataList.ItemLabel>
-                                    {t('end_time_label')}
-                                </DataList.ItemLabel>
-                                <DataList.ItemValue display="flex" flexDirection="column" gap={1}>
-                                    <Text>{booking.session_end_time.substring(0, 5)}</Text>
-                                </DataList.ItemValue>
-                            </DataList.Item>
-                        )}
                         <DataList.Item>
                             <DataList.ItemLabel>
                                 {t('date_end_label')}
@@ -58,7 +48,8 @@ export const BookingSummaryCard = ({ booking }: { booking: IBookingDetail }) => 
                                     const d = new Date(booking.start_date);
                                     d.setDate(d.getDate() + Math.max(0, booking.duration_days - 1));
                                     return d.toLocaleDateString(lng === 'vi' ? 'vi-VN' : 'en-US');
-                                })()}
+                                })()} {" "}
+                                {booking.session_end_time ? `(${booking.session_end_time.substring(0, 5)})` : ''}
                             </DataList.ItemValue>
                         </DataList.Item>
                         <DataList.Item>

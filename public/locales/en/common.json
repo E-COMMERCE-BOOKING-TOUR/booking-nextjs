@@ -463,5 +463,16 @@
     "weather_experience": "Great trip!",
     "bookmark_failed": "Failed to bookmark",
     "unbookmark_failed": "Failed to unbookmark",
-    "login_to_bookmark": "Please login to bookmark"
+    "login_to_bookmark": "Please login to bookmark",
+    "passenger_list_title": "Passenger List",
+    "booking_created_at": "Booked at",
+    "cancel_booking_btn": "Cancel Booking",
+    "cancel_booking_title": "Cancel Booking",
+    "cancel_confirm_message": "Are you sure you want to cancel this booking?",
+    "cancellation_fee_label": "Cancellation fee",
+    "refund_amount_label": "Refund amount",
+    "cancel_btn": "Cancel",
+    "confirm_cancel_btn": "Confirm Cancellation",
+    "selected_range_includes_off_days": "Selected range includes off days",
+    "tour_cannot_run_on_date": "Tour cannot run on this date"
 }

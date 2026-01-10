@@ -47,6 +47,7 @@ interface TourHeaderProps {
     slug: string;
     variants: TourHeaderVariant[];
     durationDays: number;
+    durationText?: string;  // Optional duration text like "5 hours" or "2 days 3 hours"
     breadcrumbItems: { label: string; href: string }[];
     currencySymbol?: string;
     currencyCode?: string;
@@ -56,7 +57,7 @@ const TourCalendar = dynamic(() => import("./TourCalendar"), {
     loading: () => <Box p={10} textAlign="center"><Spinner size="xl" /></Box>,
 });
 
-export default function TourHeader({ title, location, rating, price, oldPrice, slug, variants, durationDays, breadcrumbItems, currencySymbol = 'VND', currencyCode }: TourHeaderProps) {
+export default function TourHeader({ title, location, rating, price, oldPrice, slug, variants, durationDays, durationText, breadcrumbItems, currencySymbol = 'VND', currencyCode }: TourHeaderProps) {
     const locale = useLocale();
     const t = useTranslations('common');
     const router = useRouter();
@@ -244,7 +245,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                     <HStack gap={1} color="gray.500" fontSize="sm" fontWeight="medium">
                         <Text>{location}</Text>
                         <Text>•</Text>
-                        <Text>{durationDays} {t("days", { count: durationDays })}</Text>
+                        <Text>{durationText || `${durationDays} ${t("days", { count: durationDays })}`}</Text>
                     </HStack>
                 </VStack>
 

@@ -49,10 +49,12 @@ export default function CheckoutInfoClient({ initialBooking }: Props) {
     const checkoutInfoSchema = z.object({
         contact_name: z.string().min(1, t('full_name_required')),
         contact_email: z.string().email(t('invalid_email')),
-        contact_phone: z.string().min(1, t('phone_required')),
+        contact_phone: z.string().min(1, t('phone_required')).regex(/^\+?\d{1,15}$/, t('phone_invalid_format')),
         passengers: z.array(z.object({
             full_name: z.string().min(1, t('traveler_name_required')),
-            phone_number: z.string().optional(),
+            phone_number: z.string().optional().refine(val => !val || /^\+?\d{1,15}$/.test(val), {
+                message: t('phone_invalid_format')
+            }),
         })),
         agree_terms: z.boolean().refine((val) => val, { message: t('agree_terms_required') }),
     });
@@ -131,7 +133,8 @@ export default function CheckoutInfoClient({ initialBooking }: Props) {
                     type: "success",
                 });
                 handleExpire(); // Ensure cleanup
-                router.push("/");
+                // Use hard navigation to ensure complete page refresh and navbar refetch
+                window.location.href = "/";
             } else {
                 toaster.create({
                     title: t('failed_cancel_booking'),

@@ -521,14 +521,15 @@ export default function AdminUserListPage() {
               <div className="space-y-2">
                 <Label>{t('col_supplier')} ({t('if_any_label') || 'if any'})</Label>
                 <Select
-                  onValueChange={(val) => setValue('supplier_id', Number(val))}
-                  defaultValue={editingUser?.supplier?.id ? String(editingUser.supplier.id) : undefined}
+                  onValueChange={(val) => setValue('supplier_id', val === 'none' ? undefined : Number(val))}
+                  defaultValue={editingUser?.supplier?.id ? String(editingUser.supplier.id) : 'none'}
                   key={editingUser ? `supplier-${editingUser.id}` : 'supplier-create'}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder={t('select_supplier_placeholder')} />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">{t('no_supplier_option') || 'No Supplier'}</SelectItem>
                     {suppliers.map((supplier: IAdminSupplier) => (
                       <SelectItem key={supplier.id} value={supplier.id.toString()}>{supplier.name}</SelectItem>
                     ))}
