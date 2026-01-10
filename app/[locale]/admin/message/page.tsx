@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, MessageCircle, Send, User, Loader2, EyeOff, Eye, Brain, UserCheck, Volume2 } from 'lucide-react';
 import { adminChatboxApi } from '@/apis/admin/chatbox';
+import { supplierChatboxApi } from '@/apis/admin/supplier-chatbox';
 import { IConversation, IMessage, IConversationListResponse } from '@/apis/chatbox';
 import { cn } from '@/libs/utils';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +29,9 @@ export default function AdminMessagePage() {
     const t = useTranslations('admin');
     const { data: session, status: sessionStatus } = useSession();
     const token = session?.user?.accessToken;
+    const userRole = session?.user?.role?.name?.toLowerCase();
+    const isAdmin = userRole === 'admin';
+    const isSupplier = userRole === 'supplier';
 
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
@@ -73,11 +77,13 @@ export default function AdminMessagePage() {
         { value: 'empty', label: t('category_empty', { defaultValue: 'Empty' }) },
     ];
 
-    // Fetch conversations using react-query
+    // Fetch conversations using react-query - use appropriate API based on role
     const { data: conversationsData, isLoading, refetch } = useQuery({
-        queryKey: ['admin-conversations', token],
-        queryFn: () => adminChatboxApi.getAllConversations(100, token),
-        enabled: !!token,
+        queryKey: ['chatbox-conversations', token, userRole],
+        queryFn: () => isSupplier
+            ? supplierChatboxApi.getAllConversations(100, token)
+            : adminChatboxApi.getAllConversations(100, token),
+        enabled: !!token && (isAdmin || isSupplier),
     });
 
     const conversations = (conversationsData as IConversationListResponse)?.data || [];
@@ -198,13 +204,15 @@ export default function AdminMessagePage() {
 
             // Mark as read
             if (selectedConvo.unreadCount > 0) {
-                adminChatboxApi.markAsRead(selectedConvo._id, token)
+                const markReadApi = isSupplier ? supplierChatboxApi : adminChatboxApi;
+                markReadApi.markAsRead(selectedConvo._id, token)
                     .then(() => refetch());
             }
 
             socket.emit('joinRoom', { conversationId: selectedConvo._id });
 
-            adminChatboxApi.getConversationDetails(selectedConvo._id, token)
+            const getDetailsApi = isSupplier ? supplierChatboxApi : adminChatboxApi;
+            getDetailsApi.getConversationDetails(selectedConvo._id, token)
                 .then((msgs: unknown) => {
                     setMessages(msgs as IMessage[]);
                     setIsLoadingMessages(false);
@@ -229,23 +237,64 @@ export default function AdminMessagePage() {
     const handleSend = () => {
         if (!input.trim() || !selectedConvo || !token || !isSocketConnected) return;
 
-        adminChatboxApi.reply(selectedConvo._id, input, token)
+        const replyApi = isSupplier ? supplierChatboxApi : adminChatboxApi;
+        replyApi.reply(selectedConvo._id, input, token)
             .then(() => setInput(''));
     };
 
     function getParticipantName(c: IConversation) {
-        const p = c.participants.find((p: { role: string; name?: string; userId?: string }) => p.role !== 'ADMIN' && p.role !== 'admin');
+        // For admin: show non-admin participant
+        // For supplier: show USER participant (not themselves)
+        const excludeRoles = isSupplier
+            ? ['SUPPLIER', 'supplier']
+            : ['ADMIN', 'admin'];
+        const p = c.participants.find((p: { role: string; name?: string; userId?: string }) =>
+            !excludeRoles.includes(p.role)
+        );
         return p?.name || p?.userId || t('unknown_user');
     }
 
     function getParticipantUserId(c: IConversation): string | null {
-        const p = c.participants.find((p: { role: string; userId?: string }) => p.role !== 'ADMIN' && p.role !== 'admin');
+        const excludeRoles = isSupplier
+            ? ['SUPPLIER', 'supplier']
+            : ['ADMIN', 'admin'];
+        const p = c.participants.find((p: { role: string; userId?: string }) =>
+            !excludeRoles.includes(p.role)
+        );
         return p?.userId || null;
     }
 
     function isUserOnline(c: IConversation): boolean {
         const userId = getParticipantUserId(c);
         return userId ? onlineUsers.has(userId) : false;
+    }
+
+    /**
+     * Determine if this is an admin or supplier conversation
+     * Returns 'ADMIN' or 'SUPPLIER'
+     */
+    function getChatTargetType(c: IConversation): 'ADMIN' | 'SUPPLIER' {
+        const hasSupplier = c.participants.some(
+            (p: { role: string }) => p.role === 'SUPPLIER' || p.role === 'supplier'
+        );
+        return hasSupplier ? 'SUPPLIER' : 'ADMIN';
+    }
+
+    /**
+     * Get supplier info from conversation (name from participant or context)
+     */
+    function getSupplierInfo(c: IConversation): { name?: string; id?: string } | null {
+        const supplierParticipant = c.participants.find(
+            (p: { role: string; name?: string; userId?: string }) =>
+                p.role === 'SUPPLIER' || p.role === 'supplier'
+        );
+        if (supplierParticipant) {
+            return {
+                name: supplierParticipant.name || (c as any).context?.supplierName,
+                id: supplierParticipant.userId
+            };
+        }
+        return null;
     }
 
     const handleUpdateCategory = async (category: string) => {
@@ -401,14 +450,23 @@ export default function AdminMessagePage() {
                                                 )}
                                             </div>
                                             <div className="flex-1 overflow-hidden">
-                                                <div className="flex items-center gap-2">
-                                                    <p className="font-bold text-sm truncate">{getParticipantName(c)}</p>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <p className="font-bold text-sm truncate max-w-[120px]">{getParticipantName(c)}</p>
                                                     {c.category && c.category !== 'general' && (
-                                                        <Badge variant="outline" className="text-[10px] h-4 px-1 opacity-60">
+                                                        <Badge variant="outline" className="text-[10px] h-4 px-1 opacity-60 shrink-0">
                                                             {t(`category_${c.category}`)}
                                                         </Badge>
                                                     )}
                                                 </div>
+                                                {/* Show chat target type: Admin or Supplier - on separate line */}
+                                                {isAdmin && (
+                                                    <span className="text-[10px] text-muted-foreground">
+                                                        {getChatTargetType(c) === 'SUPPLIER'
+                                                            ? `${getSupplierInfo(c)?.name || t('supplier')}`
+                                                            : `${t('admin')}`
+                                                        }
+                                                    </span>
+                                                )}
                                                 <p className={cn(
                                                     "text-xs truncate",
                                                     c.unreadCount > 0 ? "text-foreground font-medium" : "text-muted-foreground"

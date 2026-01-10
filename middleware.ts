@@ -26,7 +26,7 @@ const adminSubRoutePermissions: Record<string, string> = {
     "/admin/review": "review:read",
     "/admin/social": "article:read",
     "/admin/static-pages": "article:read",
-    "/admin/message": "system:admin",
+    "/admin/message": "chatbox:read",
     "/admin/settings": "system:config",
 };
 

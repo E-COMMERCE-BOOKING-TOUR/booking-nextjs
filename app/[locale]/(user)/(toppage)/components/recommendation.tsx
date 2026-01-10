@@ -8,11 +8,13 @@ import { getGuestId } from "@/utils/guest";
 import { useSession } from "next-auth/react";
 import { FaFire } from "react-icons/fa";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 export default function Recommendation() {
   const [tours, setTours] = useState<IUserTourPopular[]>([]);
   const [loading, setLoading] = useState(true);
   const { data: session } = useSession();
+  const t = useTranslations('common');
 
   useEffect(() => {
     const fetchTours = async () => {
@@ -34,8 +36,8 @@ export default function Recommendation() {
   return (
     <Box my={12}>
       <HeaderList
-        title="Dành riêng cho bạn"
-        description="Dựa trên những tour bạn đã xem và quan tâm gần đây"
+        title={t('recommendation_title')}
+        description={t('recommendation_description')}
       />
       <SimpleGrid columns={{ base: 1, sm: 2, lg: 4 }} gap={4} mb={4}>
         {loading ? (
@@ -56,6 +58,7 @@ export default function Recommendation() {
 }
 
 const RecommendationCard = ({ tour }: { tour: IUserTourPopular }) => {
+  const t = useTranslations('common');
   return (
     <Link href={`/tour/${tour.slug}`}>
       <Box
@@ -91,7 +94,7 @@ const RecommendationCard = ({ tour }: { tour: IUserTourPopular }) => {
           fontWeight="bold"
           boxShadow="sm"
         >
-          <Icon as={FaFire} mr={1} /> Gợi ý cao
+          <Icon as={FaFire} mr={1} /> {t('high_recommendation')}
         </Badge>
 
         <Box position="relative" h="180px" overflow="hidden">

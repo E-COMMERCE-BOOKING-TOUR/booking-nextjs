@@ -100,7 +100,7 @@ const sections = [
     base: "/admin/message",
     icon: MessageCircle,
     url: "/admin/message",
-    permission: "system:admin", // Temporary, should use specific permission
+    permission: "chatbox:read",
   },
   {
     title: "notifications_menu",

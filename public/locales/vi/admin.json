@@ -38,6 +38,15 @@
     "export_report": "Xuất báo cáo",
     "export_report_success": "Xuất báo cáo thành công",
     "export_report_error": "Không thể xuất báo cáo",
+    "export_dashboard_summary": "Tổng quan Dashboard",
+    "export_all_bookings": "Tất cả Đặt chỗ",
+    "export_all_tours": "Tất cả Tour",
+    "export_revenue_report": "Báo cáo Doanh thu",
+    "start_date": "Ngày bắt đầu",
+    "end_date": "Ngày kết thúc",
+    "export_date_hint": "Để trống để xuất tất cả dữ liệu",
+    "cancel": "Hủy",
+    "export": "Xuất",
     "add_new_tour": "Thêm tour mới",
     "create_tour": "Tạo Tour",
     "action_logout": "Đăng xuất",
@@ -831,5 +840,7 @@
     "tour_wizard_discard_draft": "Bỏ qua",
     "tour_wizard_restore_draft": "Khôi phục nháp",
     "tour_wizard_draft_restored": "Đã khôi phục bản nháp thành công",
-    "no_supplier_option": "Không có đối tác"
+    "no_supplier_option": "Không có đối tác",
+    "supplier": "Đối tác",
+    "admin": "Admin"
 }

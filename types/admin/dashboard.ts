@@ -1,3 +1,12 @@
+export interface IRevenuesByCurrency {
+    [currencyCode: string]: {
+        symbol: string;
+        todayRevenue: number;
+        monthlyRevenue: number;
+        totalRevenue: number;
+    };
+}
+
 export interface IDashboardStats {
     kpis: {
         todayRevenue: number;
@@ -6,6 +15,7 @@ export interface IDashboardStats {
         activeToursCount: number;
         totalUsers: number;
         totalBookings: number;
+        revenuesByCurrency?: IRevenuesByCurrency;
     };
     chartData: Array<{
         name: string;
@@ -16,6 +26,8 @@ export interface IDashboardStats {
         title: string;
         count: number;
         revenue: number;
+        currency_code?: string;
+        currency_symbol?: string;
     }>;
     recentBookings: Array<{
         id: number;
@@ -24,5 +36,8 @@ export interface IDashboardStats {
         status: string;
         total_amount: number;
         created_at: string;
+        currency_code?: string;
+        currency_symbol?: string;
     }>;
 }
+

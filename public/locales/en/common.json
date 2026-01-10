@@ -474,5 +474,8 @@
     "cancel_btn": "Cancel",
     "confirm_cancel_btn": "Confirm Cancellation",
     "selected_range_includes_off_days": "Selected range includes off days",
-    "tour_cannot_run_on_date": "Tour cannot run on this date"
+    "tour_cannot_run_on_date": "Tour cannot run on this date",
+    "recommendation_title": "Just for you",
+    "recommendation_description": "Based on tours you've recently viewed and shown interest in",
+    "high_recommendation": "Top Pick"
 }

@@ -38,6 +38,15 @@
     "export_report": "Export Report",
     "export_report_success": "Report exported successfully",
     "export_report_error": "Failed to export report",
+    "export_dashboard_summary": "Dashboard Summary",
+    "export_all_bookings": "All Bookings",
+    "export_all_tours": "All Tours",
+    "export_revenue_report": "Revenue Report",
+    "start_date": "Start Date",
+    "end_date": "End Date",
+    "export_date_hint": "Leave empty to export all data",
+    "cancel": "Cancel",
+    "export": "Export",
     "add_new_tour": "Add New Tour",
     "create_tour": "Create Tour",
     "action_logout": "Logout",
@@ -830,5 +839,7 @@
     "tour_wizard_discard_draft": "Discard",
     "tour_wizard_restore_draft": "Restore Draft",
     "tour_wizard_draft_restored": "Draft restored successfully",
-    "no_supplier_option": "No Supplier"
+    "no_supplier_option": "No Supplier",
+    "supplier": "Supplier",
+    "admin": "Admin"
 }
