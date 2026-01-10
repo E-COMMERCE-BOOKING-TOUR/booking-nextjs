@@ -477,5 +477,8 @@
     "tour_cannot_run_on_date": "Tour không thể khởi hành vào ngày này",
     "recommendation_title": "Dành riêng cho bạn",
     "recommendation_description": "Dựa trên những tour bạn đã xem và quan tâm gần đây",
-    "high_recommendation": "Gợi ý cao"
+    "high_recommendation": "Gợi ý cao",
+    "back_to_list": "Quay lại danh sách",
+    "processing": "Đang xử lý...",
+    "cancellation_reason_label": "Lý do hủy"
 }

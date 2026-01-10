@@ -477,5 +477,8 @@
     "tour_cannot_run_on_date": "Tour cannot run on this date",
     "recommendation_title": "Just for you",
     "recommendation_description": "Based on tours you've recently viewed and shown interest in",
-    "high_recommendation": "Top Pick"
+    "high_recommendation": "Top Pick",
+    "back_to_list": "Back to List",
+    "processing": "Processing...",
+    "cancellation_reason_label": "Cancellation Reason"
 }

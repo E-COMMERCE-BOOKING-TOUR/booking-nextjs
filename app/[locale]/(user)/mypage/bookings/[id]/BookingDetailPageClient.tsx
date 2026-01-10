@@ -114,6 +114,7 @@ export default function BookingDetailPageClient() {
             case 'confirmed': return 'green';
             case 'pending_confirm': return 'orange';
             case 'pending_payment': return 'blue';
+            case 'waiting_supplier': return 'purple';
             case 'cancelled':
             case 'expired': return 'red';
             default: return 'gray';
@@ -147,7 +148,7 @@ export default function BookingDetailPageClient() {
                     <Text fontSize="2xl" fontWeight="black" color="blue.600">
                         {Number(b.total_amount).toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US')} {b.currency}
                     </Text>
-                    {b.status === 'confirmed' && (
+                    {['confirmed', 'waiting_supplier'].includes(b.status) && (
                         <ChakraButton
                             variant="outline"
                             size="sm"
