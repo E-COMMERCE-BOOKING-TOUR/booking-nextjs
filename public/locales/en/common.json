@@ -323,6 +323,7 @@
     "explore_title": "Explore New Horizons",
     "explore_desc": "Discover interesting stories and adventures from around the world",
     "explore_tag_desc": "Discover stories tagged with",
+    "explore_destination_desc": "Stories from travelers who visited this destination",
     "social_hub_title": "Travel Social Hub",
     "social_hub_desc": "Share your journey, discover new horizons, and connect with fellow explorers.",
     "for_you": "For you",
@@ -480,5 +481,19 @@
     "high_recommendation": "Top Pick",
     "back_to_list": "Back to List",
     "processing": "Processing...",
-    "cancellation_reason_label": "Cancellation Reason"
+    "cancellation_reason_label": "Cancellation Reason",
+    "email_not_verified_title": "Email Not Verified",
+    "email_not_verified_desc": "Your email has not been verified yet. Please enter your email address to receive a new verification link.",
+    "resend_verification": "Resend Email",
+    "enter_email_to_resend": "Please enter your email address",
+    "verification_email_sent": "Verification email sent!",
+    "resend_failed": "Failed to resend verification email",
+    "verifying_email": "Verifying your email...",
+    "please_wait": "Please wait a moment",
+    "verify_email_success": "Email verified successfully!",
+    "email_verified_title": "Email Verified!",
+    "email_verified_desc": "Your email has been verified successfully. You will be redirected shortly...",
+    "verification_failed_title": "Verification Failed",
+    "verify_token_missing": "Verification token is missing!",
+    "verify_email_failed": "Failed to verify email"
 }

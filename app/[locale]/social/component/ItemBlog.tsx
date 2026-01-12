@@ -237,16 +237,25 @@ export default function ItemBlog(props: ItemBlogProps) {
 
             try {
                 // Use wttr.in for simple weather info without API key
-                const response = await fetch(`https://wttr.in/${encodeURIComponent(cityName)}?format=j1`);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+
+                const response = await fetch(`https://wttr.in/${encodeURIComponent(cityName)}?format=j1`, {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
                 if (!response.ok) return;
                 const data = await response.json();
-                const current = data.current_condition[0];
-                setWeather({
-                    temp: `${current.temp_C}°C`,
-                    icon: current.weatherDesc[0].value,
-                });
-            } catch (error) {
-                console.error('Weather fetch error:', error);
+                const current = data.current_condition?.[0];
+                if (current) {
+                    setWeather({
+                        temp: `${current.temp_C}°C`,
+                        icon: current.weatherDesc?.[0]?.value || '',
+                    });
+                }
+            } catch {
+                // Silently fail - weather is optional
             }
         };
 

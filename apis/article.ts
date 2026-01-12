@@ -93,6 +93,27 @@ const article = {
         const res = await fetchC.get(url, { headers: authHeaders.headers });
         return Array.isArray(res) ? res : (res?.data || []);
     },
+    /**
+     * Get explore articles with personalized discovery algorithm
+     * @param options.userId - Current user ID for personalization
+     * @param options.followingUserIds - IDs of users the current user follows
+     * @param options.likedArticleIds - IDs of articles the user already liked (to exclude)
+     * @param options.divisionId - Filter by destination/division ID
+     */
+    explore: async (
+        limit: number = 10,
+        page: number = 1,
+        options?: { userId?: string; followingUserIds?: string[]; likedArticleIds?: string[]; divisionId?: string }
+    ): Promise<IArticlePopular[]> => {
+        let url = `/user/article/explore?limit=${limit}&page=${page}`;
+        if (options?.userId) url += `&userId=${options.userId}`;
+        if (options?.followingUserIds?.length) url += `&followingUserIds=${options.followingUserIds.join(',')}`;
+        if (options?.likedArticleIds?.length) url += `&likedArticleIds=${options.likedArticleIds.join(',')}`;
+        if (options?.divisionId) url += `&divisionId=${options.divisionId}`;
+
+        const res = await fetchC.get(url, { cache: 'no-store' }); // No cache for personalized content
+        return Array.isArray(res) ? res : (res?.data || []);
+    },
 }
 
 export default article;

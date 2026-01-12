@@ -17,6 +17,7 @@ import { userApi } from "@/apis/user";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import Link from "next/link";
 
 const postSchema = z.object({
     content: z.string().min(3, "Content must be at least 3 characters long"),
@@ -402,7 +403,7 @@ const ForYou = ({ mode = 'foryou' }: { mode?: 'foryou' | 'following' }) => {
                         <ChakraText fontSize="lg" fontWeight="medium" color="gray.600">
                             {t('login_to_share', { defaultValue: 'Login to share your travel stories' })}
                         </ChakraText>
-                        <a href={`/${locale}/auth/login`}>
+                        <Link href={`/en/user-login`}>
                             <Button
                                 bg="main"
                                 color="white"
@@ -415,7 +416,7 @@ const ForYou = ({ mode = 'foryou' }: { mode?: 'foryou' | 'following' }) => {
                             >
                                 {t('login', { defaultValue: 'Login' })}
                             </Button>
-                        </a>
+                        </Link>
                     </VStack>
                 </Box>
             )}

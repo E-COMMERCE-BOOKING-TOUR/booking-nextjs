@@ -79,11 +79,11 @@ export default {
                         };
                         return userData;
                     } catch (e) {
-                        // Get error message from API response
+                        // Get error message from API response and throw it
                         const errorMessage = e instanceof Error ? e.message : "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!";
                         console.error("[AUTH] Login failed:", errorMessage);
-                        // Return null to trigger CredentialsSignin error
-                        return null;
+                        // Throw error with the actual message so it can be caught in login action
+                        throw new Error(errorMessage);
                     }
                 }
                 return null;

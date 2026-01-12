@@ -53,6 +53,24 @@ const authApi = {
             cache: "no-store"
         });
         return res;
+    },
+    verifyEmail: async (token: string) => {
+        const url = "/auth/verify-email";
+        const res: IResponseAuth = await fetchC.post(url, {
+            token
+        }, {
+            cache: "no-store"
+        });
+        return res;
+    },
+    resendVerification: async (email: string) => {
+        const url = "/auth/resend-verification";
+        const res: IResponseAuth = await fetchC.post(url, {
+            email
+        }, {
+            cache: "no-store"
+        });
+        return res;
     }
 }
 

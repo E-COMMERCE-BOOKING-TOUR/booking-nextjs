@@ -16,6 +16,8 @@ const ExploreContent = () => {
     const t = useTranslations('common');
     const locale = useLocale();
     const tag = searchParams.get('tag');
+    const division = searchParams.get('division');
+    const divisionName = searchParams.get('divisionName');
 
     const { data: followingIds, refetch: refetchFollowing } = useQuery({
         queryKey: ['following-ids', session?.user?.uuid],
@@ -27,21 +29,39 @@ const ExploreContent = () => {
         enabled: !!session?.user?.accessToken
     });
 
+    // Fetch liked article IDs for exclusion in explore
+    const { data: likedArticleIds } = useQuery({
+        queryKey: ['liked-article-ids', session?.user?.uuid],
+        queryFn: async (): Promise<string[]> => {
+            if (!session?.user?.accessToken) return [];
+            const articles = await article.getLikedArticles(session.user.accessToken);
+            return articles.map(a => a._id || a.id?.toString() || '').filter(Boolean);
+        },
+        enabled: !!session?.user?.accessToken
+    });
+
     const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery<IArticlePopular[]>({
-        queryKey: ['explore-articles-infinite', tag, session?.user?.uuid],
+        queryKey: ['explore-articles-infinite', tag, division, session?.user?.uuid, followingIds, likedArticleIds],
         initialPageParam: 1,
         getNextPageParam: (lastPage, allPages) => {
             return lastPage.length > 0 ? allPages.length + 1 : undefined;
         },
-        staleTime: 1000 * 60 * 5,
-        gcTime: 1000 * 60 * 30,
+        staleTime: 1000 * 60 * 2, // 2 min - shorter for personalized content
+        gcTime: 1000 * 60 * 10,
         refetchOnWindowFocus: false,
         retry: 1,
         queryFn: async ({ pageParam = 1 }): Promise<IArticlePopular[]> => {
+            // If tag is specified, use tag-based search
             if (tag) {
                 return await article.getByTag(tag, 10, pageParam as number);
             }
-            return await article.popular(10, pageParam as number);
+            // Otherwise use personalized explore algorithm (with optional division filter)
+            return await article.explore(10, pageParam as number, {
+                userId: (session?.user as { uuid?: string })?.uuid,
+                followingUserIds: followingIds,
+                likedArticleIds: likedArticleIds,
+                divisionId: division || undefined,
+            });
         },
     });
 
@@ -82,10 +102,10 @@ const ExploreContent = () => {
                     maxW="90%"
                 >
                     <Heading size={{ base: "xl", md: "2xl" }} color="white" fontWeight="900" letterSpacing="tighter" textTransform="uppercase">
-                        {tag ? `#${tag}` : t('explore_title', { defaultValue: 'Explore New Horizons' })}
+                        {tag ? `#${tag}` : divisionName ? decodeURIComponent(divisionName) : t('explore_title', { defaultValue: 'Explore New Horizons' })}
                     </Heading>
                     <Text color="whiteAlpha.900" fontWeight="600" fontSize={{ base: "sm", md: "lg" }}>
-                        {tag ? t('explore_tag_desc', { defaultValue: 'Discover stories tagged with' }) : t('explore_desc', { defaultValue: 'Discover interesting stories and adventures from around the world' })}
+                        {tag ? t('explore_tag_desc', { defaultValue: 'Discover stories tagged with' }) : divisionName ? t('explore_destination_desc', { defaultValue: 'Stories from travelers who visited this destination' }) : t('explore_desc', { defaultValue: 'Discover interesting stories and adventures from around the world' })}
                     </Text>
                 </VStack>
             </Box>
@@ -105,8 +125,8 @@ const ExploreContent = () => {
                         {
                             data?.pages.map((page, i) => (
                                 <Fragment key={i}>
-                                    {page.map((item: IArticlePopular) => (
-                                        <List.Item key={item.id}
+                                    {page.map((item: IArticlePopular, idx) => (
+                                        <List.Item key={item._id || item.id?.toString() || `article-${i}-${idx}`}
                                             w="full"
                                             display={'flex'}
                                             alignItems={'center'}

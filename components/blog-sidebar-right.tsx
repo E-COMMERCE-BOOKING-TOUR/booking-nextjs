@@ -91,7 +91,7 @@ export default function BlogSidebarRight() {
         ) : (
           <VStack align="stretch" gap={4}>
             {trendingDestinations?.map((dest) => (
-              <Link href={`/tour/list?division_id=${dest.id}`} key={dest.id}>
+              <Link href={`/social/explore?division=${dest.id}&divisionName=${encodeURIComponent(dest.title)}`} key={dest.id}>
                 <HStack gap={3} role="group" cursor="pointer">
                   <Box borderRadius="xl" overflow="hidden" w="60px" h="60px" flexShrink={0}>
                     <ChakraImage src={dest.image} alt={dest.title} w="full" h="full" objectFit="cover" transition="transform 0.3s" _groupHover={{ transform: "scale(1.1)" }} />

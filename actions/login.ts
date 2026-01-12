@@ -25,12 +25,21 @@ export const login = async (values: z.input<typeof LoginSchema>, guestId?: strin
         return { message: "login_success", type: "success", shouldRedirect: true };
     } catch (error) {
         if (error instanceof AuthError) {
+            // Try to extract the actual error message from the cause
+            const cause = (error as any).cause;
+            if (cause?.err?.message) {
+                return { message: cause.err.message, type: "error" };
+            }
             switch (error.type) {
                 case "CredentialsSignin":
-                    return { message: "invalid_credentials", type: "error" };
+                    return { message: "Tài khoản hoặc mật khẩu không đúng!", type: "error" };
                 default:
                     return { message: "login_failed", type: "error" };
             }
+        }
+        // Handle Error thrown from authorize
+        if (error instanceof Error) {
+            return { message: error.message, type: "error" };
         }
         throw error;
     }

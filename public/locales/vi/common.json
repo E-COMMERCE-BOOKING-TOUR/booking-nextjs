@@ -323,6 +323,7 @@
     "explore_title": "Khám phá chân trời mới",
     "explore_desc": "Khám phá những câu chuyện và cuộc phiêu lưu thú vị từ khắp nơi trên thế giới",
     "explore_tag_desc": "Khám phá các bài viết với thẻ",
+    "explore_destination_desc": "Những câu chuyện từ du khách đã đến điểm đến này",
     "social_hub_title": "Mạng xã hội Du lịch",
     "social_hub_desc": "Chia sẻ hành trình của bạn, khám phá chân trời mới và kết nối với những người yêu du lịch.",
     "for_you": "Dành cho bạn",
@@ -480,5 +481,19 @@
     "high_recommendation": "Gợi ý cao",
     "back_to_list": "Quay lại danh sách",
     "processing": "Đang xử lý...",
-    "cancellation_reason_label": "Lý do hủy"
+    "cancellation_reason_label": "Lý do hủy",
+    "email_not_verified_title": "Email chưa xác nhận",
+    "email_not_verified_desc": "Email của bạn chưa được xác nhận. Vui lòng nhập email để nhận lại liên kết xác nhận.",
+    "resend_verification": "Gửi lại email",
+    "enter_email_to_resend": "Vui lòng nhập địa chỉ email",
+    "verification_email_sent": "Email xác nhận đã được gửi!",
+    "resend_failed": "Không thể gửi lại email xác nhận",
+    "verifying_email": "Đang xác nhận email của bạn...",
+    "please_wait": "Vui lòng đợi một chút",
+    "verify_email_success": "Xác nhận email thành công!",
+    "email_verified_title": "Email đã xác nhận!",
+    "email_verified_desc": "Email của bạn đã được xác nhận thành công. Bạn sẽ được chuyển hướng ngay...",
+    "verification_failed_title": "Xác nhận thất bại",
+    "verify_token_missing": "Thiếu mã xác nhận!",
+    "verify_email_failed": "Không thể xác nhận email"
 }
