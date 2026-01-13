@@ -159,6 +159,22 @@ export const bookingApi = {
             };
         }
     },
+    createVnpayPayment: async (token?: string): Promise<{ ok: boolean; vnpayUrl?: string; bookingId?: number; error?: string }> => {
+        const url = "/user/booking/current/vnpay-create";
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) {
+            return { ok: false, error: authHeaders.message };
+        }
+        try {
+            const res = await fetchC.post(url, {}, { headers: authHeaders.headers });
+            return { ok: true, vnpayUrl: res.vnpayUrl, bookingId: res.bookingId };
+        } catch (error) {
+            return {
+                ok: false,
+                error: (error as Error)?.message || "Failed to create VNPay payment"
+            };
+        }
+    },
     cancelCurrent: async (token?: string): Promise<{ ok: boolean; message?: string; error?: string }> => {
         const url = "/user/booking/current/cancel";
         const authHeaders = await getAuthHeaders(token);

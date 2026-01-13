@@ -403,7 +403,7 @@ const ForYou = ({ mode = 'foryou' }: { mode?: 'foryou' | 'following' }) => {
                         <ChakraText fontSize="lg" fontWeight="medium" color="gray.600">
                             {t('login_to_share', { defaultValue: 'Login to share your travel stories' })}
                         </ChakraText>
-                        <Link href={`/en/user-login`}>
+                        <Link href="/user-login">
                             <Button
                                 bg="main"
                                 color="white"

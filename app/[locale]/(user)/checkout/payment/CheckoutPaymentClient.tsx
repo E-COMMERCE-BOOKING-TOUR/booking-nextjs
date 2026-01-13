@@ -295,6 +295,17 @@ export default function CheckoutPaymentClient({ initialBooking, paymentMethods }
                                                                 )}
                                                             </Box>
                                                         )}
+
+                                                        {/* VNPay Notice when selected */}
+                                                        {selectedPaymentId === method.id && method.id === PaymentCardID.VN_PAY && (
+                                                            <Box mt={4} pl={6} onClick={(e) => e.stopPropagation()}>
+                                                                <Box p={3} bg="blue.50" border="1px solid" borderColor="blue.200" borderRadius="md">
+                                                                    <Text color="blue.700" fontSize="sm">
+                                                                        {t('vnpay_redirect_info', { defaultValue: 'Bạn sẽ được chuyển đến cổng thanh toán VNPay để hoàn tất giao dịch sau khi xác nhận.' })}
+                                                                    </Text>
+                                                                </Box>
+                                                            </Box>
+                                                        )}
                                                     </Box>
                                                 );
                                             })}

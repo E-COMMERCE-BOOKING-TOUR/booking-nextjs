@@ -7,10 +7,12 @@ import { useMutation } from "@tanstack/react-query";
 import bookingApi from "@/apis/booking";
 import { toaster } from "@/components/chakra/toaster";
 import { IBookingDetail } from "@/types/booking";
+import { PaymentCardID } from "@/types/payment";
 import { BookingSummaryCard } from "@/components/ui/user/BookingSummaryCard";
 import { useBookingExpiry } from "@/hooks/useBookingExpiry";
 import { BookingExpiryManager } from "@/components/ui/user/BookingExpiryManager";
 import { useTranslations, useLocale } from "next-intl";
+import { useState } from "react";
 
 interface Props {
     initialBooking: IBookingDetail;
@@ -21,6 +23,7 @@ export default function CheckoutConfirmClient({ initialBooking }: Props) {
     const { data: session } = useSession();
     const locale = useLocale();
     const t = useTranslations('common');
+    const [isVnpayLoading, setIsVnpayLoading] = useState(false);
 
     const steps = [
         {
@@ -42,6 +45,9 @@ export default function CheckoutConfirmClient({ initialBooking }: Props) {
     ];
     const { isExpired, handleExpire } = useBookingExpiry(initialBooking.hold_expires_at);
 
+    // Check if VNPay payment method is selected
+    const isVnpay = initialBooking.booking_payment?.id === PaymentCardID.VN_PAY;
+
     const confirmMutation = useMutation({
         mutationFn: () => bookingApi.confirmCurrent(session?.user?.accessToken),
         onSuccess: () => {
@@ -60,7 +66,7 @@ export default function CheckoutConfirmClient({ initialBooking }: Props) {
         },
     });
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         if (isExpired) {
             toaster.create({
                 title: t('booking_expired_title'),
@@ -69,6 +75,40 @@ export default function CheckoutConfirmClient({ initialBooking }: Props) {
             });
             return;
         }
+
+        // If VNPay is selected, redirect to VNPay portal
+        if (isVnpay) {
+            setIsVnpayLoading(true);
+            try {
+                const result = await bookingApi.createVnpayPayment(session?.user?.accessToken);
+                if (result.ok && result.vnpayUrl) {
+                    // Show notice before redirecting
+                    toaster.create({
+                        title: t('vnpay_redirect_notice', { defaultValue: 'Đang chuyển hướng đến VNPay...' }),
+                        type: "info",
+                    });
+                    // Redirect to VNPay
+                    window.location.href = result.vnpayUrl;
+                } else {
+                    toaster.create({
+                        title: t('failed_create_vnpay', { defaultValue: 'Không thể tạo thanh toán VNPay' }),
+                        description: result.error,
+                        type: "error",
+                    });
+                    setIsVnpayLoading(false);
+                }
+            } catch (error) {
+                toaster.create({
+                    title: t('failed_create_vnpay', { defaultValue: 'Không thể tạo thanh toán VNPay' }),
+                    description: (error as Error).message,
+                    type: "error",
+                });
+                setIsVnpayLoading(false);
+            }
+            return;
+        }
+
+        // Otherwise, proceed with normal confirmation (Credit Card, etc.)
         confirmMutation.mutate();
     };
 
@@ -165,9 +205,9 @@ export default function CheckoutConfirmClient({ initialBooking }: Props) {
                             <Button
                                 size="lg"
                                 onClick={handleConfirm}
-                                loading={confirmMutation.isPending}
+                                loading={confirmMutation.isPending || isVnpayLoading}
                             >
-                                {t('confirm_booking')}
+                                {isVnpay ? t('pay_with_vnpay', { defaultValue: 'Thanh toán với VNPay' }) : t('confirm_booking')}
                             </Button>
                         </Flex>
                     </Stack>
