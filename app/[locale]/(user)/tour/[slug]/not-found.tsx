@@ -24,7 +24,7 @@ export default function TourNotFound() {
                             colorScheme="blue"
                             size="lg"
                             mt={4}
-                            _hover={{ transform: "translateY(-2px)", boxShadow: "lg" }}
+                            _hover={{ boxShadow: "lg" }}
                             transition="all 0.2s"
                         >
                             Back to Home

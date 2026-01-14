@@ -340,7 +340,6 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                             width="100%"
                             _hover={{
                                 bg: "blue.800",
-                                transform: "translateY(-2px)",
                                 boxShadow: "0 10px 20px rgba(0, 59, 149, 0.2)"
                             }}
                             _active={{ transform: "translateY(0)" }}

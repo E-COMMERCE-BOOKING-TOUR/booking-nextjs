@@ -152,7 +152,7 @@ export default function ChangePasswordPageClient() {
                         rounded="2xl"
                         fontWeight="black"
                         loading={mutation.isPending}
-                        _hover={{ bg: "blue.700", shadow: "xl", transform: "translateY(-2px)" }}
+                        _hover={{ bg: "blue.700", shadow: "xl" }}
                         _active={{ transform: "translateY(0)" }}
                         transition="all 0.3s"
                     >

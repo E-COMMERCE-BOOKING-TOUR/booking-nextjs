@@ -264,7 +264,7 @@ export default function RegisterPage() {
               rounded="xl"
               bg="gray.900"
               color="white"
-              _hover={{ bg: "black", shadow: "lg", transform: "translateY(-2px)" }}
+              _hover={{ bg: "black", shadow: "lg" }}
               transition="all 0.2s"
               fontWeight="bold"
               fontSize="md"

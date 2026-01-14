@@ -85,7 +85,7 @@ export default async function UserNavbar({ settings }: NavbarProps) {
                     <NextLink href="/user-login">{t('sign_in', { defaultValue: 'Sign in' })}</NextLink>
                   </Button>
                 </Box>
-                <Button asChild rounded="full" paddingX={{ base: 4, md: 6 }} bg="main" color="white" _hover={{ bg: "main.dark", transform: "translateY(-1px)" }} transition="all 0.2s">
+                <Button asChild rounded="full" paddingX={{ base: 4, md: 6 }} bg="main" color="white" _hover={{ bg: "main.dark" }} transition="all 0.2s">
                   <NextLink href="/user-register">{t('sign_up', { defaultValue: 'Sign up' })}</NextLink>
                 </Button>
               </>

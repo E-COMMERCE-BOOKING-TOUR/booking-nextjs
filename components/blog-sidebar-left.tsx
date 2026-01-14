@@ -123,7 +123,6 @@ export default function BlogSidebarLeft({
                                 bg={isActive ? "main" : "transparent"}
                                 _hover={{
                                     bg: isActive ? "main" : "gray.50",
-                                    transform: "translateY(-2px)",
                                     boxShadow: isActive ? "lg" : "none"
                                 }}
                                 transition="all 0.2s"

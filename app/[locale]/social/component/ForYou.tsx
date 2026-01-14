@@ -177,7 +177,7 @@ const CreatePost = ({ session, bookedTours, onSuccess, onPostCreated }: { sessio
             border="1px solid"
             borderColor="whiteAlpha.400"
             transition="all 0.3s"
-            _hover={{ shadow: "2xl", transform: "translateY(-2px)" }}
+            _hover={{ shadow: "2xl" }}
         >
             <HStack align="flex-start" gap={4}>
                 <Avatar.Root size="lg" border="2px solid" borderColor="main" p="2px" boxShadow="0 0 15px rgba(0, 59, 149, 0.2)">

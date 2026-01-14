@@ -403,7 +403,7 @@ export default function ItemBlog(props: ItemBlogProps) {
                                 borderRadius="lg"
                                 cursor="pointer"
                                 transition="all 0.2s"
-                                _hover={{ bg: "main", color: "white", transform: "translateY(-1px)" }}
+                                _hover={{ bg: "main", color: "white" }}
                             >
                                 #{typeof tag === 'object' ? (tag as { _id?: string })._id || i : tag}
                             </Text>

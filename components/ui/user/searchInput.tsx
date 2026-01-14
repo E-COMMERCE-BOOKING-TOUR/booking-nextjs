@@ -543,7 +543,6 @@ export default function SearchInput({ defaultDestination = "" }: SearchInputProp
         _hover={{
           bg: "secondary",
           opacity: 0.9,
-          transform: "translateY(-1px)"
         }}
         _active={{
           transform: "translateY(0px)"

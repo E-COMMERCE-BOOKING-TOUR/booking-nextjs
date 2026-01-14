@@ -160,7 +160,6 @@ export default function Diagonal({ divisions = [] }: { divisions?: IDivisionTren
               _hover={{
                 bg: "white",
                 color: "blue.900",
-                transform: "translateY(-2px)",
                 shadow: "xl",
               }}
               transition="all 0.3s"
