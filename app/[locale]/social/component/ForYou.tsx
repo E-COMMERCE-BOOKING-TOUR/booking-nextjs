@@ -328,7 +328,8 @@ const ForYou = ({ mode = 'foryou' }: { mode?: 'foryou' | 'following' }) => {
         queryKey: ['following-ids', session?.user?.uuid],
         queryFn: async () => {
             if (!session?.user?.accessToken) return [];
-            return await userApi.getFollowing(session.user.accessToken);
+            const res = await userApi.getFollowingUuids(session.user.accessToken);
+            return Array.isArray(res) ? res : (res?.data || []);
         },
         enabled: !!session?.user?.accessToken
     });
@@ -433,7 +434,7 @@ const ForYou = ({ mode = 'foryou' }: { mode?: 'foryou' | 'following' }) => {
                             (fp) => !newPosts.some((np) => np.id === fp.id)
                         );
                         return [...newPosts, ...filteredFetchedPosts].map((item: IArticlePopular, index: number) => (
-                            <List.Item key={item.id?.toString() || index.toString()}
+                            <List.Item key={(item._id || item.id)?.toString() || index.toString()}
                                 w="full"
                                 display={'flex'}
                                 alignItems={'center'}
@@ -443,7 +444,10 @@ const ForYou = ({ mode = 'foryou' }: { mode?: 'foryou' | 'following' }) => {
                                     {...item}
                                     _id={item._id}
                                     followingIds={followingIds}
-                                    onFollowChange={() => refetchFollowing()}
+                                    onFollowChange={() => {
+                                        refetchFollowing();
+                                        queryClient.invalidateQueries({ queryKey: ['articles-infinite'] });
+                                    }}
                                 />
                             </List.Item>
                         ));

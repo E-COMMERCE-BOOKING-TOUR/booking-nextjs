@@ -96,6 +96,14 @@ const userApi = {
             headers: authHeaders.headers
         });
     },
+    getFollowingUuids: async (token: string) => {
+        const url = "/user/following-uuids";
+        const authHeaders = await getAuthHeaders(token);
+        if (!authHeaders.ok) throw new Error(authHeaders.message);
+        return await fetchC.get(url, {
+            headers: authHeaders.headers
+        });
+    },
     getFollowersById: async (id: number) => {
         const url = `/user/followers/${id}`;
         return await fetchC.get(url);

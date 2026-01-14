@@ -153,8 +153,9 @@ export default function ItemBlog(props: ItemBlogProps) {
     const isLiked = localLiked !== null ? localLiked : (userUuid && props.users_like?.includes(userUuid) || false);
     const [likeCount, setLikeCount] = useState(count_likes || 0);
 
+    const articleId = (props._id || props.id)?.toString() || '';
     const likeMutation = useMutation({
-        mutationFn: () => article.like(props.id?.toString() || '', session?.user?.accessToken),
+        mutationFn: () => article.like(articleId, session?.user?.accessToken),
         onSuccess: () => {
             setLocalLiked(true);
             setLikeCount(prev => prev + 1);
@@ -165,7 +166,7 @@ export default function ItemBlog(props: ItemBlogProps) {
     });
 
     const unlikeMutation = useMutation({
-        mutationFn: () => article.unlike(props.id?.toString() || '', session?.user?.accessToken),
+        mutationFn: () => article.unlike(articleId, session?.user?.accessToken),
         onSuccess: () => {
             setLocalLiked(false);
             setLikeCount(prev => Math.max(0, prev - 1));
@@ -192,7 +193,7 @@ export default function ItemBlog(props: ItemBlogProps) {
             toaster.create({ title: "Please login to report", type: "warning" });
             return;
         }
-        article.report(props.id?.toString() || '', 'Inappropriate content', session.user.accessToken)
+        article.report(articleId, 'Inappropriate content', session.user.accessToken)
             .then(() => toaster.create({ title: "Report submitted", type: "success" }))
             .catch(() => toaster.create({ title: "Failed to report", type: "error" }));
     };
@@ -202,13 +203,13 @@ export default function ItemBlog(props: ItemBlogProps) {
     const isBookmarked = localBookmarked !== null ? localBookmarked : (userUuid && props.users_bookmark?.includes(userUuid) || false);
 
     const bookmarkMutation = useMutation({
-        mutationFn: () => article.bookmark(props.id?.toString() || '', session?.user?.accessToken),
+        mutationFn: () => article.bookmark(articleId, session?.user?.accessToken),
         onSuccess: () => setLocalBookmarked(true),
         onError: () => toaster.create({ title: t('bookmark_failed', { defaultValue: 'Failed to bookmark' }), type: "error" })
     });
 
     const unbookmarkMutation = useMutation({
-        mutationFn: () => article.unbookmark(props.id?.toString() || '', session?.user?.accessToken),
+        mutationFn: () => article.unbookmark(articleId, session?.user?.accessToken),
         onSuccess: () => setLocalBookmarked(false),
         onError: () => toaster.create({ title: t('unbookmark_failed', { defaultValue: 'Failed to unbookmark' }), type: "error" })
     });
@@ -510,14 +511,16 @@ export default function ItemBlog(props: ItemBlogProps) {
                 <PopUpComment
                     isOpen={open}
                     onClose={onClose}
-                    articleId={(props._id || props.id)?.toString()}
+                    articleId={articleId}
                     images={imageUrls}
                     comments={comments as CommentParams[] || []}
                     author={user ? { name: user.name || 'Anonymous', avatar: user.avatar } : { name: 'Anonymous' }}
                     caption={title}
                     content={props.content}
                     createdAt={created_at}
-                    likeCount={count_likes}
+                    likeCount={likeCount}
+                    usersLike={props.users_like}
+                    usersBookmark={props.users_bookmark}
                 />
             </VStack>
         </Box>

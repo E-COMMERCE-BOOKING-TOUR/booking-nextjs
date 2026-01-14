@@ -110,63 +110,66 @@ const BookmarkContent = () => {
                 </Center>
             ) : (
                 <VStack gap={4} align="stretch">
-                    {allArticles.map((item: IArticlePopular) => (
-                        <Card.Root key={item.id?.toString()} p={4} bg="white" shadow="sm" borderRadius="xl" _hover={{ shadow: "md" }} transition="all 0.2s">
-                            <HStack gap={4} align="start">
-                                {/* Thumbnail */}
-                                {item.images?.[0]?.image_url && (
-                                    <Image
-                                        src={item.images[0].image_url}
-                                        alt={item.title}
-                                        w="120px"
-                                        h="80px"
-                                        borderRadius="lg"
-                                        objectFit="cover"
-                                        flexShrink={0}
-                                    />
-                                )}
+                    {allArticles.map((item: IArticlePopular) => {
+                        const articleId = (item._id || item.id)?.toString() || '';
+                        return (
+                            <Card.Root key={articleId} p={4} bg="white" shadow="sm" borderRadius="xl" _hover={{ shadow: "md" }} transition="all 0.2s">
+                                <HStack gap={4} align="start">
+                                    {/* Thumbnail */}
+                                    {item.images?.[0]?.image_url && (
+                                        <Image
+                                            src={item.images[0].image_url}
+                                            alt={item.title}
+                                            w="120px"
+                                            h="80px"
+                                            borderRadius="lg"
+                                            objectFit="cover"
+                                            flexShrink={0}
+                                        />
+                                    )}
 
-                                {/* Content */}
-                                <VStack align="start" flex={1} gap={2}>
-                                    <Link href={`/social/article/${item.id}`} style={{ width: '100%' }}>
-                                        <Text fontWeight="700" fontSize="md" lineClamp={2} _hover={{ color: "main" }}>
-                                            {item.title}
-                                        </Text>
-                                    </Link>
+                                    {/* Content */}
+                                    <VStack align="start" flex={1} gap={2}>
+                                        <Link href={`/social/article/${articleId}`} style={{ width: '100%' }}>
+                                            <Text fontWeight="700" fontSize="md" lineClamp={2} _hover={{ color: "main" }}>
+                                                {item.title}
+                                            </Text>
+                                        </Link>
 
-                                    <HStack gap={4} color="gray.500" fontSize="sm">
-                                        <HStack gap={1}>
-                                            <Avatar.Root size="xs">
-                                                {item.user?.avatar && <Avatar.Image src={item.user.avatar} />}
-                                                <Avatar.Fallback>{item.user?.name?.[0]}</Avatar.Fallback>
-                                            </Avatar.Root>
-                                            <Text>{item.user?.name || 'Unknown'}</Text>
+                                        <HStack gap={4} color="gray.500" fontSize="sm">
+                                            <HStack gap={1}>
+                                                <Avatar.Root size="xs">
+                                                    {item.user?.avatar && <Avatar.Image src={item.user.avatar} />}
+                                                    <Avatar.Fallback>{item.user?.name?.[0]}</Avatar.Fallback>
+                                                </Avatar.Root>
+                                                <Text>{item.user?.name || 'Unknown'}</Text>
+                                            </HStack>
+                                            <HStack gap={1}>
+                                                <FiHeart size={14} />
+                                                <Text>{item.count_likes || 0}</Text>
+                                            </HStack>
+                                            <HStack gap={1}>
+                                                <FiMessageCircle size={14} />
+                                                <Text>{item.count_comments || 0}</Text>
+                                            </HStack>
                                         </HStack>
-                                        <HStack gap={1}>
-                                            <FiHeart size={14} />
-                                            <Text>{item.count_likes || 0}</Text>
-                                        </HStack>
-                                        <HStack gap={1}>
-                                            <FiMessageCircle size={14} />
-                                            <Text>{item.count_comments || 0}</Text>
-                                        </HStack>
-                                    </HStack>
-                                </VStack>
+                                    </VStack>
 
-                                {/* Remove button */}
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    color="gray.400"
-                                    _hover={{ color: "red.500", bg: "red.50" }}
-                                    onClick={() => unbookmarkMutation.mutate(item.id?.toString() || '')}
-                                    loading={unbookmarkMutation.isPending}
-                                >
-                                    <FiTrash2 />
-                                </Button>
-                            </HStack>
-                        </Card.Root>
-                    ))}
+                                    {/* Remove button */}
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        color="gray.400"
+                                        _hover={{ color: "red.500", bg: "red.50" }}
+                                        onClick={() => unbookmarkMutation.mutate(articleId)}
+                                        loading={unbookmarkMutation.isPending}
+                                    >
+                                        <FiTrash2 />
+                                    </Button>
+                                </HStack>
+                            </Card.Root>
+                        );
+                    })}
 
                     {hasNextPage && (
                         <Button onClick={() => fetchNextPage()} disabled={isFetchingNextPage} variant="outline" w="full">

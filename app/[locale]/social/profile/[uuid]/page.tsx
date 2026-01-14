@@ -71,7 +71,7 @@ const ProfileContent = () => {
         enabled: !!session?.user?.accessToken && !isOwnProfile,
     });
 
-    const isFollowing = myFollowing?.some((f: { id: number } | number) => (typeof f === 'object' ? f.id : f) === profileUser?.id);
+    const isFollowing = myFollowing?.some((f: { id: number } | number) => (f && typeof f === 'object' ? f.id : f) === profileUser?.id);
 
     // Follow/unfollow mutations
     const followMutation = useMutation({
@@ -263,7 +263,7 @@ const ProfileContent = () => {
             ) : (
                 <List.Root w="full" variant="marker" gap={6} display="flex" flexDirection="column" alignItems="center">
                     {articles.map((item: IArticlePopular, index: number) => (
-                        <List.Item key={item.id?.toString() || item._id?.toString() || `article-${index}`} w="full" display="flex" alignItems="center" justifyContent="center">
+                        <List.Item key={(item._id || item.id)?.toString() || `article-${index}`} w="full" display="flex" alignItems="center" justifyContent="center">
                             <ItemBlog
                                 {...item}
                                 users_like={item.users_like}

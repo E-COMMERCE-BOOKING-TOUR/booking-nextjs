@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Box, Button, Grid, GridItem, HStack, Icon, Image, Input, Text, VStack, Dialog, CloseButton, Portal, Flex, Avatar, Menu } from "@chakra-ui/react";
 import { Link } from "@/i18n/navigation";
-import { FiMessageCircle, FiChevronLeft, FiChevronRight, FiHeart, FiShare2, FiBookmark, FiSend } from "react-icons/fi";
+import { FiMessageCircle, FiChevronLeft, FiChevronRight, FiHeart, FiShare2, FiBookmark, FiSend, FiThumbsUp } from "react-icons/fi";
 import { FaXTwitter, FaFacebook, FaLine, FaLink } from "react-icons/fa6";
 import { useSession } from "next-auth/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,11 +18,11 @@ export interface CommentParams {
     id: string | number;
     content: string;
     parent_id: string | number | null;
-    user_id: number;
+    user_id: string | number;
     created_at: string;
     updated_at: string;
     user?: {
-        id: number;
+        id: string | number;
         name: string;
         avatar: string;
     };
@@ -77,7 +77,7 @@ const CommentItem = ({
 }: {
     node: CommentNode;
     depth?: number;
-    users: Record<number, { name: string; avatar?: string }>;
+    users: Record<string | number, { name: string; avatar?: string }>;
     expanded: Record<string | number, boolean>;
     toggle: (id: string | number) => void;
     onReply: (comment: CommentParams) => void;
@@ -226,7 +226,9 @@ export function PopUpComment({
     caption,
     content,
     createdAt,
-    likeCount
+    likeCount,
+    usersLike = [],
+    usersBookmark = []
 }: {
     isOpen: boolean;
     onClose: () => void;
@@ -239,6 +241,8 @@ export function PopUpComment({
     content?: string;
     createdAt?: string;
     likeCount?: number;
+    usersLike?: string[];
+    usersBookmark?: string[];
 }) {
     const { data: session } = useSession();
     const t = useTranslations('common');
@@ -246,10 +250,76 @@ export function PopUpComment({
 
     const [expanded, setExpanded] = useState<Record<string | number, boolean>>({});
     const [replyingTo, setReplyingTo] = useState<CommentParams | null>(null);
-    const [users, setUsers] = useState<Record<number, { name: string; avatar?: string }>>({});
+    const [users, setUsers] = useState<Record<string | number, { name: string; avatar?: string }>>({});
     const [imgIndex, setImgIndex] = useState(0);
     const [localComments, setLocalComments] = useState<CommentParams[]>(comments);
     const [visibleCount, setVisibleCount] = useState(5); // Show 5 comments initially
+
+    // Like & Bookmark state
+    const userUuid = (session?.user as any)?.uuid;
+    const [localLiked, setLocalLiked] = useState<boolean | null>(null);
+    const isLiked = localLiked !== null ? localLiked : (userUuid && usersLike?.includes(userUuid) || false);
+    const [currentLikeCount, setCurrentLikeCount] = useState(likeCount || 0);
+
+    const [localBookmarked, setLocalBookmarked] = useState<boolean | null>(null);
+    const isBookmarked = localBookmarked !== null ? localBookmarked : (userUuid && usersBookmark?.includes(userUuid) || false);
+
+    // Sync initial counts/states when props change (modal re-opens for different article)
+    useEffect(() => {
+        setLocalLiked(null);
+        setLocalBookmarked(null);
+        setCurrentLikeCount(likeCount || 0);
+    }, [articleId, likeCount]);
+
+    const likeMutation = useMutation({
+        mutationFn: () => articleApi.like(articleId || '', session?.user?.accessToken),
+        onSuccess: () => {
+            setLocalLiked(true);
+            setCurrentLikeCount(prev => prev + 1);
+            queryClient.invalidateQueries({ queryKey: ["articles-infinite"] });
+        },
+        onError: () => toaster.create({ title: "Failed to like", type: "error" })
+    });
+
+    const unlikeMutation = useMutation({
+        mutationFn: () => articleApi.unlike(articleId || '', session?.user?.accessToken),
+        onSuccess: () => {
+            setLocalLiked(false);
+            setCurrentLikeCount(prev => Math.max(0, prev - 1));
+            queryClient.invalidateQueries({ queryKey: ["articles-infinite"] });
+        },
+        onError: () => toaster.create({ title: "Failed to unlike", type: "error" })
+    });
+
+    const bookmarkMutation = useMutation({
+        mutationFn: () => articleApi.bookmark(articleId || '', session?.user?.accessToken),
+        onSuccess: () => {
+            setLocalBookmarked(true);
+            queryClient.invalidateQueries({ queryKey: ["articles-infinite"] });
+        },
+        onError: () => toaster.create({ title: "Failed to bookmark", type: "error" })
+    });
+
+    const unbookmarkMutation = useMutation({
+        mutationFn: () => articleApi.unbookmark(articleId || '', session?.user?.accessToken),
+        onSuccess: () => {
+            setLocalBookmarked(false);
+            queryClient.invalidateQueries({ queryKey: ["articles-infinite"] });
+        },
+        onError: () => toaster.create({ title: "Failed to unbookmark", type: "error" })
+    });
+
+    const handleLike = () => {
+        if (!session?.user?.accessToken) return toaster.create({ title: t('login_to_like', { defaultValue: 'Please login to like' }), type: "warning" });
+        if (likeMutation.isPending || unlikeMutation.isPending) return;
+        isLiked ? unlikeMutation.mutate() : likeMutation.mutate();
+    };
+
+    const handleBookmark = () => {
+        if (!session?.user?.accessToken) return toaster.create({ title: t('login_to_bookmark', { defaultValue: 'Please login to bookmark' }), type: "warning" });
+        if (bookmarkMutation.isPending || unbookmarkMutation.isPending) return;
+        isBookmarked ? unbookmarkMutation.mutate() : bookmarkMutation.mutate();
+    };
 
     // Use react-hook-form for uncontrolled input to avoid lag
     const { register, handleSubmit, reset, setValue, setFocus } = useForm<{ comment: string }>({
@@ -283,18 +353,19 @@ export function PopUpComment({
 
         const fetchUsers = async () => {
             const userIds = Array.from(new Set(localComments.map(c => c.user_id)));
-            const newUsers: Record<number, { name: string; avatar?: string }> = { ...users };
+            const newUsers: Record<string | number, { name: string; avatar?: string }> = { ...users };
             let hasNew = false;
 
             for (const id of userIds) {
                 if (!newUsers[id]) {
                     try {
-                        const res = await userApi.getById(id) as { full_name?: string; name?: string; avatar?: string };
+                        const res = await userApi.getById(id as any) as any;
                         if (res) {
-                            // API returns full_name, map to name for display
+                            // Backend might return user directly or wrapped in data
+                            const userData = res.data || res;
                             newUsers[id] = {
-                                name: res.full_name || res.name || 'Anonymous',
-                                avatar: res.avatar
+                                name: userData.full_name || userData.name || 'Anonymous',
+                                avatar: userData.avatar_url || userData.avatar
                             };
                             hasNew = true;
                         }
@@ -328,22 +399,26 @@ export function PopUpComment({
                     id: data.id || Date.now().toString(),
                     content: variables,
                     parent_id: replyingTo?.id || null,
-                    user_id: (session?.user as { id?: number })?.id || 0,
+                    user_id: (session?.user as any)?.id || (session?.user as any)?.uuid || 0,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString(),
                     user: {
-                        id: (session?.user as { id?: number })?.id || 0,
-                        name: session?.user?.name || 'You',
-                        avatar: ''
+                        id: (session?.user as any)?.id || (session?.user as any)?.uuid || 0,
+                        name: (session?.user as any)?.full_name || session?.user?.name || 'You',
+                        avatar: (session?.user as any)?.avatar_url || ''
                     }
                 };
                 setLocalComments(prev => [...prev, newComment]);
+                if (replyingTo?.id) {
+                    setExpanded(prev => ({ ...prev, [replyingTo.id]: true }));
+                }
             }
             reset({ comment: "" });
             setReplyingTo(null);
             toaster.create({ title: t('comment_posted', { defaultValue: 'Comment posted!' }), type: 'success' });
             refetch?.();
             queryClient.invalidateQueries({ queryKey: ["articles-infinite"] });
+            queryClient.invalidateQueries({ queryKey: ["user-articles"] });
         },
         onError: (error) => {
             console.error('[Comment] Error posting comment:', error);
@@ -588,9 +663,9 @@ export function PopUpComment({
                                 <Box p={4} borderTop="1px solid" borderColor="gray.100" bg="gray.50">
                                     <HStack justify="space-between" mb={3}>
                                         <HStack gap={4}>
-                                            <HStack gap={1} color="gray.600">
-                                                <Icon as={FiHeart} boxSize={5} />
-                                                <Text fontWeight="700" fontSize="sm">{likeCount || 0}</Text>
+                                            <HStack gap={1} color={isLiked ? "main" : "gray.600"} cursor="pointer" onClick={handleLike}>
+                                                <Icon as={FiThumbsUp} boxSize={5} fill={isLiked ? "currentColor" : "none"} />
+                                                <Text fontWeight="700" fontSize="sm">{currentLikeCount}</Text>
                                             </HStack>
                                             <HStack gap={1} color="gray.600">
                                                 <Icon as={FiMessageCircle} boxSize={5} />
@@ -598,7 +673,15 @@ export function PopUpComment({
                                             </HStack>
                                             <ShareMenu articleId={articleId} title={caption} t={t} />
                                         </HStack>
-                                        <Icon as={FiBookmark} boxSize={5} color="gray.600" cursor="pointer" _hover={{ color: "main" }} />
+                                        <Icon
+                                            as={FiBookmark}
+                                            boxSize={5}
+                                            color={isBookmarked ? "main" : "gray.600"}
+                                            fill={isBookmarked ? "currentColor" : "none"}
+                                            cursor="pointer"
+                                            _hover={{ color: "main" }}
+                                            onClick={handleBookmark}
+                                        />
                                     </HStack>
 
                                     {/* Reply indicator */}
