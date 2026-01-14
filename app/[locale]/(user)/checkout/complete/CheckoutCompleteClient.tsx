@@ -104,8 +104,6 @@ export default function CheckoutCompleteClient({ initialBooking }: Props) {
                             </Text>
                             <Text color="fg.muted" mb={6}>
                                 {t('confirmation_email_sent', { email: initialBooking.contact_email })}
-                                <br />
-                                {t('present_qr_notice')}
                             </Text>
 
                             <Stack direction={{ base: "column", md: "row" }} gap={3} justify="center">

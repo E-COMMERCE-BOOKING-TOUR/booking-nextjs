@@ -39,31 +39,16 @@ export default function VerifyEmailPage() {
             try {
                 const response = await authApi.verifyEmail(token);
 
-                if (response.token) {
-                    // Store tokens for auto-login
-                    localStorage.setItem("access_token", response.token.access_token);
-                    localStorage.setItem("refresh_token", response.token.refresh_token);
+                setStatus("success");
+                toaster.create({
+                    description: response.message || t('verify_email_success', { defaultValue: "Email verified successfully!" }),
+                    type: "success",
+                });
 
-                    setStatus("success");
-                    toaster.create({
-                        description: t('verify_email_success', { defaultValue: "Email verified successfully!" }),
-                        type: "success",
-                    });
-
-                    // Redirect to home after 2 seconds
-                    setTimeout(() => {
-                        router.push("/");
-                    }, 2000);
-                } else {
-                    setStatus("success");
-                    toaster.create({
-                        description: response.message || t('verify_email_success', { defaultValue: "Email verified successfully!" }),
-                        type: "success",
-                    });
-                    setTimeout(() => {
-                        router.push("/user-login");
-                    }, 2000);
-                }
+                // Redirect to login after 2 seconds
+                setTimeout(() => {
+                    router.push("/user-login");
+                }, 2000);
             } catch (error: unknown) {
                 setStatus("error");
                 const message = error instanceof Error ? error.message : t('verify_email_failed', { defaultValue: "Failed to verify email" });

@@ -170,7 +170,7 @@ export default function LoginPage() {
                     placeholder={t('username_placeholder', { defaultValue: "Enter your username" })}
                     {...register("username")}
                   />
-                  <Field.ErrorText>{errors.username?.message && t(errors.username.message as string, { count: 4 })}</Field.ErrorText>
+                  <Field.ErrorText>{errors.username?.message && t(errors.username.message as string, { count: 5 })}</Field.ErrorText>
                 </Field.Root>
 
                 <Field.Root invalid={!!errors.password}>
@@ -193,7 +193,7 @@ export default function LoginPage() {
                     placeholder={t('password_placeholder', { defaultValue: "Enter your password" })}
                     {...register("password")}
                   />
-                  <Field.ErrorText>{errors.password?.message && t(errors.password.message as string, { count: 5 })}</Field.ErrorText>
+                  <Field.ErrorText>{errors.password?.message && t(errors.password.message as string, { count: 8 })}</Field.ErrorText>
                 </Field.Root>
               </Stack>
 

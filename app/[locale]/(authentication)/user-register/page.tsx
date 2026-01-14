@@ -1,5 +1,4 @@
 "use client";
-import { login } from "@/actions/login";
 import authApi from "@/apis/auth";
 import { toaster } from "@/components/chakra/toaster";
 import { RegisterSchema } from "@/schemas";
@@ -49,7 +48,7 @@ export default function RegisterPage() {
       const response = await authApi.register(values);
       return response;
     },
-    onSuccess: async (data, variables) => {
+    onSuccess: async (data) => {
       if (data.error) {
         const errorKey = data.message || 'registration_failed';
         toaster.create({
@@ -58,17 +57,13 @@ export default function RegisterPage() {
         });
       } else {
         toaster.create({
-          description: t('registration_success', { defaultValue: "Registration successful!" }),
+          description: t('registration_email_sent', { defaultValue: "Registration successful! Please check your email to verify your account." }),
           type: "success",
         });
-        // Auto login
-        await login({
-          username: variables.username,
-          password: variables.password,
-          remember: true,
-        });
-        router.push("/");
-        router.refresh();
+        // Redirect to login page
+        setTimeout(() => {
+          router.push("/user-login");
+        }, 2000);
       }
     },
     onError: (error: unknown) => {
@@ -155,7 +150,7 @@ export default function RegisterPage() {
                     placeholder="username123"
                     {...registerFrom("username")}
                   />
-                  <Field.ErrorText>{errors.username?.message && t(errors.username.message as string, { count: 4 })}</Field.ErrorText>
+                  <Field.ErrorText>{errors.username?.message && t(errors.username.message as string, { count: 5 })}</Field.ErrorText>
                 </Field.Root>
               </GridItem>
 
@@ -207,7 +202,7 @@ export default function RegisterPage() {
                     placeholder="••••••••"
                     {...registerFrom("password")}
                   />
-                  <Field.ErrorText>{errors.password?.message && t(errors.password.message as string, { count: 5 })}</Field.ErrorText>
+                  <Field.ErrorText>{errors.password?.message && t(errors.password.message as string, { count: 8 })}</Field.ErrorText>
                 </Field.Root>
               </GridItem>
 
@@ -225,7 +220,7 @@ export default function RegisterPage() {
                     placeholder={t('register_confirm_password_placeholder', { defaultValue: "••••••••" })}
                     {...registerFrom("confirmPassword")}
                   />
-                  <Field.ErrorText>{errors.confirmPassword?.message && t(errors.confirmPassword.message as string, { count: 5 })}</Field.ErrorText>
+                  <Field.ErrorText>{errors.confirmPassword?.message && t(errors.confirmPassword.message as string, { count: 8 })}</Field.ErrorText>
                 </Field.Root>
               </GridItem>
             </Grid>
