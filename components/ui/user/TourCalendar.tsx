@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Button, Flex, Grid, Heading, HStack, Text, Spinner } from "@chakra-ui/react";
+import { Box, Button, Flex, Grid, Heading, HStack, Text, Spinner, VStack } from "@chakra-ui/react";
 import { useState, useMemo } from "react";
 import tour from "@/apis/tour";
 import { IUserTourSession } from "@/types/response/tour.type";
@@ -172,8 +172,9 @@ export default function TourCalendar({ tourSlug, variantId, durationDays, onSele
                         // Determine if this date is part of selection (start, middle, or end)
                         const isPartOfSelection = isStartDate || inRange || isEndDate;
 
-                        // Calculate total available spots for display
-                        const totalAvailable = daySessions?.reduce((sum, s) => sum + (s.capacity_available || 0), 0) || 0;
+                        // Use Math.max to show the largest available capacity among all slots on this day
+                        // This prevents overstating availability (e.g., 2 slots of 20 showing as 40)
+                        const totalAvailable = daySessions?.reduce((max, s) => Math.max(max, s.capacity_available || 0), 0) || 0;
 
                         return (
                             <Box
@@ -203,10 +204,28 @@ export default function TourCalendar({ tourSlug, variantId, durationDays, onSele
                                 )}
                                 <Text fontSize="md" fontWeight={isPartOfSelection ? "bold" : "medium"}>{d.getDate()}</Text>
 
-                                {!isDisabled && totalAvailable > 0 && (
-                                    <Text fontSize="10px" color={isPartOfSelection ? "whiteAlpha.800" : "blue.500"} fontWeight="bold" mt={1}>
-                                        {totalAvailable} {t("spots_left")}
-                                    </Text>
+                                {/* Show individual sessions if available, otherwise just summary */}
+                                {!isDisabled && daySessions && daySessions.length > 0 ? (
+                                    <VStack gap={0} mt={1} width="100%">
+                                        {daySessions
+                                            .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''))
+                                            .map((s, idx) => {
+                                                const timeStr = s.start_time ? s.start_time.substring(0, 5) : 'All day';
+                                                // Minimal display: "08:00: 18"
+                                                return (
+                                                    <Text key={idx} fontSize="10px" color={isPartOfSelection ? "whiteAlpha.900" : "blue.600"} fontWeight="bold">
+                                                        {timeStr}: {s.capacity_available}
+                                                    </Text>
+                                                );
+                                            })}
+                                    </VStack>
+                                ) : (
+                                    /* Fallback for virtual sessions or single session without time */
+                                    !isDisabled && totalAvailable > 0 && (
+                                        <Text fontSize="10px" color={isPartOfSelection ? "whiteAlpha.800" : "blue.500"} fontWeight="bold" mt={1}>
+                                            {totalAvailable}
+                                        </Text>
+                                    )
                                 )}
                             </Box>
                         );

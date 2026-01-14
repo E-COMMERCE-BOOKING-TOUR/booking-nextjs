@@ -63,6 +63,8 @@ type TourData = {
     };
     meetingPoint: string;
     currencySymbol?: string;
+    min_pax: number;
+    max_pax?: number;
     variants: TourHeaderVariant[];
 };
 
@@ -107,6 +109,8 @@ const getTourData = async (slug: string, guestId?: string, token?: string): Prom
             staffScore: tourDetail.staffScore,
             images: tourDetail.images,
             durationDays: tourDetail.durationDays,
+            min_pax: tourDetail.min_pax,
+            max_pax: tourDetail.max_pax,
             slug: tourDetail.slug,
             testimonial: tourDetail.testimonial,
             mapUrl: tourDetail.mapUrl,
@@ -185,6 +189,8 @@ export default async function TourDetailPage({ params }: { params: Promise<{ slu
                             variants={tour.variants}
                             durationDays={tour.durationDays}
                             durationText={tour.details.duration}
+                            min_pax={tour.min_pax}
+                            max_pax={tour.max_pax}
                         />
 
                         <Grid templateColumns={{ base: "1fr", md: "repeat(8, 1fr)" }} gap={5} mt={8}>

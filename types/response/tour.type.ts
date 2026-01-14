@@ -148,6 +148,8 @@ export interface IUserTourDetail {
   currencyCode?: string;
   rating: number;
   durationDays: number;
+  min_pax: number;
+  max_pax?: number;
   reviewCount: number;
   score: number;
   scoreLabel: string;

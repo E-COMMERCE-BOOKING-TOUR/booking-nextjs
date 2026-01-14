@@ -629,6 +629,19 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
         };
     }, [watchAllFields, form, saveDraft, showDraftRecovery]);
 
+    // Sync max_pax to all variants' capacity_per_slot
+    const watchedMaxPax = useWatch({ control: form.control, name: 'max_pax' });
+    useEffect(() => {
+        if (watchedMaxPax !== undefined && watchedMaxPax !== null) {
+            const variants = form.getValues('variants') || [];
+            variants.forEach((v, index) => {
+                if (v.capacity_per_slot !== watchedMaxPax) {
+                    form.setValue(`variants.${index}.capacity_per_slot`, watchedMaxPax);
+                }
+            });
+        }
+    }, [watchedMaxPax, form]);
+
 
     const { data: divisions = [] } = useQuery({
         queryKey: ['divisions', watchedCountryId],
@@ -1758,10 +1771,12 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                         ? [{ pax_type_id: adultPaxType.id, pax_type_name: adultPaxType.name, price: 0 }]
                                         : [{ pax_type_id: 1, pax_type_name: 'Adult', price: 0 }];
 
+                                    const currentMaxPax = form.getValues('max_pax');
+
                                     appendVariant({
                                         name: 'Standard',
                                         min_pax_per_booking: 1,
-                                        capacity_per_slot: 20,
+                                        capacity_per_slot: (currentMaxPax !== null && currentMaxPax !== undefined) ? currentMaxPax : 20,
                                         tax_included: true,
                                         cutoff_hours: 24,
                                         status: 'active',
@@ -1806,8 +1821,12 @@ export default function TourWizard({ tourId, initialData }: TourWizardProps) {
                                                         <FormItem>
                                                             <FormLabel>{t('tour_wizard_capacity_label')}</FormLabel>
                                                             <FormControl>
-                                                                <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} className="bg-background/50" />
+                                                                <div className="flex items-center gap-2 h-10 px-3 rounded-md bg-white/5 border border-white/10 text-emerald-400 font-medium text-sm">
+                                                                    <CheckCircle2 className="size-4" />
+                                                                    {t('tour_wizard_linked_to_max_pax')}: {field.value || t('tour_wizard_unlimited')}
+                                                                </div>
                                                             </FormControl>
+                                                            <input type="hidden" {...field} />
                                                         </FormItem>
                                                     )}
                                                 />

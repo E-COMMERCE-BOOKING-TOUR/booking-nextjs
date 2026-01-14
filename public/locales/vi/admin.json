@@ -842,5 +842,7 @@
     "tour_wizard_draft_restored": "Đã khôi phục bản nháp thành công",
     "no_supplier_option": "Không có đối tác",
     "supplier": "Đối tác",
-    "admin": "Admin"
+    "admin": "Admin",
+    "tour_wizard_linked_to_max_pax": "Đã liên kết với Số khách tối đa",
+    "tour_wizard_unlimited": "Không giới hạn"
 }

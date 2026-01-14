@@ -51,13 +51,15 @@ interface TourHeaderProps {
     breadcrumbItems: { label: string; href: string }[];
     currencySymbol?: string;
     currencyCode?: string;
+    min_pax: number;
+    max_pax?: number;
 }
 
 const TourCalendar = dynamic(() => import("./TourCalendar"), {
     loading: () => <Box p={10} textAlign="center"><Spinner size="xl" /></Box>,
 });
 
-export default function TourHeader({ title, location, rating, price, oldPrice, slug, variants, durationDays, durationText, breadcrumbItems, currencySymbol = 'VND', currencyCode }: TourHeaderProps) {
+export default function TourHeader({ title, location, rating, price, oldPrice, slug, variants, durationDays, durationText, breadcrumbItems, currencySymbol = 'VND', currencyCode, min_pax, max_pax }: TourHeaderProps) {
     const locale = useLocale();
     const t = useTranslations('common');
     const router = useRouter();
@@ -163,7 +165,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
             return;
         }
 
-        if (availableSessions.length > 0 && !selectedSessionId) {
+        if (availableSessions.length > 0 && selectedSessionId === null) {
             toaster.create({
                 title: "Please select a time slot.", // Need to add this to common.json too if possible, but for now I'll just keep it or use a generic one
                 type: "warning",
@@ -189,6 +191,25 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
         }
 
         const totalTravelers = pax.reduce((sum, p) => sum + p.quantity, 0);
+
+        if (totalTravelers < min_pax) {
+            toaster.create({
+                title: t("min_pax_required", { count: min_pax, defaultValue: `Minimum ${min_pax} travelers required` }),
+                type: "warning",
+                duration: 3000,
+            });
+            return;
+        }
+
+        if (max_pax && totalTravelers > max_pax) {
+            toaster.create({
+                title: t("max_pax_exceeded", { count: max_pax, defaultValue: `Maximum ${max_pax} travelers allowed` }),
+                type: "warning",
+                duration: 3000,
+            });
+            return;
+        }
+
         const selectedSession = (sessions as IUserTourSession[])?.find(s => s.id === selectedSessionId);
 
         if (selectedSession && totalTravelers > (selectedSession.capacity_available || 0)) {
@@ -299,7 +320,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
 
                 {/* Book Tour Dialog */}
                 <Dialog.Root
-                    size="xl"
+                    size="md"
                     lazyMount
                     unmountOnExit
                     placement="center"
@@ -367,7 +388,9 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                                                     colorScheme="teal"
                                                                     onClick={() => setSelectedSessionId(s.id)}
                                                                 >
-                                                                    {(s.start_time && s.start_time !== '00:00:00') ? `${s.start_time.substring(0, 5)}${s.end_time ? ` - ${s.end_time.substring(0, 5)}` : ''}` : t("all_day")}
+                                                                    {(s.start_time && s.start_time !== '00:00:00')
+                                                                        ? `${s.start_time.substring(0, 5)}${s.end_time ? ` - ${s.end_time.substring(0, 5)}` : ''} (${s.capacity_available})`
+                                                                        : `${t("all_day")} (${s.capacity_available})`}
                                                                 </Button>
                                                             ))}
                                                         </Flex>
@@ -416,7 +439,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                                             <Input
                                                                 type="number"
                                                                 min={0}
-                                                                max={selectedSession ? selectedSession.capacity_available : 10}
+                                                                max={selectedSession ? selectedSession.capacity_available : (max_pax || 99)}
                                                                 w="80px"
                                                                 value={paxQuantities[p.pax_type_id] || 0}
                                                                 onChange={(e) => handlePaxChange(p.pax_type_id, parseInt(e.target.value) || 0)}

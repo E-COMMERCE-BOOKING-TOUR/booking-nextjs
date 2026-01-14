@@ -841,5 +841,7 @@
     "tour_wizard_draft_restored": "Draft restored successfully",
     "no_supplier_option": "No Supplier",
     "supplier": "Supplier",
-    "admin": "Admin"
+    "admin": "Admin",
+    "tour_wizard_linked_to_max_pax": "Linked to Maximum Pax",
+    "tour_wizard_unlimited": "Unlimited"
 }

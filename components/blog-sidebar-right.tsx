@@ -108,20 +108,6 @@ export default function BlogSidebarRight() {
             )}
           </VStack>
         )}
-        <Link href="/tour/list">
-          <Button
-            variant="outline"
-            colorScheme="gray"
-            w="full"
-            mt={6}
-            borderRadius="full"
-            fontSize="xs"
-            fontWeight="bold"
-            _hover={{ bg: "main", color: "white" }}
-          >
-            {t('view_more', { defaultValue: 'View More' })}
-          </Button>
-        </Link>
       </Box>
     </Box>
   );
