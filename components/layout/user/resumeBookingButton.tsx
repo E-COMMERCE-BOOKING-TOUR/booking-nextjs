@@ -15,6 +15,14 @@ export const ResumeBookingButton = ({ booking, ...props }: { booking: IBookingDe
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
     useEffect(() => {
+        // Hide button for completed bookings (paid, confirmed, etc.)
+        const completedStatuses = ['paid', 'confirmed', 'waiting_supplier', 'completed'];
+        if (booking && completedStatuses.includes(booking.status)) {
+            localStorage.removeItem(STORAGE_KEY);
+            setTimeLeft(null);
+            return;
+        }
+
         // If booking exists but has no expiry (completed/confirmed), clear localStorage and hide button
         if (booking && !booking.hold_expires_at) {
             localStorage.removeItem(STORAGE_KEY);

@@ -25,7 +25,9 @@ export default function CheckoutCompleteClient({ initialBooking }: Props) {
         if (typeof window !== 'undefined') {
             localStorage.removeItem('booking_expiry');
         }
-    }, []);
+        // Refresh to update server components (navbar) with new booking status
+        router.refresh();
+    }, [router]);
 
     const steps = [
         {

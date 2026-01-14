@@ -522,5 +522,7 @@
     "vnpay_wrong_password": "Wrong payment password too many times",
     "vnpay_invalid_signature": "Invalid signature",
     "vnpay_unknown_error": "Unknown error",
-    "vnpay_redirect_info": "You will be redirected to VNPay payment portal to complete the transaction after confirmation."
+    "vnpay_redirect_info": "You will be redirected to VNPay payment portal to complete the transaction after confirmation.",
+    "session_expired_title": "Session Expired",
+    "session_expired_desc": "Please log in again to continue."
 }

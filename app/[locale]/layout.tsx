@@ -5,6 +5,8 @@ import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
+import { SessionMonitor } from '@/components/auth/SessionMonitor';
+import { auth } from "@/libs/auth/auth";
 
 export const metadata: Metadata = {
   title: "Booking NextJS",
@@ -24,11 +26,12 @@ export default async function RootLayout({
   }
 
   const messages = await getMessages();
+  const session = await auth();
 
   return (
     <html suppressHydrationWarning lang={locale}>
       <body>
-        <SessionProvider>
+        <SessionProvider session={session}>
           <NextIntlClientProvider messages={messages}>
             <TanstackProvider>
               {children}

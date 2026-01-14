@@ -23,6 +23,7 @@ import { useSearchParams } from "next/navigation";
 import { useTransition, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useTranslations } from "next-intl";
+import { useSession } from "next-auth/react";
 import * as z from "zod";
 import { getGuestId } from "@/utils/guest";
 
@@ -33,6 +34,7 @@ export default function LoginPage() {
   const [resendEmail, setResendEmail] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { update } = useSession();
   const t = useTranslations('common');
 
   // Get callback URL from query parameters (set by middleware when redirecting)
@@ -72,7 +74,8 @@ export default function LoginPage() {
             description: t('login_success', { defaultValue: "Login successful!" }),
             type: "success",
           });
-          // Redirect to callback URL (the page user was trying to access)
+          // Update session and redirect
+          await update();
           router.push(callbackUrl);
           router.refresh();
         }

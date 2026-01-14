@@ -522,5 +522,7 @@
     "vnpay_wrong_password": "Nhập sai mật khẩu thanh toán quá số lần quy định",
     "vnpay_invalid_signature": "Chữ ký không hợp lệ",
     "vnpay_unknown_error": "Lỗi không xác định",
-    "vnpay_redirect_info": "Bạn sẽ được chuyển đến cổng thanh toán VNPay để hoàn tất giao dịch sau khi xác nhận."
+    "vnpay_redirect_info": "Bạn sẽ được chuyển đến cổng thanh toán VNPay để hoàn tất giao dịch sau khi xác nhận.",
+    "session_expired_title": "Phiên đăng nhập đã hết hạn",
+    "session_expired_desc": "Vui lòng đăng nhập lại để tiếp tục."
 }

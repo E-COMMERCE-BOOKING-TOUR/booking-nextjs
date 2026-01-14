@@ -21,8 +21,7 @@ export const login = async (values: z.input<typeof LoginSchema>, guestId?: strin
             redirect: false,
         });
 
-        // Return success before redirect so toast can show
-        return { message: "login_success", type: "success", shouldRedirect: true };
+        return { message: "login_success", type: "success" };
     } catch (error) {
         if (error instanceof AuthError) {
             // Try to extract the actual error message from the cause
