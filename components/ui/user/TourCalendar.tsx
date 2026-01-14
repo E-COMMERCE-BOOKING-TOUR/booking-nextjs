@@ -112,8 +112,8 @@ export default function TourCalendar({ tourSlug, variantId, durationDays, onSele
 
                 if (isOff) {
                     toaster.create({
-                        title: t('selected_range_includes_off_days', { defaultValue: "Selected range includes off days" }),
-                        description: t('tour_cannot_run_on_date', { date: checkDate.toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US'), defaultValue: `The tour cannot run on ${checkDate.toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US')}. Please choose another start date.` }),
+                        title: t('selected_range_includes_off_days'),
+                        description: t('tour_cannot_run_on_date', { date: checkDate.toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US') }),
                         type: "error",
                         duration: 5000,
                     });
@@ -172,8 +172,8 @@ export default function TourCalendar({ tourSlug, variantId, durationDays, onSele
                         // Determine if this date is part of selection (start, middle, or end)
                         const isPartOfSelection = isStartDate || inRange || isEndDate;
 
-                        // Price formatting
-                        // const price = session?.price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(session.price) : '';
+                        // Calculate total available spots for display
+                        const totalAvailable = daySessions?.reduce((sum, s) => sum + (s.capacity_available || 0), 0) || 0;
 
                         return (
                             <Box
@@ -185,7 +185,7 @@ export default function TourCalendar({ tourSlug, variantId, durationDays, onSele
                                 color={isStartDate || isEndDate ? "white" : isDisabled ? "gray.400" : "gray.700"}
                                 cursor={isDisabled ? "not-allowed" : "pointer"}
                                 onClick={() => !isDisabled && handleDateClick(d)}
-                                minH="70px"
+                                minH="80px"
                                 display="flex"
                                 flexDirection="column"
                                 alignItems="center"
@@ -196,12 +196,18 @@ export default function TourCalendar({ tourSlug, variantId, durationDays, onSele
                             >
                                 {/* Day label for start/end */}
                                 {isStartDate && durationDays > 1 && (
-                                    <Text fontSize="2xs" color="whiteAlpha.800" position="absolute" top={-1}>{t('start', { defaultValue: 'Start' })}</Text>
+                                    <Text fontSize="2xs" color="whiteAlpha.800" position="absolute" top={1}>{t('start')}</Text>
                                 )}
                                 {isEndDate && (
-                                    <Text fontSize="2xs" color="whiteAlpha.800" position="absolute" top={-1}>{t('end', { defaultValue: 'End' })}</Text>
+                                    <Text fontSize="2xs" color="whiteAlpha.800" position="absolute" top={1}>{t('end')}</Text>
                                 )}
                                 <Text fontSize="md" fontWeight={isPartOfSelection ? "bold" : "medium"}>{d.getDate()}</Text>
+
+                                {!isDisabled && totalAvailable > 0 && (
+                                    <Text fontSize="10px" color={isPartOfSelection ? "whiteAlpha.800" : "blue.500"} fontWeight="bold" mt={1}>
+                                        {totalAvailable} {t("spots_left")}
+                                    </Text>
+                                )}
                             </Box>
                         );
                     })}

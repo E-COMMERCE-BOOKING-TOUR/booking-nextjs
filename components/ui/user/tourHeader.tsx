@@ -141,6 +141,10 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
         }).sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
     }, [startDate, selectedVariantId, sessions]);
 
+    const selectedSession = useMemo(() => {
+        return (sessions as IUserTourSession[])?.find(s => s.id === selectedSessionId);
+    }, [sessions, selectedSessionId]);
+
     const handleBooking = () => {
         if (!startDate) {
             toaster.create({
@@ -180,6 +184,19 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                 title: t("select_travelers"),
                 type: "warning",
                 duration: 3000,
+            });
+            return;
+        }
+
+        const totalTravelers = pax.reduce((sum, p) => sum + p.quantity, 0);
+        const selectedSession = (sessions as IUserTourSession[])?.find(s => s.id === selectedSessionId);
+
+        if (selectedSession && totalTravelers > (selectedSession.capacity_available || 0)) {
+            toaster.create({
+                title: t("not_enough_spots"),
+                description: t("only_n_spots_left", { n: selectedSession.capacity_available }),
+                type: "error",
+                duration: 5000,
             });
             return;
         }
@@ -282,7 +299,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
 
                 {/* Book Tour Dialog */}
                 <Dialog.Root
-                    size="md"
+                    size="xl"
                     lazyMount
                     unmountOnExit
                     placement="center"
@@ -384,7 +401,14 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                         {/* Passengers */}
                                         {selectedVariant && (
                                             <Box>
-                                                <Text fontSize="sm" mb={1} fontWeight="bold">{t("passengers")}</Text>
+                                                <HStack justify="space-between" mb={1}>
+                                                    <Text fontSize="sm" fontWeight="bold">{t("passengers")}</Text>
+                                                    {selectedSession && (
+                                                        <Text fontSize="xs" color="blue.500" fontWeight="bold">
+                                                            {selectedSession.capacity_available} {t("spots_left")}
+                                                        </Text>
+                                                    )}
+                                                </HStack>
                                                 <VStack gap={2} align="stretch">
                                                     {(selectedVariant.tour_variant_pax_type_prices || []).filter(p => p.price > 0).map((p, i) => (
                                                         <HStack key={`${p.id}-${i}`} justify="space-between">
@@ -392,7 +416,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
                                                             <Input
                                                                 type="number"
                                                                 min={0}
-                                                                max={10}
+                                                                max={selectedSession ? selectedSession.capacity_available : 10}
                                                                 w="80px"
                                                                 value={paxQuantities[p.pax_type_id] || 0}
                                                                 onChange={(e) => handlePaxChange(p.pax_type_id, parseInt(e.target.value) || 0)}
@@ -425,7 +449,7 @@ export default function TourHeader({ title, location, rating, price, oldPrice, s
 
                 {/* Calendar Dialog */}
                 <Dialog.Root
-                    size="xl"
+                    size="lg"
                     lazyMount
                     unmountOnExit
                     placement="center"
