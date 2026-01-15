@@ -528,5 +528,6 @@
     "vnpay_unknown_error": "Unknown error",
     "vnpay_redirect_info": "You will be redirected to VNPay payment portal to complete the transaction after confirmation.",
     "session_expired_title": "Session Expired",
-    "session_expired_desc": "Please log in again to continue."
+    "session_expired_desc": "Please log in again to continue.",
+    "min_pax_required": "Minimum {count} passenger(s) required"
 }
