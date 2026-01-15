@@ -529,5 +529,6 @@
     "vnpay_redirect_info": "Bạn sẽ được chuyển đến cổng thanh toán VNPay để hoàn tất giao dịch sau khi xác nhận.",
     "session_expired_title": "Phiên đăng nhập đã hết hạn",
     "session_expired_desc": "Vui lòng đăng nhập lại để tiếp tục.",
-    "min_pax_required": "Số lượng hành khách tối thiểu cần thiết là {count}"
+    "min_pax_required": "Số lượng hành khách tối thiểu cần thiết là {count}",
+    "max_pax_exceeded": "Đã vượt quá số lượng hành khách tối đa {count}"
 }

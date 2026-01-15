@@ -529,5 +529,6 @@
     "vnpay_redirect_info": "You will be redirected to VNPay payment portal to complete the transaction after confirmation.",
     "session_expired_title": "Session Expired",
     "session_expired_desc": "Please log in again to continue.",
-    "min_pax_required": "Minimum {count} passenger(s) required"
+    "min_pax_required": "Minimum {count} passenger(s) required",
+    "max_pax_exceeded": "Maximum {count} passenger(s) exceeded"
 }
